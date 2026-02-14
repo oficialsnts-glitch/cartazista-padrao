@@ -7,8 +7,8 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e61e25">
-    <link rel="icon" type="image/png" href="logo_cartaz.png">
-    <link rel="apple-touch-icon" href="logo_cartaz.png">
+    <link rel="icon" type="image/png" href="Logo_cartaz.png">
+    <link rel="apple-touch-icon" href="Logo_cartaz.png">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
@@ -17,17 +17,14 @@
             --vermelho: #e61e25; --verde: #009432; --laranja: #f39c12; 
             --amarelo: #ffc312; --preto: #1e272e; --azul: #0984e3;
             --roxo-validade: #6c5ce7;
-            /* Escalas base */
-            --f-topo: 2.8em; --f-prod: 1.6em; --f-gram: 1.2em; --f-reais: 14em;
+            --f-topo: 2.8em; --f-prod: 1.6em; --f-reais: 14em;
         }
 
-        * { box-sizing: border-box; } /* Impede que bordas e padding aumentem o tamanho do elemento */
+        * { box-sizing: border-box; }
 
         /* --- Splash Screen --- */
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, #0984e3 0%, #1e272e 100%);
             display: flex; justify-content: center; align-items: center;
             z-index: 9999; transition: opacity 0.8s ease;
@@ -40,54 +37,41 @@
 
         /* --- Interface --- */
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-
         .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
         .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
         .input-group { display: flex; flex-direction: column; }
         label { font-size: 10px; text-transform: uppercase; color: #718096; margin-bottom: 4px; font-weight: bold; }
         input, select { padding: 10px; border: 2px solid #edf2f7; border-radius: 8px; font-size: 14px; }
-        
         #group-validade { display: none; }
-
         .botoes { display: flex; gap: 10px; margin-top: 15px; }
         button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
         .btn-add { background: var(--preto); color: white; }
         .btn-print { background: var(--vermelho); color: white; }
         .btn-clear { background: #718096; color: white; flex: 0.3; }
 
-        /* --- Área de Impressão --- */
-        #container-impressao { 
-            display: grid; 
-            width: 210mm; /* Largura A4 */
-            background: #fff; 
-            margin: 0 auto;
-        }
-
-        /* Ajustes de Layout para evitar sobreposição */
+        /* --- Área de Impressão Corrigida --- */
+        #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
+        
+        /* Layout 1: Ajuste para não cortar topo/fundo */
         .layout-1 { grid-template-columns: 1fr; padding: 0; }
-        .layout-1 .cartaz-item { height: 297mm; border: none; page-break-after: always; --f-topo: 5em; --f-prod: 3.5em; --f-reais: 28em; }
+        .layout-1 .cartaz-item { height: 290mm; border: none; --f-topo: 4.5em; --f-prod: 2.5em; --f-reais: 24em; }
 
+        /* Layout 2: Tradicional A5 */
         .layout-2 { grid-template-columns: 1fr; row-gap: 5mm; padding: 5mm; }
-        .layout-2 .cartaz-item { height: 140mm; }
+        .layout-2 .cartaz-item { height: 138mm; }
 
+        /* Layout 4: Ajuste crítico de espaço */
         .layout-4 { grid-template-columns: 1fr 1fr; gap: 2mm; padding: 2mm; }
-        .layout-4 .cartaz-item { height: 145mm; border: 1px solid #eee; --f-topo: 1.8em; --f-prod: 1.2em; --f-reais: 9em; }
+        .layout-4 .cartaz-item { height: 140mm; --f-topo: 1.6em; --f-prod: 1em; --f-reais: 8.5em; padding: 0 5px 15px 5px !important; }
 
         .cartaz-item { 
-            width: 100%; 
-            background: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 0 10px 20px 10px; 
-            position: relative; 
-            page-break-inside: avoid; 
-            overflow: hidden; 
+            width: 100%; background: #fff; display: flex; flex-direction: column; align-items: center; 
+            justify-content: space-between; position: relative; page-break-inside: avoid; 
+            overflow: hidden; border: 1px dashed #ddd; padding: 0 10px 20px 10px;
         }
 
-        .selo-topo { width: 110%; padding: 10px 0; text-align: center; transform: rotate(-1deg); z-index: 1; }
-        .selo-topo span { font-size: var(--f-topo); color: #fff; text-transform: uppercase; white-space: nowrap; }
+        .selo-topo { width: 115%; padding: 12px 0; text-align: center; transform: rotate(-1.5deg); z-index: 1; margin-top: -5px; }
+        .selo-topo span { font-size: var(--f-topo); color: #fff; text-transform: uppercase; display: block; }
 
         /* Temas */
         .tema-oferta { background: var(--vermelho); }
@@ -98,35 +82,33 @@
         .tema-ultimas span { color: var(--preto); }
         .tema-validade { background: var(--roxo-validade); }
 
-        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
-        .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; }
-        .marca-produto { width: 100%; text-transform: uppercase; line-height: 0.9; letter-spacing: -1px; margin: 5px 0; }
-        .gramatura-produto { font-size: var(--f-gram); color: #718096; font-weight: bold; }
+        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; padding: 0 5px; }
+        .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; word-wrap: break-word; }
+        .marca-produto { width: 100%; text-transform: uppercase; line-height: 0.85; letter-spacing: -1px; margin: 2px 0; word-wrap: break-word; }
+        .gramatura-produto { font-size: 1.2em; color: #718096; font-weight: bold; }
+        .selo-validade-info { background: var(--roxo-validade); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.85em; margin-top: 4px; display: inline-block; align-self: center; }
 
-        .selo-validade-info { background: var(--roxo-validade); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.9em; margin-top: 5px; display: inline-block; }
-
-        .preco-box { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin-top: auto; padding-bottom: 10px; }
-        .rs { font-size: calc(var(--f-reais) * 0.15); margin-top: 10%; margin-right: 2px; }
-        .reais { font-size: var(--f-reais); line-height: 0.8; color: var(--vermelho); letter-spacing: -5px; }
+        .preco-box { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin-top: auto; }
+        .rs { font-size: calc(var(--f-reais) * 0.15); margin-top: 10%; margin-right: 2px; color: var(--preto); }
+        .reais { font-size: var(--f-reais); line-height: 0.75; color: var(--vermelho); letter-spacing: -6px; }
         
-        .tema-horti ~ .preco-box .reais { color: var(--verde); }
-        .tema-bebidas ~ .preco-box .reais { color: var(--azul); }
-        .tema-validade ~ .preco-box .reais { color: var(--roxo-validade); }
+        /* Cores Dinâmicas */
+        .tema-horti ~ .preco-box .reais, .tema-horti ~ .preco-box .centavos { color: var(--verde); }
+        .tema-bebidas ~ .preco-box .reais, .tema-bebidas ~ .preco-box .centavos { color: var(--azul); }
+        .tema-validade ~ .preco-box .reais, .tema-validade ~ .preco-box .centavos { color: var(--roxo-validade); }
 
         .dir-box { display: flex; flex-direction: column; margin-top: 5%; }
-        .centavos { font-size: calc(var(--f-reais) * 0.3); line-height: 1; color: var(--vermelho); border-bottom: 4px solid; }
-        .tema-validade ~ .preco-box .centavos { color: var(--roxo-validade); }
-        .unidade { font-size: calc(var(--f-reais) * 0.08); font-weight: bold; text-transform: uppercase; }
+        .centavos { font-size: calc(var(--f-reais) * 0.32); line-height: 1; color: var(--vermelho); border-bottom: 5px solid; }
+        .unidade { font-size: calc(var(--f-reais) * 0.08); font-weight: bold; text-transform: uppercase; color: #4a5568; }
 
-        .acoes-cartaz { position: absolute; top: 5px; right: 5px; display: flex; gap: 3px; z-index: 10; }
-        .btn-acao { background: white; border: 1px solid #ccc; padding: 5px; cursor: pointer; border-radius: 4px; font-size: 10px; }
+        .acoes-cartaz { position: absolute; top: 5px; right: 5px; display: flex; gap: 4px; z-index: 10; }
+        .btn-acao { background: white; border: 1px solid #ccc; width: 28px; height: 28px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 
         @media print {
             body { padding: 0; background: #fff; }
             .painel, .acoes-cartaz, #splash-screen { display: none !important; }
-            #container-impressao { width: 100%; padding: 0; }
-            .layout-4 { gap: 0; padding: 0; }
-            .layout-4 .cartaz-item { border: 0.5px solid #eee; height: 148mm; }
+            #container-impressao { width: 100%; border: none; }
+            .layout-4 .cartaz-item { border: 0.2mm solid #eee; }
         }
     </style>
 </head>
@@ -134,14 +116,14 @@
 
     <div id="splash-screen">
         <div class="splash-content">
-            <img src="logo_cartaz.png" alt="Cartazista Pro" class="splash-logo">
+            <img src="Logo_cartaz.png" alt="Cartazista Pro" class="splash-logo">
             <div class="loader"></div>
-            <p>Carregando Cartazista Pro...</p>
+            <p>Sistema Pronto</p>
         </div>
     </div>
 
     <div class="painel">
-        <h2 style="text-align:center;">🛒 Cartazista Pro v5.5</h2>
+        <h2 style="text-align:center; margin-top:0;">🛒 Cartazista Pro v5.6</h2>
         <div class="grid-inputs">
             <div class="input-group">
                 <label>Tema</label>
@@ -156,26 +138,26 @@
             </div>
             <div class="input-group" id="group-validade">
                 <label>Vencimento</label>
-                <input type="text" id="inVenc" placeholder="Ex: 15/02">
+                <input type="text" id="inVenc" placeholder="Ex: 10.02">
             </div>
             <div class="input-group">
                 <label>Layout</label>
-                <select id="selLayout" onchange="document.getElementById('container-impressao').className = this.value">
-                    <option value="layout-2">2 por Folha (A5)</option>
+                <select id="selLayout" onchange="document.getElementById('container-impressao').className = this.value; renderizar();">
+                    <option value="layout-2">2 por Folha</option>
                     <option value="layout-1">1 por Folha (A4)</option>
-                    <option value="layout-4">4 por Folha (A6)</option>
+                    <option value="layout-4">4 por Folha</option>
                 </select>
             </div>
         </div>
         <div class="grid-inputs">
             <div class="input-group"><label>Produto</label><input type="text" id="inProd"></div>
-            <div class="input-group"><label>Marca</label><input type="text" id="inMarca"></div>
-            <div class="input-group"><label>Medida</label><input type="text" id="inGram" placeholder="Ex: 500g / 1L"></div>
+            <div class="input-group"><label>Marca/Nome Principal</label><input type="text" id="inMarca"></div>
+            <div class="input-group"><label>Peso/Qtd</label><input type="text" id="inGram"></div>
         </div>
         <div class="grid-inputs">
             <div class="input-group"><label>Reais</label><input type="number" id="inR"></div>
             <div class="input-group"><label>Centavos</label><input type="number" id="inC"></div>
-            <div class="input-group"><label>Unid.</label><input type="text" id="inU" placeholder="un / kg"></div>
+            <div class="input-group"><label>Unid.</label><input type="text" id="inU" placeholder="UN/KG"></div>
         </div>
         <div class="botoes">
             <button class="btn-add" onclick="adicionar()">➕ Adicionar</button>
@@ -195,7 +177,7 @@
                 const splash = document.getElementById('splash-screen');
                 splash.style.opacity = '0';
                 setTimeout(() => splash.style.display = 'none', 800);
-            }, 2000);
+            }, 1500);
         };
 
         function toggleValidade() {
@@ -204,6 +186,7 @@
         }
 
         function adicionar() {
+            if(!document.getElementById('inProd').value || !document.getElementById('inR').value) return alert("Preencha Produto e Valor!");
             const item = {
                 id: Date.now(),
                 tema: document.getElementById('selTema').value,
@@ -224,10 +207,7 @@
 
         function duplicar(id) {
             const original = cartazes.find(c => c.id === id);
-            if (original) {
-                cartazes.push({ ...original, id: Date.now() });
-                salvarERenderizar();
-            }
+            if (original) { cartazes.push({ ...original, id: Date.now() }); salvarERenderizar(); }
         }
 
         function remover(id) {
@@ -240,16 +220,15 @@
             renderizar();
         }
 
-        function limparTudo() {
-            if(confirm("Limpar lista?")) { cartazes = []; salvarERenderizar(); }
-        }
+        function limparTudo() { if(confirm("Limpar lista?")) { cartazes = []; salvarERenderizar(); } }
 
         function renderizar() {
             const container = document.getElementById('container-impressao');
+            const layoutAtual = document.getElementById('selLayout').value;
             container.innerHTML = "";
             cartazes.forEach(c => {
                 const centavos = c.c ? c.c.toString().padStart(2, '0') : "00";
-                const validadeHtml = c.vencimento ? `<div class="selo-validade-info">VENCE: ${c.vencimento}</div>` : "";
+                const validadeHtml = c.vencimento ? `<div class="selo-validade-info">VÁLIDO ATÉ: ${c.vencimento}</div>` : "";
                 
                 container.innerHTML += `
                     <div class="cartaz-item">
@@ -270,7 +249,7 @@
                         </div>
                     </div>
                 `;
-                ajustarFonte(c.id, c.layout, c.marca);
+                ajustarFonte(c.id, layoutAtual, c.marca);
             });
         }
 
@@ -278,12 +257,17 @@
             setTimeout(() => {
                 const el = document.getElementById(`m-${id}`);
                 if (!el) return;
-                let base = 5.8;
-                if(layout === 'layout-1') base = 12;
-                if(layout === 'layout-4') base = 3.8;
+                let base = 5.2; // Reduzido para evitar corte inicial
+                if(layout === 'layout-1') base = 11;
+                if(layout === 'layout-4') base = 3.2; // Mais agressivo no Layout 4
                 
-                if (texto.length > 8) el.style.fontSize = (base * (Math.max(0.3, 1 - (texto.length-8)*0.06))) + "em";
-                else el.style.fontSize = base + "em";
+                // Cálculo para diminuir a fonte se o texto for longo
+                if (texto.length > 7) {
+                    let redutor = layout === 'layout-4' ? 0.08 : 0.05;
+                    el.style.fontSize = (base * (Math.max(0.25, 1 - (texto.length-7) * redutor))) + "em";
+                } else {
+                    el.style.fontSize = base + "em";
+                }
             }, 0);
         }
 
