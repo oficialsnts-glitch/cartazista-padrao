@@ -1,5 +1,5 @@
 const CACHE_NAME = 'cartazista-cache-v1';
-const assets = ['./', './index.html', './manifest.json', './Logo_cartaz.png'];
+const assets = ['./', './index.html', './manifest.json', './logo_cartaz.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(assets)));
