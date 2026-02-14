@@ -1,0 +1,23 @@
+{
+  "name": "GB PRO - Gestor de Boletos",
+  "short_name": "GB PRO",
+  "description": "Sistema Profissional de Gestão de Boletos e Finanças",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f2f8",
+  "theme_color": "#4361ee",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "IMG_6828.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "IMG_6828.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

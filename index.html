@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GB SISTEMAS - HUB</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        :root { --primary: #4361ee; --dark: #1a1b2e; --bg: #f0f2f8; }
+        body { margin: 0; background: var(--bg); font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .header { background: var(--primary); width: 100%; padding: 50px 20px; text-align: center; color: white; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; box-shadow: 0 10px 20px rgba(67,97,238,0.2); }
+        .grid-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px 20px; width: 100%; max-width: 500px; }
+        .app-card { background: white; padding: 25px; border-radius: 25px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-decoration: none; color: var(--dark); transition: 0.3s; }
+        .app-card:active { transform: scale(0.95); }
+        .app-card i { font-size: 45px; display: block; margin-bottom: 12px; }
+        .app-card b { font-size: 15px; display: block; }
+        #tela-login { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 40px; border-radius: 35px; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="tela-login">
+        <div class="login-box">
+            <img src="IMG_6828.png" style="width:80px; border-radius:20px; margin-bottom:20px;">
+            <h2>Bem-vindo</h2>
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="pass" placeholder="Senha">
+            <button onclick="login()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 style="margin:0; letter-spacing: -1px;">GB SISTEMAS</h1>
+        <p id="user-info" style="opacity: 0.8; margin-top: 5px;">Carregando...</p>
+    </div>
+
+    <div class="grid-apps">
+        <a href="financeiro.html" class="app-card"><i>💰</i><b>Financeiro</b></a>
+        <a href="validade.html" class="app-card"><i>📅</i><b>Validades</b></a>
+        <div class="app-card" style="opacity: 0.5;"><i>📦</i><b>Stock</b></div>
+        <div class="app-card" onclick="sair()" style="background: #fff5f5;"><i style="color:#ff4d4d">🚪</i><b style="color:#ff4d4d">Sair</b></div>
+    </div>
+
+    <script>
+        const firebaseConfig = { /* COLE AQUI AS SUAS CREDENCIAIS DO FIREBASE */ };
+        firebase.initializeApp(firebaseConfig);
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('user-info').innerText = user.email;
+            } else {
+                document.getElementById('tela-login').style.display = 'flex';
+            }
+        });
+        async function login() {
+            const e = document.getElementById('email').value;
+            const s = document.getElementById('pass').value;
+            try { await firebase.auth().signInWithEmailAndPassword(e, s); } 
+            catch(err) { alert("Erro: " + err.message); }
+        }
+        function sair() { firebase.auth().signOut(); }
+    </script>
+</body>
+</html>
