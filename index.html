@@ -22,19 +22,6 @@
 
         * { box-sizing: border-box; }
 
-        /* --- Splash Screen --- */
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #0984e3 0%, #1e272e 100%);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 0.8s ease;
-        }
-        .splash-content { text-align: center; color: white; }
-        .splash-logo { width: 180px; margin-bottom: 20px; animation: pulse 2s infinite; }
-        .loader { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--amarelo); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
         /* --- Interface --- */
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
@@ -49,18 +36,15 @@
         .btn-print { background: var(--vermelho); color: white; }
         .btn-clear { background: #718096; color: white; flex: 0.3; }
 
-        /* --- Área de Impressão Corrigida --- */
+        /* --- Área de Impressão --- */
         #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
         
-        /* Layout 1: Ajuste para não cortar topo/fundo */
         .layout-1 { grid-template-columns: 1fr; padding: 0; }
         .layout-1 .cartaz-item { height: 290mm; border: none; --f-topo: 4.5em; --f-prod: 2.5em; --f-reais: 24em; }
 
-        /* Layout 2: Tradicional A5 */
         .layout-2 { grid-template-columns: 1fr; row-gap: 5mm; padding: 5mm; }
         .layout-2 .cartaz-item { height: 138mm; }
 
-        /* Layout 4: Ajuste crítico de espaço */
         .layout-4 { grid-template-columns: 1fr 1fr; gap: 2mm; padding: 2mm; }
         .layout-4 .cartaz-item { height: 140mm; --f-topo: 1.6em; --f-prod: 1em; --f-reais: 8.5em; padding: 0 5px 15px 5px !important; }
 
@@ -82,9 +66,20 @@
         .tema-ultimas span { color: var(--preto); }
         .tema-validade { background: var(--roxo-validade); }
 
-        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; padding: 0 5px; }
-        .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; word-wrap: break-word; }
-        .marca-produto { width: 100%; text-transform: uppercase; line-height: 0.85; letter-spacing: -1px; margin: 2px 0; word-wrap: break-word; }
+        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; padding: 0 5px; overflow: hidden; }
+        .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; }
+        
+        /* Ajuste Crítico para a Marca */
+        .marca-produto { 
+            width: 100%; 
+            text-transform: uppercase; 
+            line-height: 1; 
+            letter-spacing: -1px; 
+            margin: 5px 0; 
+            white-space: nowrap; /* Impede a quebra de linha */
+            display: inline-block;
+        }
+
         .gramatura-produto { font-size: 1.2em; color: #718096; font-weight: bold; }
         .selo-validade-info { background: var(--roxo-validade); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.85em; margin-top: 4px; display: inline-block; align-self: center; }
 
@@ -106,24 +101,15 @@
 
         @media print {
             body { padding: 0; background: #fff; }
-            .painel, .acoes-cartaz, #splash-screen { display: none !important; }
+            .painel, .acoes-cartaz { display: none !important; }
             #container-impressao { width: 100%; border: none; }
-            .layout-4 .cartaz-item { border: 0.2mm solid #eee; }
         }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen">
-        <div class="splash-content">
-            <img src="Logo_cartaz.png" alt="Cartazista Pro" class="splash-logo">
-            <div class="loader"></div>
-            <p>Sistema Pronto</p>
-        </div>
-    </div>
-
     <div class="painel">
-        <h2 style="text-align:center; margin-top:0;">🛒 Cartazista Pro v5.6</h2>
+        <h2 style="text-align:center; margin-top:0;">🛒 Cartazista Pro v5.7</h2>
         <div class="grid-inputs">
             <div class="input-group">
                 <label>Tema</label>
@@ -151,7 +137,7 @@
         </div>
         <div class="grid-inputs">
             <div class="input-group"><label>Produto</label><input type="text" id="inProd"></div>
-            <div class="input-group"><label>Marca/Nome Principal</label><input type="text" id="inMarca"></div>
+            <div class="input-group"><label>Marca (Tamanho Adaptativo)</label><input type="text" id="inMarca"></div>
             <div class="input-group"><label>Peso/Qtd</label><input type="text" id="inGram"></div>
         </div>
         <div class="grid-inputs">
@@ -171,14 +157,7 @@
     <script>
         let cartazes = JSON.parse(localStorage.getItem('meus_cartazes')) || [];
 
-        window.onload = () => {
-            renderizar();
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 800);
-            }, 1500);
-        };
+        window.onload = () => { renderizar(); };
 
         function toggleValidade() {
             const tema = document.getElementById('selTema').value;
@@ -239,7 +218,7 @@
                         <div class="selo-topo ${c.tema}"><span>${c.temaTexto}</span></div>
                         <div class="info-produto">
                             <p class="nome-produto">${c.prod}</p>
-                            <h1 class="marca-produto" id="m-${c.id}">${c.marca}</h1>
+                            <span class="marca-produto" id="m-${c.id}">${c.marca}</span>
                             <div class="gramatura-produto">${c.gram}</div>
                             ${validadeHtml}
                         </div>
@@ -257,17 +236,23 @@
             setTimeout(() => {
                 const el = document.getElementById(`m-${id}`);
                 if (!el) return;
-                let base = 5.2; // Reduzido para evitar corte inicial
-                if(layout === 'layout-1') base = 11;
-                if(layout === 'layout-4') base = 3.2; // Mais agressivo no Layout 4
                 
-                // Cálculo para diminuir a fonte se o texto for longo
-                if (texto.length > 7) {
-                    let redutor = layout === 'layout-4' ? 0.08 : 0.05;
-                    el.style.fontSize = (base * (Math.max(0.25, 1 - (texto.length-7) * redutor))) + "em";
-                } else {
-                    el.style.fontSize = base + "em";
+                let baseSize = 5.5; // Tamanho para 1 folha
+                if (layout === 'layout-2') baseSize = 5.2;
+                if (layout === 'layout-4') baseSize = 3.0;
+
+                // Cálculo adaptativo: Reduz a fonte com base no número de caracteres
+                // Começa a reduzir após 6 caracteres para garantir preenchimento
+                let numChars = texto.length;
+                let scaleFactor = 1;
+
+                if (numChars > 6) {
+                    // Quanto mais caracteres, menor o scaleFactor
+                    // Ex: 12 chars -> 1 - (12-6)*0.07 = 0.58 da fonte original
+                    scaleFactor = Math.max(0.2, 1 - (numChars - 6) * 0.07);
                 }
+
+                el.style.fontSize = (baseSize * scaleFactor) + "em";
             }, 0);
         }
 
