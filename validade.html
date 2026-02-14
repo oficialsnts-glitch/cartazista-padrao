@@ -3,52 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Validades - GB</title>
+    <title>Validade GB - Sem Login</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
-        :root { --primary: #4361ee; --success: #2ecc71; --warning: #ffa500; --danger: #ff4d4d; }
-        body { margin: 0; background: #f0f2f8; font-family: -apple-system, sans-serif; padding-bottom: 80px; }
-        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        :root { --primary: #4361ee; --success: #2ecc71; --warning: #ffa500; --danger: #ff4d4d; --dark: #1a1b2e; }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { margin: 0; background: #f0f2f8; padding-bottom: 90px; }
+        
+        .header { background: var(--dark); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--primary); }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        
         .tela { display: none; }
         .ativa { display: block; }
-        .card { background: white; border-radius: 18px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 6px solid #ccc; }
-        .thumb { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #eee; }
-        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; }
-        nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; }
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* CARDS */
+        .card { background: white; border-radius: 15px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; }
+        .thumb { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #eee; }
+        
+        /* FORM */
+        .box-cad { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        /* NAV */
+        nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 100; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 12px; cursor: pointer; }
+        .fab { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 101; }
     </style>
 </head>
 <body>
-    <nav>
-        <b onclick="location.href='index.html'"><i>🏠</i>Home</b>
-        <b onclick="irPara('home')"><i>📋</i>Lista</b>
-    </nav>
 
-    <button class="fab" onclick="irPara('cad')">+</button>
+    <div class="header">
+        <h2 style="margin:0;">GB VALIDADES</h2>
+    </div>
 
     <div class="container">
-        <div id="t-home" class="tela ativa">
-            <h2>Minhas Validades</h2>
-            <div id="l-home">Carregando produtos...</div>
+        <div id="t-lista" class="tela ativa">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3 style="margin:0">Estoque</h3>
+                <button onclick="gerarPDF()" style="border:none; background:#ddd; padding:5px 10px; border-radius:5px; font-size:11px;">PDF</button>
+            </div>
+            <div id="lista-html">Carregando dados...</div>
         </div>
 
         <div id="t-cad" class="tela">
-            <div style="background: white; padding: 20px; border-radius: 25px;">
-                <h3>Novo Produto</h3>
-                <img id="p-img" style="width:100%; height:180px; object-fit:contain; display:none; border-radius:15px; margin-bottom:15px; background:#000;">
-                <label style="display:block; background:#eee; padding:15px; border-radius:12px; text-align:center; margin-bottom:15px; font-weight:bold;">
-                    📷 TIRAR FOTO
-                    <input type="file" id="f-in" accept="image/*" capture="environment" style="display:none;" onchange="pFoto(this)">
+            <div class="box-cad">
+                <h3 style="margin-top:0">Novo Item</h3>
+                <img id="prev" style="width:100%; height:150px; object-fit:contain; display:none; border-radius:10px; margin-bottom:10px; background:#000;">
+                
+                <label style="display:block; background:#eee; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; font-weight:bold; cursor:pointer;">
+                    📸 FOTO DO PRODUTO
+                    <input type="file" id="f-foto" accept="image/*" capture="environment" style="display:none;" onchange="verPreview(this)">
                 </label>
+
                 <input type="text" id="p-nome" placeholder="Nome do Produto">
-                <input type="date" id="p-data">
-                <input type="number" id="p-qtd" value="1">
-                <button onclick="salvar()" id="b-salvar" style="width:100%; padding:18px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold;">SALVAR PRODUTO</button>
+                <input type="date" id="p-venc">
+                <input type="number" id="p-qtd" value="1" placeholder="Quantidade">
+                
+                <button onclick="salvar()" id="btn-save" class="btn-main">SALVAR AGORA</button>
+                <button onclick="irPara('lista')" style="width:100%; background:none; color:red; border:none; margin-top:15px; cursor:pointer;">Cancelar</button>
             </div>
         </div>
     </div>
+
+    <button class="fab" onclick="irPara('cad')">+</button>
+
+    <nav>
+        <div class="nav-item" onclick="irPara('lista')">🏠<br>Início</div>
+        <div class="nav-item" onclick="location.reload()">🔄<br>Atualizar</div>
+        <div class="nav-item" onclick="location.href='index.html'">📱<br>Hub</div>
+    </nav>
 
     <script>
         const firebaseConfig = {
@@ -59,70 +87,125 @@
             messagingSenderId: "867200475066",
             appId: "1:867200475066:web:f90351b3d65a8a8df00783"
         };
+
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); const auth = firebase.auth();
-        let prods = [];
+        const db = firebase.firestore();
+        let globalProds = [];
 
-        auth.onAuthStateChanged(u => { if(u) load(); else location.href='index.html'; });
+        function bip() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = 800;
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
+        }
 
-        function pFoto(i) {
-            if (i.files && i.files[0]) {
-                const r = new FileReader(); r.onload = e => { 
-                    document.getElementById('p-img').src = e.target.result; 
-                    document.getElementById('p-img').style.display='block';
-                }; r.readAsDataURL(i.files[0]);
+        function verPreview(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { 
+                    const img = document.getElementById('prev');
+                    img.src = e.target.result; 
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
             }
         }
 
-        async function processarBase64(file) {
+        async function comprimir(file) {
             return new Promise((res) => {
-                const r = new FileReader(); r.readAsDataURL(file);
-                r.onload = (e) => {
-                    const img = new Image(); img.src = e.target.result;
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
                     img.onload = () => {
-                        const cv = document.createElement('canvas');
+                        const canvas = document.createElement('canvas');
                         const w = 400; const sc = w / img.width;
-                        cv.width = w; cv.height = img.height * sc;
-                        const ctx = cv.getContext('2d');
-                        ctx.drawImage(img, 0, 0, cv.width, cv.height);
-                        res(cv.toDataURL('image/jpeg', 0.6));
+                        canvas.width = w; canvas.height = img.height * sc;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        res(canvas.toDataURL('image/jpeg', 0.6));
                     }
                 }
             });
         }
 
         async function salvar() {
-            const btn = document.getElementById('b-salvar');
-            const file = document.getElementById('f-in').files[0];
-            const d = {
+            const btn = document.getElementById('btn-save');
+            const file = document.getElementById('f-foto').files[0];
+            const item = {
                 nome: document.getElementById('p-nome').value,
-                validade: document.getElementById('p-data').value,
-                qtd: parseInt(document.getElementById('p-qtd').value),
-                user: auth.currentUser.email,
+                venc: document.getElementById('p-venc').value,
+                qtd: document.getElementById('p-qtd').value,
                 foto: ""
             };
-            if(!d.nome || !d.validade) return alert("Preencha os campos!");
-            btn.disabled = true; btn.innerText = "SALVANDO...";
-            if(file) d.foto = await processarBase64(file);
-            await db.collection("prods_v").add(d);
-            location.reload();
+
+            if(!item.nome || !item.venc) return alert("Preencha Nome e Data!");
+
+            btn.disabled = true;
+            btn.innerText = "SALVANDO...";
+
+            if(file) item.foto = await comprimir(file);
+
+            try {
+                await db.collection("estoque_validade").add(item);
+                bip();
+                location.reload();
+            } catch(e) { alert("Erro ao salvar!"); btn.disabled = false; }
         }
 
-        async function load() {
-            const s = await db.collection("prods_v").where("user", "==", auth.currentUser.email).orderBy("validade").get();
-            let h = ""; s.forEach(doc => {
+        async function carregar() {
+            const snap = await db.collection("estoque_validade").orderBy("venc", "asc").get();
+            let html = "";
+            globalProds = [];
+            snap.forEach(doc => {
                 const p = doc.data();
-                const diff = Math.ceil((new Date(p.validade+"T12:00:00") - new Date()) / 86400000);
-                let c = diff < 0 ? "var(--danger)" : (diff <= 7 ? "var(--warning)" : "var(--success)");
-                h += `<div class="card" style="border-left-color:${c}">
-                    <img src="${p.foto || ''}" class="thumb">
-                    <div><b>${p.nome}</b><br><small>Qtd: ${p.qtd}</small><br><span style="color:${c}">Vence: ${p.validade.split('-').reverse().join('/')}</span></div>
+                globalProds.push(p);
+                const diff = Math.ceil((new Date(p.venc + "T12:00:00") - new Date()) / 86400000);
+                let cor = diff < 0 ? "var(--danger)" : (diff <= 7 ? "var(--warning)" : "var(--success)");
+                
+                html += `
+                <div class="card" style="border-left-color: ${cor}">
+                    <img src="${p.foto || 'https://via.placeholder.com/80'}" class="thumb">
+                    <div style="flex:1">
+                        <b style="font-size:15px;">${p.nome}</b><br>
+                        <small>Qtd: ${p.qtd}</small><br>
+                        <span style="color:${cor}; font-weight:bold; font-size:12px;">Data: ${p.venc.split('-').reverse().join('/')}</span>
+                    </div>
+                    <button onclick="excluir('${doc.id}')" style="background:none; border:none; color:#ccc; font-size:18px;">✕</button>
                 </div>`;
             });
-            document.getElementById('l-home').innerHTML = h || "Nenhum produto.";
+            document.getElementById('lista-html').innerHTML = html || "Estoque vazio.";
         }
 
-        function irPara(t) { document.querySelectorAll('.tela').forEach(e => e.classList.remove('ativa')); document.getElementById('t-'+t).classList.add('ativa'); }
+        async function excluir(id) {
+            if(confirm("Excluir este item?")) {
+                await db.collection("estoque_validade").doc(id).delete();
+                carregar();
+            }
+        }
+
+        function irPara(t) {
+            document.querySelectorAll('.tela').forEach(el => el.classList.remove('ativa'));
+            document.getElementById('t-' + t).classList.add('ativa');
+        }
+
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("RELATORIO DE VALIDADES - GB", 20, 20);
+            let y = 35;
+            globalProds.forEach(p => {
+                doc.text(`${p.venc.split('-').reverse().join('/')} - ${p.nome} (Qtd: ${p.qtd})`, 20, y);
+                y += 10;
+            });
+            doc.save("validade.pdf");
+        }
+
+        carregar();
     </script>
 </body>
 </html>
