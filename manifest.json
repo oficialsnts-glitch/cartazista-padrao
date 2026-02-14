@@ -7,7 +7,7 @@
   "theme_color": "#e61e25",
   "icons": [
     {
-      "src": "Logo_cartaz.png",
+      "src": "logo_cartaz.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
