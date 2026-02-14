@@ -19,9 +19,42 @@
             --f-topo: 2.8em; --f-prod: 1.6em; --f-gram: 1.2em; --f-reais: 14em;
         }
 
+        /* --- Estilos da Tela de Boas-Vindas --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, #0984e3 0%, #1e272e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+
+        .splash-content { text-align: center; color: white; }
+
+        .splash-logo {
+            width: 180px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid var(--amarelo);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* --- Estilos Base do App --- */
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Painel Administrativo */
         .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
         .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
         .input-group { display: flex; flex-direction: column; }
@@ -34,9 +67,9 @@
         .btn-print { background: var(--vermelho); color: white; }
         .btn-clear { background: #718096; color: white; flex: 0.3; }
 
-        /* Área de Impressão */
         #container-impressao { display: grid; width: 210mm; background: #fff; padding: 5mm; box-sizing: border-box; }
 
+        /* Layouts */
         .layout-1 { grid-template-columns: 1fr; --f-topo: 4.5em; --f-prod: 2.5em; --f-gram: 2em; --f-reais: 22em; }
         .layout-1 .cartaz-item { height: 280mm; }
         .layout-2 { grid-template-columns: 1fr; row-gap: 10mm; }
@@ -66,9 +99,8 @@
         .rs { font-size: calc(var(--f-reais) * 0.2); color: var(--preto); margin-top: 15%; margin-right: 5px; }
         .reais { font-size: var(--f-reais); line-height: 0.75; color: var(--vermelho); letter-spacing: -10px; }
         
-        /* Cores de Preço Dinâmicas */
-        .tema-horti + .info-produto + .preco-box .reais, .tema-horti + .info-produto + .preco-box .centavos { color: var(--verde); }
-        .tema-bebidas + .info-produto + .preco-box .reais, .tema-bebidas + .info-produto + .preco-box .centavos { color: var(--azul); }
+        .tema-horti + .info-produto + .preco-box .reais { color: var(--verde); }
+        .tema-bebidas + .info-produto + .preco-box .reais { color: var(--azul); }
 
         .dir-box { display: flex; flex-direction: column; margin-top: 10%; margin-left: 5px; }
         .centavos { font-size: calc(var(--f-reais) * 0.35); line-height: 1; color: var(--vermelho); border-bottom: 0.05em solid; }
@@ -77,13 +109,21 @@
         .btn-acao { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.05); border: none; width: 30px; height: 30px; cursor: pointer; border-radius: 50%; z-index: 10; }
 
         @media print {
-            .painel, .btn-acao { display: none !important; }
+            .painel, .btn-acao, #splash-screen { display: none !important; }
             body { padding: 0; background: #fff; }
             .cartaz-item { border: none; }
         }
     </style>
 </head>
 <body>
+
+    <div id="splash-screen">
+        <div class="splash-content">
+            <img src="Logo_cartaz.png" alt="Cartazista Pro" class="splash-logo">
+            <div class="loader"></div>
+            <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Iniciando Sistema...</p>
+        </div>
+    </div>
 
     <div class="painel">
         <h2 style="text-align:center; margin-bottom: 20px;">🛒 Cartazista Pro v5.2</h2>
@@ -135,6 +175,15 @@
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js');
             }
+            
+            // Lógica para remover a tela de boas-vindas
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 800); // Tempo para terminar a transição de fade
+            }, 3000); // 3 segundos de exibição
         };
 
         function adicionar() {
@@ -166,7 +215,10 @@
         }
 
         function limparTudo() {
-            if(confirm("Apagar todos?")) { cartazes = []; salvarERenderizar(); }
+            if(confirm("Apagar todos os cartazes da lista?")) { 
+                cartazes = []; 
+                salvarERenderizar(); 
+            }
         }
 
         function renderizar() {
@@ -205,6 +257,7 @@
 
         function limparInputs() {
             ["inProd", "inMarca", "inGram", "inR", "inC", "inU", "inCustom"].forEach(i => document.getElementById(i).value = "");
+            document.getElementById('inProd').focus();
         }
     </script>
 </body>
