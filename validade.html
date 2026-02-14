@@ -3,92 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GB Validade - Autônomo</title>
+    <title>GB Validade PRO</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        :root { --cor-fundo: #f4f7fe; --cor-card: #ffffff; --primaria: #4361ee; --perigo: #ff4d4d; --sucesso: #2ecc71; --aviso: #ffa500; --texto: #2b2d42; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { margin: 0; background: var(--cor-fundo); color: var(--texto); padding-bottom: 100px; }
-        
-        /* Cabeçalho */
-        .header { background: #1a1b2e; color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--primaria); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
-        
+        :root {
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --primary: #007AFF; /* Azul iOS */
+            --danger: #FF3B30;
+            --success: #34C759;
+            --warning: #FF9500;
+            --text-main: #1C1C1E;
+            --text-sub: #8E8E93;
+            --radius: 16px;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body { 
+            margin: 0; 
+            background-color: var(--bg); 
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        /* HEADER ESTILO NATIVO */
+        .header {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 20px;
+            text-align: center;
+            z-index: 100;
+            border-bottom: 0.5px solid #D1D1D6;
+        }
+
+        .header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+
+        .container { 
+            padding: 16px; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            min-height: calc(100vh - 150px);
+        }
+
         .tela { display: none; }
-        .ativa { display: block; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .ativa { display: block; animation: fadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estilo dos Itens na Lista */
-        .card-item { background: var(--cor-card); border-radius: 20px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 8px solid #ccc; position: relative; }
-        .foto-produto { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid #ddd; }
+        /* CARDS ESTILO APP */
+        .card-item {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+
+        .card-item:active { transform: scale(0.98); }
+
+        .foto-produto {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #F2F2F7;
+        }
+
         .info-produto { flex: 1; }
-        .info-produto b { font-size: 16px; display: block; margin-bottom: 4px; }
-        .data-venc { font-weight: bold; font-size: 13px; }
+        .info-produto b { font-size: 16px; color: var(--text-main); display: block; margin-bottom: 2px; }
+        .info-produto small { font-size: 13px; color: var(--text-sub); }
+        .data-venc { font-size: 13px; font-weight: 600; margin-top: 4px; display: block; }
+
+        /* BOTÕES E INPUTS */
+        .form-box { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
         
-        /* Formulário */
-        .form-box { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #dee2e6; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--primaria); }
-        .btn-acao { width: 100%; padding: 18px; background: var(--primaria); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-acao:active { transform: scale(0.98); }
+        input {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border: 1px solid #E5E5EA;
+            background: #F9F9FB;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
 
-        /* Navegação Inferior */
-        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #edf2f7; z-index: 100; }
-        .nav-btn { background: none; border: none; color: #a0aec0; font-size: 11px; font-weight: bold; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .nav-btn.ativo { color: var(--primaria); }
-        .nav-btn i { font-size: 24px; margin-bottom: 4px; }
+        input:focus { border-color: var(--primary); background: #fff; outline: none; }
 
-        .btn-excluir { background: #fff5f5; color: var(--perigo); border: none; padding: 8px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .btn-acao {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* FAB (Botão flutuante) */
+        .fab {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 30px;
+            box-shadow: 0 8px 16px rgba(0,122,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        /* TAB BAR (Navegação inferior) */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 85px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding-top: 10px;
+            border-top: 0.5px solid #D1D1D6;
+            z-index: 1000;
+        }
+
+        .tab-item {
+            border: none;
+            background: none;
+            color: var(--text-sub);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .tab-item.ativo { color: var(--primary); }
+        .tab-item i { font-size: 24px; margin-bottom: 4px; }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        
+        .btn-del {
+            background: #FFF0F0;
+            color: var(--danger);
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1 style="margin:0; font-size: 22px; letter-spacing: 1px;">GB VALIDADES</h1>
+        <h1>Validade Pro</h1>
     </div>
 
     <div class="container">
         <div id="tela-lista" class="tela ativa">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0; font-size: 18px;">Estoque Atual</h2>
-                <button onclick="gerarPDF()" style="background:#edf2f7; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; font-size:12px;">📄 PDF</button>
+            <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+                <h2 style="margin:0; font-size: 24px; letter-spacing: -1px;">Estoque</h2>
+                <button onclick="gerarPDF()" style="background:none; border:none; color:var(--primary); font-weight: 600;">Relatório</button>
             </div>
             <div id="lista-render">Carregando itens...</div>
         </div>
 
         <div id="tela-cad" class="tela">
             <div class="form-box">
-                <h2 style="margin-top:0; font-size: 18px;">Cadastrar Produto</h2>
+                <h2 style="margin-top:0; font-size: 22px; letter-spacing: -0.5px;">Adicionar Item</h2>
                 
-                <img id="img-preview" style="width:100%; height:160px; object-fit:contain; display:none; border-radius:15px; margin-bottom:15px; background:#f8f9fa; border: 2px dashed #ddd;">
-                
-                <label style="display:block; background: #f8f9fa; border: 2px solid #edf2f7; padding:18px; border-radius:15px; text-align:center; margin-bottom:15px; font-weight:bold; color:var(--primaria); cursor:pointer;">
-                    📸 TIRAR FOTO DO ITEM
-                    <input type="file" id="input-foto" accept="image/*" capture="environment" style="display:none;" onchange="exibirPreview(this)">
-                </label>
+                <div id="area-foto" style="position:relative; margin-bottom:20px;">
+                    <img id="img-preview" style="width:100%; height:200px; object-fit:cover; display:none; border-radius:14px; background:#000;">
+                    <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#F2F2F7; height:200px; border-radius:14px; border: 2px dashed #C7C7CC; cursor:pointer;">
+                        <span style="font-size:40px;">📸</span>
+                        <span style="font-weight:600; color:var(--primary); margin-top:10px;">Tirar Foto</span>
+                        <input type="file" id="input-foto" accept="image/*" capture="environment" style="display:none;" onchange="exibirPreview(this)">
+                    </label>
+                </div>
 
-                <input type="text" id="nome-prod" placeholder="Nome do Produto">
-                <input type="date" id="data-prod">
-                <input type="number" id="qtd-prod" value="1" placeholder="Quantidade">
+                <label style="font-size:13px; font-weight:600; color:var(--text-sub); margin-left:4px;">NOME DO PRODUTO</label>
+                <input type="text" id="nome-prod" placeholder="Ex: Iogurte Natural">
                 
-                <button onclick="salvarItem()" id="btn-save" class="btn-acao">SALVAR NO ESTOQUE</button>
-                <button onclick="navegar('lista')" style="width:100%; background:none; color:#a0aec0; border:none; margin-top:15px; font-weight:bold;">Cancelar</button>
+                <label style="font-size:13px; font-weight:600; color:var(--text-sub); margin-left:4px;">DATA DE VENCIMENTO</label>
+                <input type="date" id="data-prod">
+                
+                <label style="font-size:13px; font-weight:600; color:var(--text-sub); margin-left:4px;">QUANTIDADE</label>
+                <input type="number" id="qtd-prod" value="1">
+                
+                <button onclick="salvarItem()" id="btn-save" class="btn-acao">Salvar Produto</button>
             </div>
         </div>
     </div>
 
-    <div class="nav-bottom">
-        <button class="nav-btn ativo" onclick="navegar('lista')" id="nav-lista"><i>🏠</i>Início</button>
-        <button class="nav-btn" onclick="navegar('cad')" id="nav-cad"><i>➕</i>Novo</button>
-        <button class="nav-btn" onclick="location.reload()"><i>🔄</i>Atualizar</button>
+    <button class="fab" onclick="navegar('cad')">＋</button>
+
+    <div class="tab-bar">
+        <button class="tab-item ativo" onclick="navegar('lista')" id="nav-lista">
+            <i>🏠</i><span>Início</span>
+        </button>
+        <button class="tab-item" onclick="location.reload()">
+            <i>🔄</i><span>Atualizar</span>
+        </button>
+        <button class="tab-item" onclick="location.href='index.html'">
+            <i>📱</i><span>Painel</span>
+        </button>
     </div>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE (SÓ O FIRESTORE É USADO)
         const firebaseConfig = {
             apiKey: "AIzaSyB1Z5EuMscjAGFcbIEvpPsDkp-hiIYh28o",
             authDomain: "meu-finan.firebaseapp.com",
@@ -102,19 +254,16 @@
         const db = firebase.firestore();
         let dadosLocais = [];
 
-        // FUNÇÃO DE BIP SONORO
         function somSucesso() {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.3);
         }
 
-        // PREVIEW E COMPRESSÃO DE FOTO
         function exibirPreview(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -122,6 +271,7 @@
                     const img = document.getElementById('img-preview');
                     img.src = e.target.result; 
                     img.style.display = 'block';
+                    document.querySelector('#area-foto label').style.display = 'none';
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -136,9 +286,9 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const larguraAlvo = 400; 
-                        const escala = larguraAlvo / img.width;
-                        canvas.width = larguraAlvo;
+                        const largura = 400; 
+                        const escala = largura / img.width;
+                        canvas.width = largura;
                         canvas.height = img.height * escala;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -148,7 +298,6 @@
             });
         }
 
-        // SALVAR NO FIREBASE (ESTRATÉGIA BASE64 - INDEPENDENTE DO STORAGE)
         async function salvarItem() {
             const btn = document.getElementById('btn-save');
             const file = document.getElementById('input-foto').files[0];
@@ -160,32 +309,20 @@
                 criadoEm: new Date().getTime()
             };
 
-            if(!item.nome || !item.vencimento) return alert("Por favor, preencha Nome e Validade.");
+            if(!item.nome || !item.vencimento) return alert("Preencha Nome e Data!");
 
             btn.disabled = true;
-            btn.innerText = "PROCESSANDO...";
+            btn.innerText = "Salvando...";
 
             if(file) item.foto = await encolherImagem(file);
 
             try {
-                // Coleção independente "sistema_validade_isolado"
                 await db.collection("sistema_validade_isolado").add(item);
                 somSucesso();
-                navegar('lista');
-                carregarEstoque();
-                // Limpar campos
-                document.getElementById('nome-prod').value = "";
-                document.getElementById('data-prod').value = "";
-                document.getElementById('img-preview').style.display = "none";
-                btn.disabled = false;
-                btn.innerText = "SALVAR NO ESTOQUE";
-            } catch(e) { 
-                alert("Erro ao conectar com o banco de dados."); 
-                btn.disabled = false; 
-            }
+                location.reload();
+            } catch(e) { alert("Erro ao salvar"); btn.disabled = false; }
         }
 
-        // CARREGAR DADOS
         async function carregarEstoque() {
             const snapshot = await db.collection("sistema_validade_isolado").orderBy("vencimento", "asc").get();
             let html = "";
@@ -196,62 +333,57 @@
                 dadosLocais.push(p);
                 const hoje = new Date();
                 const venc = new Date(p.vencimento + "T12:00:00");
-                const diasRestantes = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
+                const dias = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
                 
-                let corStatus = "var(--sucesso)";
-                if(diasRestantes < 0) corStatus = "var(--perigo)";
-                else if(diasRestantes <= 10) corStatus = "var(--aviso)";
+                let cor = "var(--success)";
+                let statusTxt = "No prazo";
+                if(dias < 0) { cor = "var(--danger)"; statusTxt = "Vencido"; }
+                else if(dias <= 10) { cor = "var(--warning)"; statusTxt = "Vence logo"; }
                 
                 html += `
-                <div class="card-item" style="border-left-color: ${corStatus}">
-                    <img src="${p.foto || 'https://via.placeholder.com/80?text=Sem+Foto'}" class="foto-produto">
+                <div class="card-item">
+                    <img src="${p.foto || 'https://via.placeholder.com/80?text=GB'}" class="foto-produto">
                     <div class="info-produto">
                         <b>${p.nome}</b>
-                        <small>Qtd: ${p.quantidade}</small><br>
-                        <span class="data-venc" style="color:${corStatus}">
-                            ${diasRestantes < 0 ? 'VENCIDO' : 'Vence em'}: ${p.vencimento.split('-').reverse().join('/')}
+                        <small>Qtd: ${p.quantidade} unidades</small>
+                        <span class="data-venc" style="color:${cor}">
+                           ${statusTxt}: ${p.vencimento.split('-').reverse().join('/')}
                         </span>
                     </div>
-                    <button class="btn-excluir" onclick="removerItem('${doc.id}')">🗑️</button>
+                    <button class="btn-del" onclick="removerItem('${doc.id}')">✕</button>
                 </div>`;
             });
-            document.getElementById('lista-render').innerHTML = html || "<p style='text-align:center; opacity:0.5; margin-top:50px;'>O estoque está vazio.</p>";
+            document.getElementById('lista-render').innerHTML = html || "<p style='text-align:center; opacity:0.3; margin-top:80px;'>Vazio</p>";
         }
 
         async function removerItem(id) {
-            if(confirm("Tem certeza que deseja remover este item?")) {
+            if(confirm("Remover item?")) {
                 await db.collection("sistema_validade_isolado").doc(id).delete();
                 carregarEstoque();
             }
         }
 
-        // NAVEGAÇÃO ENTRE TELAS
         function navegar(tela) {
             document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
-            
+            document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('ativo'));
             document.getElementById('tela-' + tela).classList.add('ativa');
-            document.getElementById('nav-' + tela).classList.add('ativo');
+            if(tela === 'lista') document.getElementById('nav-lista').classList.add('ativo');
         }
 
-        // EXPORTAR PDF
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFont("helvetica", "bold");
-            doc.text("CONTROLE DE ESTOQUE - VALIDADES", 20, 20);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            
-            let linha = 35;
+            doc.setFontSize(20);
+            doc.text("RELATÓRIO DE ESTOQUE", 20, 20);
+            let y = 35;
             dadosLocais.forEach(p => {
-                doc.text(`${p.vencimento.split('-').reverse().join('/')} | Qtd: ${p.quantidade} | ${p.nome}`, 20, linha);
-                linha += 10;
+                doc.setFontSize(10);
+                doc.text(`${p.vencimento.split('-').reverse().join('/')} - ${p.nome} (${p.quantidade} un)`, 20, y);
+                y += 8;
             });
-            doc.save("relatorio-validade.pdf");
+            doc.save("validade.pdf");
         }
 
-        // Iniciar carregamento
         carregarEstoque();
     </script>
 </body>
