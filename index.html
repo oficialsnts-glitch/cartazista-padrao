@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro - PWA</title>
+    <title>Cartazista Pro - Foco em Marca</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e61e25">
-    <link rel="icon" type="image/png" href="Logo_cartaz.png">
-    <link rel="apple-touch-icon" href="Logo_cartaz.png">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
@@ -17,14 +15,15 @@
             --vermelho: #e61e25; --verde: #009432; --laranja: #f39c12; 
             --amarelo: #ffc312; --preto: #1e272e; --azul: #0984e3;
             --roxo-validade: #6c5ce7;
-            --f-topo: 2.8em; --f-prod: 1.4em; --f-reais: 14em;
+            --f-topo: 2.8em; --f-prod: 1.1em; /* Produto menor */
+            --f-reais: 14em;
         }
 
         * { box-sizing: border-box; }
 
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Interface de Controle */
+        /* Interface */
         .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
         .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
         .input-group { display: flex; flex-direction: column; }
@@ -41,52 +40,52 @@
         #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
         
         .layout-1 { grid-template-columns: 1fr; padding: 0; }
-        .layout-1 .cartaz-item { height: 290mm; --f-topo: 4.5em; --f-prod: 2.2em; --f-reais: 24em; }
+        .layout-1 .cartaz-item { height: 290mm; --f-topo: 4.5em; --f-prod: 1.8em; --f-reais: 24em; }
 
         .layout-2 { grid-template-columns: 1fr; row-gap: 5mm; padding: 5mm; }
         .layout-2 .cartaz-item { height: 138mm; }
 
         .layout-4 { grid-template-columns: 1fr 1fr; gap: 2mm; padding: 2mm; }
-        .layout-4 .cartaz-item { height: 140mm; --f-topo: 1.6em; --f-prod: 1em; --f-reais: 9em; padding: 0 5px 15px 5px !important; }
+        .layout-4 .cartaz-item { height: 140mm; --f-topo: 1.6em; --f-prod: 0.9em; --f-reais: 9em; padding: 0 5px 15px 5px !important; }
 
         .cartaz-item { 
             width: 100%; background: #fff; display: flex; flex-direction: column; align-items: center; 
             justify-content: space-between; position: relative; page-break-inside: avoid; 
-            overflow: hidden; border: 1px dashed #ddd; padding: 0 10px 20px 10px;
+            overflow: hidden; border: 1px dashed #ddd; padding: 0 5px 20px 5px;
         }
 
         .selo-topo { width: 115%; padding: 12px 0; text-align: center; transform: rotate(-1.5deg); z-index: 1; margin-top: -5px; }
         .selo-topo span { font-size: var(--f-topo); color: #fff; text-transform: uppercase; display: block; }
 
-        /* Estilo dos Temas */
+        /* Temas */
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
         .tema-bebidas { background: var(--azul); }
         .tema-queima { background: var(--laranja); }
         .tema-ultimas { background: var(--amarelo); }
         .tema-ultimas span { color: var(--preto); }
-        .tema-validade { background: #1a237e; } /* Azul escuro como na foto */
+        .tema-validade { background: #1a237e; }
 
-        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; padding: 0 10px; }
-        .nome-produto { font-size: var(--f-prod); color: #1e272e; margin: 0; text-transform: uppercase; font-weight: 900; }
+        .info-produto { text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; padding: 0 15px; }
         
-        /* A Marca elástica e destacada */
+        /* FOCO NA MARCA */
+        .nome-produto { font-size: var(--f-prod); color: #718096; margin: 0 0 5px 0; text-transform: uppercase; font-weight: normal; }
         .marca-produto { 
             width: 100%; 
             text-transform: uppercase; 
-            line-height: 0.9; 
+            line-height: 0.85; 
             letter-spacing: -2px; 
-            margin: 2px 0; 
+            margin: 0; 
             white-space: nowrap; 
             display: block;
             font-weight: 900;
             color: #000;
         }
 
-        .gramatura-produto { font-size: 1.1em; color: #4a5568; font-weight: bold; margin-bottom: 5px; }
-        .selo-validade-info { background: var(--roxo-validade); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.8em; display: inline-block; align-self: center; text-transform: uppercase; }
+        .gramatura-produto { font-size: 1.2em; color: #1e272e; font-weight: bold; margin-top: 5px; }
+        .selo-validade-info { background: var(--roxo-validade); color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.8em; margin-top: 8px; display: inline-block; align-self: center; }
 
-        /* Preço estilo supermercado */
+        /* Preço */
         .preco-box { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin-top: auto; }
         .rs { font-size: calc(var(--f-reais) * 0.15); margin-top: 12%; margin-right: 4px; color: #1e272e; }
         .reais { font-size: var(--f-reais); line-height: 0.75; color: var(--vermelho); letter-spacing: -8px; }
@@ -97,7 +96,7 @@
 
         .dir-box { display: flex; flex-direction: column; margin-top: 6%; }
         .centavos { font-size: calc(var(--f-reais) * 0.35); line-height: 1; color: var(--vermelho); border-bottom: 6px solid; }
-        .unidade { font-size: calc(var(--f-reais) * 0.08); font-weight: 900; text-transform: uppercase; color: #1e272e; margin-top: 2px; }
+        .unidade { font-size: calc(var(--f-reais) * 0.08); font-weight: 900; text-transform: uppercase; color: #1e272e; }
 
         .acoes-cartaz { position: absolute; top: 5px; right: 5px; display: flex; gap: 4px; z-index: 10; }
         .btn-acao { background: white; border: 1px solid #ccc; width: 28px; height: 28px; cursor: pointer; border-radius: 4px; font-size: 12px; }
@@ -112,7 +111,7 @@
 <body>
 
     <div class="painel">
-        <h2 style="text-align:center; margin-top:0;">🛒 Cartazista Pro v5.8</h2>
+        <h2 style="text-align:center; margin-top:0;">🛒 Cartazista Pro v5.9</h2>
         <div class="grid-inputs">
             <div class="input-group">
                 <label>Tema</label>
@@ -139,9 +138,9 @@
             </div>
         </div>
         <div class="grid-inputs">
-            <div class="input-group"><label>Produto (Creme Dental)</label><input type="text" id="inProd"></div>
-            <div class="input-group"><label>Marca (SORRISO)</label><input type="text" id="inMarca"></div>
-            <div class="input-group"><label>Peso/Qtd (70g)</label><input type="text" id="inGram"></div>
+            <div class="input-group"><label>Produto (Menor)</label><input type="text" id="inProd" placeholder="Ex: Arroz"></div>
+            <div class="input-group"><label>Marca (DESTAQUE)</label><input type="text" id="inMarca" placeholder="Ex: TIO JOÃO"></div>
+            <div class="input-group"><label>Peso</label><input type="text" id="inGram" placeholder="Ex: 5kg"></div>
         </div>
         <div class="grid-inputs">
             <div class="input-group"><label>Reais</label><input type="number" id="inR"></div>
@@ -168,7 +167,7 @@
         }
 
         function adicionar() {
-            if(!document.getElementById('inProd').value || !document.getElementById('inR').value) return alert("Preencha os campos!");
+            if(!document.getElementById('inMarca').value || !document.getElementById('inR').value) return alert("Preencha Marca e Valor!");
             const item = {
                 id: Date.now(),
                 tema: document.getElementById('selTema').value,
@@ -241,11 +240,12 @@
                 const parent = el.parentElement;
                 if (!el || !parent) return;
                 
-                let fontSize = (layout === 'layout-1') ? 12 : (layout === 'layout-4' ? 3.5 : 6.5);
+                // Base de fonte maior para a marca
+                let fontSize = (layout === 'layout-1') ? 14 : (layout === 'layout-4' ? 4.2 : 7.8);
                 el.style.fontSize = fontSize + "em";
 
-                // Redução progressiva até caber na largura do cartaz
-                let maxWidth = parent.offsetWidth * 0.9;
+                let maxWidth = parent.offsetWidth * 0.95;
+                // Diminuir até caber
                 while (el.offsetWidth > maxWidth && fontSize > 1) {
                     fontSize -= 0.1;
                     el.style.fontSize = fontSize + "em";
@@ -255,7 +255,7 @@
 
         function limparInputs() {
             ["inProd", "inMarca", "inGram", "inR", "inC", "inVenc"].forEach(id => document.getElementById(id).value = "");
-            document.getElementById('inProd').focus();
+            document.getElementById('inMarca').focus();
         }
     </script>
 </body>
