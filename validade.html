@@ -3,82 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Validade GB - Sem Login</title>
+    <title>GB Validade - Autônomo</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        :root { --primary: #4361ee; --success: #2ecc71; --warning: #ffa500; --danger: #ff4d4d; --dark: #1a1b2e; }
-        * { box-sizing: border-box; font-family: sans-serif; }
-        body { margin: 0; background: #f0f2f8; padding-bottom: 90px; }
+        :root { --cor-fundo: #f4f7fe; --cor-card: #ffffff; --primaria: #4361ee; --perigo: #ff4d4d; --sucesso: #2ecc71; --aviso: #ffa500; --texto: #2b2d42; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { margin: 0; background: var(--cor-fundo); color: var(--texto); padding-bottom: 100px; }
         
-        .header { background: var(--dark); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--primary); }
-        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        /* Cabeçalho */
+        .header { background: #1a1b2e; color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--primaria); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
         
         .tela { display: none; }
-        .ativa { display: block; }
+        .ativa { display: block; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* CARDS */
-        .card { background: white; border-radius: 15px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; }
-        .thumb { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #eee; }
+        /* Estilo dos Itens na Lista */
+        .card-item { background: var(--cor-card); border-radius: 20px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 8px solid #ccc; position: relative; }
+        .foto-produto { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid #ddd; }
+        .info-produto { flex: 1; }
+        .info-produto b { font-size: 16px; display: block; margin-bottom: 4px; }
+        .data-venc { font-weight: bold; font-size: 13px; }
         
-        /* FORM */
-        .box-cad { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        
-        /* NAV */
-        nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 100; }
-        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 12px; cursor: pointer; }
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 101; }
+        /* Formulário */
+        .form-box { background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #dee2e6; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--primaria); }
+        .btn-acao { width: 100%; padding: 18px; background: var(--primaria); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn-acao:active { transform: scale(0.98); }
+
+        /* Navegação Inferior */
+        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #edf2f7; z-index: 100; }
+        .nav-btn { background: none; border: none; color: #a0aec0; font-size: 11px; font-weight: bold; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .nav-btn.ativo { color: var(--primaria); }
+        .nav-btn i { font-size: 24px; margin-bottom: 4px; }
+
+        .btn-excluir { background: #fff5f5; color: var(--perigo); border: none; padding: 8px; border-radius: 10px; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2 style="margin:0;">GB VALIDADES</h2>
+        <h1 style="margin:0; font-size: 22px; letter-spacing: 1px;">GB VALIDADES</h1>
     </div>
 
     <div class="container">
-        <div id="t-lista" class="tela ativa">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h3 style="margin:0">Estoque</h3>
-                <button onclick="gerarPDF()" style="border:none; background:#ddd; padding:5px 10px; border-radius:5px; font-size:11px;">PDF</button>
+        <div id="tela-lista" class="tela ativa">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0; font-size: 18px;">Estoque Atual</h2>
+                <button onclick="gerarPDF()" style="background:#edf2f7; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; font-size:12px;">📄 PDF</button>
             </div>
-            <div id="lista-html">Carregando dados...</div>
+            <div id="lista-render">Carregando itens...</div>
         </div>
 
-        <div id="t-cad" class="tela">
-            <div class="box-cad">
-                <h3 style="margin-top:0">Novo Item</h3>
-                <img id="prev" style="width:100%; height:150px; object-fit:contain; display:none; border-radius:10px; margin-bottom:10px; background:#000;">
+        <div id="tela-cad" class="tela">
+            <div class="form-box">
+                <h2 style="margin-top:0; font-size: 18px;">Cadastrar Produto</h2>
                 
-                <label style="display:block; background:#eee; padding:15px; border-radius:10px; text-align:center; margin-bottom:15px; font-weight:bold; cursor:pointer;">
-                    📸 FOTO DO PRODUTO
-                    <input type="file" id="f-foto" accept="image/*" capture="environment" style="display:none;" onchange="verPreview(this)">
+                <img id="img-preview" style="width:100%; height:160px; object-fit:contain; display:none; border-radius:15px; margin-bottom:15px; background:#f8f9fa; border: 2px dashed #ddd;">
+                
+                <label style="display:block; background: #f8f9fa; border: 2px solid #edf2f7; padding:18px; border-radius:15px; text-align:center; margin-bottom:15px; font-weight:bold; color:var(--primaria); cursor:pointer;">
+                    📸 TIRAR FOTO DO ITEM
+                    <input type="file" id="input-foto" accept="image/*" capture="environment" style="display:none;" onchange="exibirPreview(this)">
                 </label>
 
-                <input type="text" id="p-nome" placeholder="Nome do Produto">
-                <input type="date" id="p-venc">
-                <input type="number" id="p-qtd" value="1" placeholder="Quantidade">
+                <input type="text" id="nome-prod" placeholder="Nome do Produto">
+                <input type="date" id="data-prod">
+                <input type="number" id="qtd-prod" value="1" placeholder="Quantidade">
                 
-                <button onclick="salvar()" id="btn-save" class="btn-main">SALVAR AGORA</button>
-                <button onclick="irPara('lista')" style="width:100%; background:none; color:red; border:none; margin-top:15px; cursor:pointer;">Cancelar</button>
+                <button onclick="salvarItem()" id="btn-save" class="btn-acao">SALVAR NO ESTOQUE</button>
+                <button onclick="navegar('lista')" style="width:100%; background:none; color:#a0aec0; border:none; margin-top:15px; font-weight:bold;">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <button class="fab" onclick="irPara('cad')">+</button>
-
-    <nav>
-        <div class="nav-item" onclick="irPara('lista')">🏠<br>Início</div>
-        <div class="nav-item" onclick="location.reload()">🔄<br>Atualizar</div>
-        <div class="nav-item" onclick="location.href='index.html'">📱<br>Hub</div>
-    </nav>
+    <div class="nav-bottom">
+        <button class="nav-btn ativo" onclick="navegar('lista')" id="nav-lista"><i>🏠</i>Início</button>
+        <button class="nav-btn" onclick="navegar('cad')" id="nav-cad"><i>➕</i>Novo</button>
+        <button class="nav-btn" onclick="location.reload()"><i>🔄</i>Atualizar</button>
+    </div>
 
     <script>
+        // CONFIGURAÇÃO FIREBASE (SÓ O FIRESTORE É USADO)
         const firebaseConfig = {
             apiKey: "AIzaSyB1Z5EuMscjAGFcbIEvpPsDkp-hiIYh28o",
             authDomain: "meu-finan.firebaseapp.com",
@@ -90,23 +100,26 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        let globalProds = [];
+        let dadosLocais = [];
 
-        function bip() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.frequency.value = 800;
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(); osc.stop(ctx.currentTime + 0.3);
+        // FUNÇÃO DE BIP SONORO
+        function somSucesso() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
         }
 
-        function verPreview(input) {
+        // PREVIEW E COMPRESSÃO DE FOTO
+        function exibirPreview(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = e => { 
-                    const img = document.getElementById('prev');
+                    const img = document.getElementById('img-preview');
                     img.src = e.target.result; 
                     img.style.display = 'block';
                 };
@@ -114,8 +127,8 @@
             }
         }
 
-        async function comprimir(file) {
-            return new Promise((res) => {
+        async function encolherImagem(file) {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (e) => {
@@ -123,89 +136,123 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const w = 400; const sc = w / img.width;
-                        canvas.width = w; canvas.height = img.height * sc;
+                        const larguraAlvo = 400; 
+                        const escala = larguraAlvo / img.width;
+                        canvas.width = larguraAlvo;
+                        canvas.height = img.height * escala;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        res(canvas.toDataURL('image/jpeg', 0.6));
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     }
                 }
             });
         }
 
-        async function salvar() {
+        // SALVAR NO FIREBASE (ESTRATÉGIA BASE64 - INDEPENDENTE DO STORAGE)
+        async function salvarItem() {
             const btn = document.getElementById('btn-save');
-            const file = document.getElementById('f-foto').files[0];
+            const file = document.getElementById('input-foto').files[0];
             const item = {
-                nome: document.getElementById('p-nome').value,
-                venc: document.getElementById('p-venc').value,
-                qtd: document.getElementById('p-qtd').value,
-                foto: ""
+                nome: document.getElementById('nome-prod').value,
+                vencimento: document.getElementById('data-prod').value,
+                quantidade: document.getElementById('qtd-prod').value,
+                foto: "",
+                criadoEm: new Date().getTime()
             };
 
-            if(!item.nome || !item.venc) return alert("Preencha Nome e Data!");
+            if(!item.nome || !item.vencimento) return alert("Por favor, preencha Nome e Validade.");
 
             btn.disabled = true;
-            btn.innerText = "SALVANDO...";
+            btn.innerText = "PROCESSANDO...";
 
-            if(file) item.foto = await comprimir(file);
+            if(file) item.foto = await encolherImagem(file);
 
             try {
-                await db.collection("estoque_validade").add(item);
-                bip();
-                location.reload();
-            } catch(e) { alert("Erro ao salvar!"); btn.disabled = false; }
-        }
-
-        async function carregar() {
-            const snap = await db.collection("estoque_validade").orderBy("venc", "asc").get();
-            let html = "";
-            globalProds = [];
-            snap.forEach(doc => {
-                const p = doc.data();
-                globalProds.push(p);
-                const diff = Math.ceil((new Date(p.venc + "T12:00:00") - new Date()) / 86400000);
-                let cor = diff < 0 ? "var(--danger)" : (diff <= 7 ? "var(--warning)" : "var(--success)");
-                
-                html += `
-                <div class="card" style="border-left-color: ${cor}">
-                    <img src="${p.foto || 'https://via.placeholder.com/80'}" class="thumb">
-                    <div style="flex:1">
-                        <b style="font-size:15px;">${p.nome}</b><br>
-                        <small>Qtd: ${p.qtd}</small><br>
-                        <span style="color:${cor}; font-weight:bold; font-size:12px;">Data: ${p.venc.split('-').reverse().join('/')}</span>
-                    </div>
-                    <button onclick="excluir('${doc.id}')" style="background:none; border:none; color:#ccc; font-size:18px;">✕</button>
-                </div>`;
-            });
-            document.getElementById('lista-html').innerHTML = html || "Estoque vazio.";
-        }
-
-        async function excluir(id) {
-            if(confirm("Excluir este item?")) {
-                await db.collection("estoque_validade").doc(id).delete();
-                carregar();
+                // Coleção independente "sistema_validade_isolado"
+                await db.collection("sistema_validade_isolado").add(item);
+                somSucesso();
+                navegar('lista');
+                carregarEstoque();
+                // Limpar campos
+                document.getElementById('nome-prod').value = "";
+                document.getElementById('data-prod').value = "";
+                document.getElementById('img-preview').style.display = "none";
+                btn.disabled = false;
+                btn.innerText = "SALVAR NO ESTOQUE";
+            } catch(e) { 
+                alert("Erro ao conectar com o banco de dados."); 
+                btn.disabled = false; 
             }
         }
 
-        function irPara(t) {
-            document.querySelectorAll('.tela').forEach(el => el.classList.remove('ativa'));
-            document.getElementById('t-' + t).classList.add('ativa');
+        // CARREGAR DADOS
+        async function carregarEstoque() {
+            const snapshot = await db.collection("sistema_validade_isolado").orderBy("vencimento", "asc").get();
+            let html = "";
+            dadosLocais = [];
+            
+            snapshot.forEach(doc => {
+                const p = doc.data();
+                dadosLocais.push(p);
+                const hoje = new Date();
+                const venc = new Date(p.vencimento + "T12:00:00");
+                const diasRestantes = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
+                
+                let corStatus = "var(--sucesso)";
+                if(diasRestantes < 0) corStatus = "var(--perigo)";
+                else if(diasRestantes <= 10) corStatus = "var(--aviso)";
+                
+                html += `
+                <div class="card-item" style="border-left-color: ${corStatus}">
+                    <img src="${p.foto || 'https://via.placeholder.com/80?text=Sem+Foto'}" class="foto-produto">
+                    <div class="info-produto">
+                        <b>${p.nome}</b>
+                        <small>Qtd: ${p.quantidade}</small><br>
+                        <span class="data-venc" style="color:${corStatus}">
+                            ${diasRestantes < 0 ? 'VENCIDO' : 'Vence em'}: ${p.vencimento.split('-').reverse().join('/')}
+                        </span>
+                    </div>
+                    <button class="btn-excluir" onclick="removerItem('${doc.id}')">🗑️</button>
+                </div>`;
+            });
+            document.getElementById('lista-render').innerHTML = html || "<p style='text-align:center; opacity:0.5; margin-top:50px;'>O estoque está vazio.</p>";
         }
 
+        async function removerItem(id) {
+            if(confirm("Tem certeza que deseja remover este item?")) {
+                await db.collection("sistema_validade_isolado").doc(id).delete();
+                carregarEstoque();
+            }
+        }
+
+        // NAVEGAÇÃO ENTRE TELAS
+        function navegar(tela) {
+            document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+            
+            document.getElementById('tela-' + tela).classList.add('ativa');
+            document.getElementById('nav-' + tela).classList.add('ativo');
+        }
+
+        // EXPORTAR PDF
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.text("RELATORIO DE VALIDADES - GB", 20, 20);
-            let y = 35;
-            globalProds.forEach(p => {
-                doc.text(`${p.venc.split('-').reverse().join('/')} - ${p.nome} (Qtd: ${p.qtd})`, 20, y);
-                y += 10;
+            doc.setFont("helvetica", "bold");
+            doc.text("CONTROLE DE ESTOQUE - VALIDADES", 20, 20);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            
+            let linha = 35;
+            dadosLocais.forEach(p => {
+                doc.text(`${p.vencimento.split('-').reverse().join('/')} | Qtd: ${p.quantidade} | ${p.nome}`, 20, linha);
+                linha += 10;
             });
-            doc.save("validade.pdf");
+            doc.save("relatorio-validade.pdf");
         }
 
-        carregar();
+        // Iniciar carregamento
+        carregarEstoque();
     </script>
 </body>
 </html>
