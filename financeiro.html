@@ -1,1 +1,107 @@
-<button onclick="location.href='index.html'" style="position:fixed; top:20px; left:20px; z-index:1001; background:rgba(0,0,0,0.5); border:none; color:white; padding:10px; border-radius:10px;">🏠 HUB</button>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Financeiro - GB Sistemas</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        :root { --primary: #4361ee; --danger: #ff4d4d; --success: #2ecc71; --bg: #f0f2f8; }
+        body { margin: 0; background: var(--bg); font-family: -apple-system, sans-serif; padding-bottom: 80px; }
+        .header { background: var(--primary); color: white; padding: 20px; display: flex; align-items: center; gap: 15px; }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .card-financeiro { background: white; border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .vencido { border-left: 5px solid var(--danger); }
+        .pago { border-left: 5px solid var(--success); opacity: 0.7; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; }
+        .btn-voltar { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="btn-voltar" onclick="location.href='index.html'">⬅</button>
+        <h2 style="margin:0;">Financeiro</h2>
+    </div>
+
+    <div class="container">
+        <div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px;">
+            <input type="text" id="f-desc" placeholder="Descrição do Boleto">
+            <input type="date" id="f-data">
+            <input type="number" id="f-valor" placeholder="R$ Valor">
+            <button class="btn-add" onclick="salvarBoleto()">CADASTRAR CONTA</button>
+        </div>
+
+        <h3>Contas a Pagar</h3>
+        <div id="lista-boletos">Carregando...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1Z5EuMscjAGFcbIEvpPsDkp-hiIYh28o",
+            authDomain: "meu-finan.firebaseapp.com",
+            projectId: "meu-finan",
+            storageBucket: "meu-finan.firebasestorage.app",
+            messagingSenderId: "867200475066",
+            appId: "1:867200475066:web:f90351b3d65a8a8df00783"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged(user => {
+            if(user) { carregarBoletos(); }
+            else { location.href = 'index.html'; }
+        });
+
+        async function salvarBoleto() {
+            const d = {
+                desc: document.getElementById('f-desc').value,
+                vencimento: document.getElementById('f-data').value,
+                valor: document.getElementById('f-valor').value,
+                pago: false,
+                user: auth.currentUser.email,
+                criadoEm: new Date().getTime()
+            };
+
+            if(!d.desc || !d.vencimento) return alert("Preencha os campos!");
+
+            await db.collection("boletos").add(d);
+            location.reload();
+        }
+
+        async function carregarBoletos() {
+            const snap = await db.collection("boletos")
+                .where("user", "==", auth.currentUser.email)
+                .orderBy("vencimento", "asc").get();
+            
+            let html = "";
+            snap.forEach(doc => {
+                const b = doc.data();
+                const estilo = b.pago ? 'pago' : 'vencido';
+                html += `
+                <div class="card-financeiro ${estilo}">
+                    <div>
+                        <b>${b.desc}</b><br>
+                        <small>Vencimento: ${b.vencimento.split('-').reverse().join('/')}</small>
+                    </div>
+                    <div style="text-align:right">
+                        <b>R$ ${parseFloat(b.valor).toFixed(2)}</b><br>
+                        <button onclick="marcarPago('${doc.id}')" style="font-size:10px;">${b.pago ? '✅ Pago' : '🔔 Pagar'}</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('lista-boletos').innerHTML = html || "Nenhuma conta encontrada.";
+        }
+
+        async function marcarPago(id) {
+            await db.collection("boletos").doc(id).update({ pago: true });
+            carregarBoletos();
+        }
+    </script>
+</body>
+</html>
