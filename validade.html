@@ -3,79 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Validades - GB Sistemas</title>
+    <title>Validades - GB</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --primary: #4361ee; --success: #2ecc71; --warning: #ffa500; --danger: #ff4d4d; --glass: rgba(255, 255, 255, 0.95); }
+        :root { --primary: #4361ee; --success: #2ecc71; --warning: #ffa500; --danger: #ff4d4d; }
         body { margin: 0; background: #f0f2f8; font-family: -apple-system, sans-serif; padding-bottom: 80px; }
-        .glass { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.4); }
         .container { padding: 20px; max-width: 600px; margin: 0 auto; }
         .tela { display: none; }
         .ativa { display: block; }
-        .card { background: white; border-radius: 18px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .thumb { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #eee; }
-        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #ddd; }
+        .card { background: white; border-radius: 18px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-left: 6px solid #ccc; }
+        .thumb { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #eee; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; }
         nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; }
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; }
-        #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        .fab { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
-    <div id="modal">
-        <div class="glass" style="width:85%; padding:25px; border-radius:25px; text-align:center;">
-            <h3 id="m-nome">Produto</h3>
-            <input type="number" id="m-qtd" value="1" style="font-size:24px; text-align:center;">
-            <button onclick="confirmarSoma()" style="width:100%; padding:15px; background:var(--success); color:white; border:none; border-radius:12px; font-weight:bold;">SOMAR AO ESTOQUE</button>
-            <button onclick="document.getElementById('modal').style.display='none'" style="margin-top:10px; border:none; background:none; color:red;">Cancelar</button>
-        </div>
-    </div>
-
     <nav>
         <b onclick="location.href='index.html'"><i>🏠</i>Home</b>
-        <b onclick="irPara('home')"><i>📋</i>Início</b>
-        <b onclick="gerarPDF()"><i>📄</i>PDF</b>
+        <b onclick="irPara('home')"><i>📋</i>Lista</b>
     </nav>
 
     <button class="fab" onclick="irPara('cad')">+</button>
 
     <div class="container">
         <div id="t-home" class="tela ativa">
-            <h2>Validades Próximas</h2>
-            <div id="l-home"></div>
+            <h2>Minhas Validades</h2>
+            <div id="l-home">Carregando produtos...</div>
         </div>
 
         <div id="t-cad" class="tela">
-            <div class="glass" style="padding:20px; border-radius:20px;">
-                <h3>Auditoria de Item</h3>
-                <img id="p-img" style="width:100%; height:150px; object-fit:contain; display:none; border-radius:12px; margin-bottom:10px; background:#000;">
-                <label style="display:block; background:#eee; padding:15px; border-radius:12px; text-align:center; margin-bottom:15px;">
+            <div style="background: white; padding: 20px; border-radius: 25px;">
+                <h3>Novo Produto</h3>
+                <img id="p-img" style="width:100%; height:180px; object-fit:contain; display:none; border-radius:15px; margin-bottom:15px; background:#000;">
+                <label style="display:block; background:#eee; padding:15px; border-radius:12px; text-align:center; margin-bottom:15px; font-weight:bold;">
                     📷 TIRAR FOTO
                     <input type="file" id="f-in" accept="image/*" capture="environment" style="display:none;" onchange="pFoto(this)">
                 </label>
-                <input type="text" id="p-ean" placeholder="Código de Barras" onchange="checkEAN(this.value)">
                 <input type="text" id="p-nome" placeholder="Nome do Produto">
                 <input type="date" id="p-data">
-                <input type="number" id="p-qtd" value="1" placeholder="Quantidade">
-                <button onclick="salvar()" id="b-salvar" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold;">SALVAR</button>
+                <input type="number" id="p-qtd" value="1">
+                <button onclick="salvar()" id="b-salvar" style="width:100%; padding:18px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold;">SALVAR PRODUTO</button>
             </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { /* SUAS CREDENCIAIS */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1Z5EuMscjAGFcbIEvpPsDkp-hiIYh28o",
+            authDomain: "meu-finan.firebaseapp.com",
+            projectId: "meu-finan",
+            storageBucket: "meu-finan.firebasestorage.app",
+            messagingSenderId: "867200475066",
+            appId: "1:867200475066:web:f90351b3d65a8a8df00783"
+        };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); const storage = firebase.storage(); const auth = firebase.auth();
-        let prods = []; let curId = null;
-
-        function bip(t) {
-            const c = new AudioContext(); const o = c.createOscillator(); const g = c.createGain();
-            o.frequency.value = t === 's' ? 880 : 220; g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.2);
-            o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.2);
-        }
+        const db = firebase.firestore(); const auth = firebase.auth();
+        let prods = [];
 
         auth.onAuthStateChanged(u => { if(u) load(); else location.href='index.html'; });
 
@@ -88,17 +74,21 @@
             }
         }
 
-        async function checkEAN(v) {
-            const m = prods.find(p => p.ean === v);
-            if(m) { bip('s'); curId = m.id; document.getElementById('m-nome').innerText = m.nome; document.getElementById('modal').style.display='flex'; }
-        }
-
-        async function confirmarSoma() {
-            const q = parseInt(document.getElementById('m-qtd').value);
-            const ref = db.collection("prods_v").doc(curId);
-            const doc = await ref.get();
-            await ref.update({ qtd: (parseInt(doc.data().qtd)||0) + q });
-            bip('s'); location.reload();
+        async function processarBase64(file) {
+            return new Promise((res) => {
+                const r = new FileReader(); r.readAsDataURL(file);
+                r.onload = (e) => {
+                    const img = new Image(); img.src = e.target.result;
+                    img.onload = () => {
+                        const cv = document.createElement('canvas');
+                        const w = 400; const sc = w / img.width;
+                        cv.width = w; cv.height = img.height * sc;
+                        const ctx = cv.getContext('2d');
+                        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+                        res(cv.toDataURL('image/jpeg', 0.6));
+                    }
+                }
+            });
         }
 
         async function salvar() {
@@ -107,42 +97,32 @@
             const d = {
                 nome: document.getElementById('p-nome').value,
                 validade: document.getElementById('p-data').value,
-                ean: document.getElementById('p-ean').value,
                 qtd: parseInt(document.getElementById('p-qtd').value),
-                user: auth.currentUser.email
+                user: auth.currentUser.email,
+                foto: ""
             };
-            if(!d.nome || !d.validade) return alert("Preencha Nome e Data!");
-            btn.disabled = true;
-            if(file) {
-                const r = storage.ref(`v/${Date.now()}`); await r.put(file);
-                d.foto = await r.getDownloadURL();
-            }
+            if(!d.nome || !d.validade) return alert("Preencha os campos!");
+            btn.disabled = true; btn.innerText = "SALVANDO...";
+            if(file) d.foto = await processarBase64(file);
             await db.collection("prods_v").add(d);
-            bip('s'); location.reload();
+            location.reload();
         }
 
         async function load() {
             const s = await db.collection("prods_v").where("user", "==", auth.currentUser.email).orderBy("validade").get();
-            prods = []; s.forEach(doc => prods.push({id: doc.id, ...doc.data()}));
-            let h = ""; prods.forEach(p => {
+            let h = ""; s.forEach(doc => {
+                const p = doc.data();
                 const diff = Math.ceil((new Date(p.validade+"T12:00:00") - new Date()) / 86400000);
                 let c = diff < 0 ? "var(--danger)" : (diff <= 7 ? "var(--warning)" : "var(--success)");
-                h += `<div class="card" style="border-left:5px solid ${c}">
-                    <img src="${p.foto||''}" class="thumb">
+                h += `<div class="card" style="border-left-color:${c}">
+                    <img src="${p.foto || ''}" class="thumb">
                     <div><b>${p.nome}</b><br><small>Qtd: ${p.qtd}</small><br><span style="color:${c}">Vence: ${p.validade.split('-').reverse().join('/')}</span></div>
                 </div>`;
             });
-            document.getElementById('l-home').innerHTML = h;
+            document.getElementById('l-home').innerHTML = h || "Nenhum produto.";
         }
 
         function irPara(t) { document.querySelectorAll('.tela').forEach(e => e.classList.remove('ativa')); document.getElementById('t-'+t).classList.add('ativa'); }
-
-        function gerarPDF() {
-            const { jsPDF } = window.jspdf; const doc = new jsPDF();
-            doc.text("RELATORIO DE VALIDADES", 20, 20);
-            let y = 30; prods.forEach(p => { doc.text(`${p.validade} - ${p.nome} (Qtd: ${p.qtd})`, 20, y); y += 10; });
-            doc.save("validades.pdf");
-        }
     </script>
 </body>
 </html>
