@@ -1,23 +1,16 @@
 {
-  "name": "GB PRO - Gestor de Boletos",
-  "short_name": "GB PRO",
-  "description": "Sistema Profissional de Gestão de Boletos e Finanças",
+  "name": "Cartazista Pro",
+  "short_name": "Cartazista",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f0f2f8",
-  "theme_color": "#4361ee",
-  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#e61e25",
   "icons": [
     {
-      "src": "IMG_6828.png",
-      "sizes": "192x192",
+      "src": "Logo_cartaz.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "IMG_6828.png",
-      "sizes": "512x512",
-      "type": "image/png"
     }
   ]
 }

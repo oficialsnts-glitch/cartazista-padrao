@@ -2,63 +2,210 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GB SISTEMAS - HUB</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartazista Pro - PWA</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e61e25">
+    <link rel="icon" type="image/png" href="Logo_cartaz.png">
+    <link rel="apple-touch-icon" href="Logo_cartaz.png">
+
     <style>
-        :root { --primary: #4361ee; --dark: #1a1b2e; --bg: #f0f2f8; }
-        body { margin: 0; background: var(--bg); font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .header { background: var(--primary); width: 100%; padding: 50px 20px; text-align: center; color: white; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
-        .grid-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px 20px; width: 100%; max-width: 500px; }
-        .app-card { background: white; padding: 25px; border-radius: 25px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.05); text-decoration: none; color: var(--dark); }
-        .app-card i { font-size: 45px; display: block; margin-bottom: 12px; }
-        #tela-login { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 40px; border-radius: 35px; width: 85%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; }
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+
+        :root {
+            --vermelho: #e61e25; --verde: #009432; --laranja: #f39c12; 
+            --amarelo: #ffc312; --preto: #1e272e; --azul: #0984e3;
+            --f-topo: 2.8em; --f-prod: 1.6em; --f-gram: 1.2em; --f-reais: 14em;
+        }
+
+        body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+        /* Painel Administrativo */
+        .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 10px; text-transform: uppercase; color: #718096; margin-bottom: 4px; font-weight: bold; }
+        input, select { padding: 10px; border: 2px solid #edf2f7; border-radius: 8px; font-size: 14px; }
+        
+        .botoes { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .btn-add { background: var(--preto); color: white; }
+        .btn-print { background: var(--vermelho); color: white; }
+        .btn-clear { background: #718096; color: white; flex: 0.3; }
+
+        /* Área de Impressão */
+        #container-impressao { display: grid; width: 210mm; background: #fff; padding: 5mm; box-sizing: border-box; }
+
+        .layout-1 { grid-template-columns: 1fr; --f-topo: 4.5em; --f-prod: 2.5em; --f-gram: 2em; --f-reais: 22em; }
+        .layout-1 .cartaz-item { height: 280mm; }
+        .layout-2 { grid-template-columns: 1fr; row-gap: 10mm; }
+        .layout-2 .cartaz-item { height: 135mm; }
+        .layout-4 { grid-template-columns: 1fr 1fr; column-gap: 5mm; row-gap: 5mm; --f-topo: 1.8em; --f-prod: 1.1em; --f-gram: 0.8em; --f-reais: 8.5em; }
+        .layout-4 .cartaz-item { height: 135mm; }
+
+        .cartaz-item { width: 100%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 0 15px 40px 15px; box-sizing: border-box; position: relative; page-break-inside: avoid; overflow: hidden; border: 1px dashed #eee; }
+
+        .selo-topo { width: 120%; left: -10%; padding: 15px 0; text-align: center; transform: rotate(-2deg); z-index: 1; position: relative; }
+        .selo-topo span { font-size: var(--f-topo); color: #fff; text-transform: uppercase; }
+
+        /* Temas */
+        .tema-oferta { background: var(--vermelho); }
+        .tema-horti { background: var(--verde); }
+        .tema-bebidas { background: var(--azul); }
+        .tema-queima { background: var(--laranja); }
+        .tema-ultimas { background: var(--amarelo); }
+        .tema-ultimas span { color: var(--preto); }
+
+        .info-produto { display: flex; flex-direction: column; align-items: center; flex-grow: 1; justify-content: center; width: 100%; }
+        .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; text-align: center; }
+        .marca-produto { width: 100%; text-transform: uppercase; line-height: 0.8; letter-spacing: -2px; text-align: center; margin: 5px 0; }
+        .gramatura-produto { font-size: var(--f-gram); color: #718096; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+
+        .preco-box { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin-top: auto; }
+        .rs { font-size: calc(var(--f-reais) * 0.2); color: var(--preto); margin-top: 15%; margin-right: 5px; }
+        .reais { font-size: var(--f-reais); line-height: 0.75; color: var(--vermelho); letter-spacing: -10px; }
+        
+        /* Cores de Preço Dinâmicas */
+        .tema-horti + .info-produto + .preco-box .reais, .tema-horti + .info-produto + .preco-box .centavos { color: var(--verde); }
+        .tema-bebidas + .info-produto + .preco-box .reais, .tema-bebidas + .info-produto + .preco-box .centavos { color: var(--azul); }
+
+        .dir-box { display: flex; flex-direction: column; margin-top: 10%; margin-left: 5px; }
+        .centavos { font-size: calc(var(--f-reais) * 0.35); line-height: 1; color: var(--vermelho); border-bottom: 0.05em solid; }
+        .unidade { font-size: calc(var(--f-reais) * 0.1); color: #4a5568; font-weight: bold; margin-top: 5px; text-transform: uppercase; }
+
+        .btn-acao { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.05); border: none; width: 30px; height: 30px; cursor: pointer; border-radius: 50%; z-index: 10; }
+
+        @media print {
+            .painel, .btn-acao { display: none !important; }
+            body { padding: 0; background: #fff; }
+            .cartaz-item { border: none; }
+        }
     </style>
 </head>
 <body>
-    <div id="tela-login">
-        <div class="login-box">
-            <h2>GB Sistemas</h2>
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="pass" placeholder="Senha">
-            <button onclick="login()">ENTRAR</button>
+
+    <div class="painel">
+        <h2 style="text-align:center; margin-bottom: 20px;">🛒 Cartazista Pro v5.2</h2>
+        <div class="grid-inputs">
+            <div class="input-group">
+                <label>Tema</label>
+                <select id="selTema">
+                    <option value="tema-oferta">OFERTA</option>
+                    <option value="tema-horti">HORTIFRUTI</option>
+                    <option value="tema-bebidas">BEBIDAS</option>
+                    <option value="tema-queima">QUEIMA TOTAL</option>
+                    <option value="tema-ultimas">SÓ HOJE</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Layout</label>
+                <select id="selLayout" onchange="document.getElementById('container-impressao').className = this.value">
+                    <option value="layout-2">2 por Folha</option>
+                    <option value="layout-1">1 por Folha (A4)</option>
+                    <option value="layout-4">4 por Folha</option>
+                </select>
+            </div>
+            <div class="input-group"><label>Título Custom</label><input type="text" id="inCustom" placeholder="Opcional"></div>
+        </div>
+        <div class="grid-inputs">
+            <div class="input-group"><label>Produto</label><input type="text" id="inProd"></div>
+            <div class="input-group"><label>Marca</label><input type="text" id="inMarca"></div>
+            <div class="input-group"><label>Gramatura</label><input type="text" id="inGram"></div>
+        </div>
+        <div class="grid-inputs">
+            <div class="input-group"><label>Reais</label><input type="number" id="inR"></div>
+            <div class="input-group"><label>Centavos</label><input type="number" id="inC"></div>
+            <div class="input-group"><label>Unid.</label><input type="text" id="inU"></div>
+        </div>
+        <div class="botoes">
+            <button class="btn-add" onclick="adicionar()">➕ Adicionar</button>
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+            <button class="btn-clear" onclick="limparTudo()">🗑️ Limpar</button>
         </div>
     </div>
 
-    <div class="header">
-        <h1 style="margin:0;">PAINEL GB</h1>
-        <p id="user-info">Carregando...</p>
-    </div>
-
-    <div class="grid-apps">
-        <a href="financeiro.html" class="app-card"><i>💰</i><b>Financeiro</b></a>
-        <a href="validade.html" class="app-card"><i>📅</i><b>Validades</b></a>
-        <div class="app-card" onclick="sair()" style="background: #fff5f5;"><i style="color:#ff4d4d">🚪</i><b style="color:#ff4d4d">Sair</b></div>
-    </div>
+    <div id="container-impressao" class="layout-2"></div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1Z5EuMscjAGFcbIEvpPsDkp-hiIYh28o",
-            authDomain: "meu-finan.firebaseapp.com",
-            projectId: "meu-finan",
-            storageBucket: "meu-finan.firebasestorage.app",
-            messagingSenderId: "867200475066",
-            appId: "1:867200475066:web:f90351b3d65a8a8df00783"
+        let cartazes = JSON.parse(localStorage.getItem('meus_cartazes')) || [];
+
+        window.onload = () => {
+            renderizar();
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js');
+            }
         };
-        firebase.initializeApp(firebaseConfig);
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) { document.getElementById('tela-login').style.display = 'none'; document.getElementById('user-info').innerText = user.email; }
-            else { document.getElementById('tela-login').style.display = 'flex'; }
-        });
-        async function login() {
-            const e = document.getElementById('email').value; const s = document.getElementById('pass').value;
-            try { await firebase.auth().signInWithEmailAndPassword(e, s); } catch(err) { alert("Erro de login: " + err.message); }
+
+        function adicionar() {
+            const item = {
+                id: Date.now(),
+                tema: document.getElementById('selTema').value,
+                temaTexto: document.getElementById('inCustom').value || document.getElementById('selTema').options[document.getElementById('selTema').selectedIndex].text,
+                prod: document.getElementById('inProd').value,
+                marca: document.getElementById('inMarca').value,
+                gram: document.getElementById('inGram').value,
+                r: document.getElementById('inR').value,
+                c: document.getElementById('inC').value,
+                u: document.getElementById('inU').value,
+                layout: document.getElementById('selLayout').value
+            };
+            cartazes.push(item);
+            salvarERenderizar();
+            limparInputs();
         }
-        function sair() { firebase.auth().signOut(); }
+
+        function salvarERenderizar() {
+            localStorage.setItem('meus_cartazes', JSON.stringify(cartazes));
+            renderizar();
+        }
+
+        function remover(id) {
+            cartazes = cartazes.filter(c => c.id !== id);
+            salvarERenderizar();
+        }
+
+        function limparTudo() {
+            if(confirm("Apagar todos?")) { cartazes = []; salvarERenderizar(); }
+        }
+
+        function renderizar() {
+            const container = document.getElementById('container-impressao');
+            container.innerHTML = "";
+            cartazes.forEach(c => {
+                const centavos = c.c ? c.c.toString().padStart(2, '0') : "00";
+                container.innerHTML += `
+                    <div class="cartaz-item">
+                        <button class="btn-acao" onclick="remover(${c.id})">✕</button>
+                        <div class="selo-topo ${c.tema}"><span>${c.temaTexto}</span></div>
+                        <div class="info-produto">
+                            <p class="nome-produto">${c.prod}</p>
+                            <h1 class="marca-produto" id="m-${c.id}">${c.marca}</h1>
+                            <div class="gramatura-produto">${c.gram}</div>
+                        </div>
+                        <div class="preco-box">
+                            <span class="rs">R$</span><span class="reais">${c.r || 0}</span>
+                            <div class="dir-box"><span class="centavos">${centavos}</span><span class="unidade">${c.u}</span></div>
+                        </div>
+                    </div>
+                `;
+                ajustarFonte(c.id, c.layout, c.marca);
+            });
+        }
+
+        function ajustarFonte(id, layout, texto) {
+            setTimeout(() => {
+                const el = document.getElementById(`m-${id}`);
+                if (!el) return;
+                let base = (layout === 'layout-1') ? 10 : (layout === 'layout-4' ? 3.5 : 5.8);
+                if (texto.length > 8) el.style.fontSize = (base * (Math.max(0.35, 1 - (texto.length-8)*0.05))) + "em";
+                else el.style.fontSize = base + "em";
+            }, 0);
+        }
+
+        function limparInputs() {
+            ["inProd", "inMarca", "inGram", "inR", "inC", "inU", "inCustom"].forEach(i => document.getElementById(i).value = "");
+        }
     </script>
 </body>
 </html>
