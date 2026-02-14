@@ -16,6 +16,7 @@
         :root {
             --vermelho: #e61e25; --verde: #009432; --laranja: #f39c12; 
             --amarelo: #ffc312; --preto: #1e272e; --azul: #0984e3;
+            --roxo-validade: #6c5ce7;
             --f-topo: 2.8em; --f-prod: 1.6em; --f-gram: 1.2em; --f-reais: 14em;
         }
 
@@ -31,28 +32,13 @@
             z-index: 9999;
             transition: opacity 0.8s ease;
         }
-
         .splash-content { text-align: center; color: white; }
-
-        .splash-logo {
-            width: 180px;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        .loader {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid var(--amarelo);
-            border-radius: 50%;
-            width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
+        .splash-logo { width: 180px; margin-bottom: 20px; animation: pulse 2s infinite; }
+        .loader { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--amarelo); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        /* --- Estilos Base do App --- */
+        /* --- Estilos Base --- */
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
         .painel { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 30px; width: 100%; max-width: 750px; border-top: 5px solid var(--vermelho); }
@@ -61,6 +47,9 @@
         label { font-size: 10px; text-transform: uppercase; color: #718096; margin-bottom: 4px; font-weight: bold; }
         input, select { padding: 10px; border: 2px solid #edf2f7; border-radius: 8px; font-size: 14px; }
         
+        /* Esconder campo de data por padrão */
+        #group-validade { display: none; }
+
         .botoes { display: flex; gap: 10px; margin-top: 15px; }
         button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
         .btn-add { background: var(--preto); color: white; }
@@ -89,27 +78,34 @@
         .tema-queima { background: var(--laranja); }
         .tema-ultimas { background: var(--amarelo); }
         .tema-ultimas span { color: var(--preto); }
+        .tema-validade { background: var(--roxo-validade); }
 
         .info-produto { display: flex; flex-direction: column; align-items: center; flex-grow: 1; justify-content: center; width: 100%; }
         .nome-produto { font-size: var(--f-prod); color: #4a5568; margin: 0; text-transform: uppercase; text-align: center; }
         .marca-produto { width: 100%; text-transform: uppercase; line-height: 0.8; letter-spacing: -2px; text-align: center; margin: 5px 0; }
         .gramatura-produto { font-size: var(--f-gram); color: #718096; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
 
+        /* Carimbo de Validade no Cartaz */
+        .selo-validade-info { background: var(--roxo-validade); color: white; padding: 5px 15px; border-radius: 50px; font-size: 0.8em; margin-top: 10px; }
+
         .preco-box { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin-top: auto; }
         .rs { font-size: calc(var(--f-reais) * 0.2); color: var(--preto); margin-top: 15%; margin-right: 5px; }
         .reais { font-size: var(--f-reais); line-height: 0.75; color: var(--vermelho); letter-spacing: -10px; }
         
-        .tema-horti + .info-produto + .preco-box .reais { color: var(--verde); }
-        .tema-bebidas + .info-produto + .preco-box .reais { color: var(--azul); }
+        .tema-horti ~ .preco-box .reais { color: var(--verde); }
+        .tema-bebidas ~ .preco-box .reais { color: var(--azul); }
+        .tema-validade ~ .preco-box .reais { color: var(--roxo-validade); }
 
         .dir-box { display: flex; flex-direction: column; margin-top: 10%; margin-left: 5px; }
         .centavos { font-size: calc(var(--f-reais) * 0.35); line-height: 1; color: var(--vermelho); border-bottom: 0.05em solid; }
+        .tema-validade ~ .preco-box .centavos { color: var(--roxo-validade); }
         .unidade { font-size: calc(var(--f-reais) * 0.1); color: #4a5568; font-weight: bold; margin-top: 5px; text-transform: uppercase; }
 
-        .btn-acao { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.05); border: none; width: 30px; height: 30px; cursor: pointer; border-radius: 50%; z-index: 10; }
+        .acoes-cartaz { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 10; }
+        .btn-acao { background: white; border: 1px solid #ddd; width: 30px; height: 30px; cursor: pointer; border-radius: 5px; }
 
         @media print {
-            .painel, .btn-acao, #splash-screen { display: none !important; }
+            .painel, .acoes-cartaz, #splash-screen { display: none !important; }
             body { padding: 0; background: #fff; }
             .cartaz-item { border: none; }
         }
@@ -126,17 +122,22 @@
     </div>
 
     <div class="painel">
-        <h2 style="text-align:center; margin-bottom: 20px;">🛒 Cartazista Pro v5.2</h2>
+        <h2 style="text-align:center; margin-bottom: 20px;">🛒 Cartazista Pro v5.4</h2>
         <div class="grid-inputs">
             <div class="input-group">
                 <label>Tema</label>
-                <select id="selTema">
+                <select id="selTema" onchange="toggleValidade()">
                     <option value="tema-oferta">OFERTA</option>
+                    <option value="tema-validade">VALIDADE PRÓXIMA</option>
                     <option value="tema-horti">HORTIFRUTI</option>
                     <option value="tema-bebidas">BEBIDAS</option>
                     <option value="tema-queima">QUEIMA TOTAL</option>
                     <option value="tema-ultimas">SÓ HOJE</option>
                 </select>
+            </div>
+            <div class="input-group" id="group-validade">
+                <label>Vencimento</label>
+                <input type="text" id="inVenc" placeholder="Ex: 25/12">
             </div>
             <div class="input-group">
                 <label>Layout</label>
@@ -146,7 +147,6 @@
                     <option value="layout-4">4 por Folha</option>
                 </select>
             </div>
-            <div class="input-group"><label>Título Custom</label><input type="text" id="inCustom" placeholder="Opcional"></div>
         </div>
         <div class="grid-inputs">
             <div class="input-group"><label>Produto</label><input type="text" id="inProd"></div>
@@ -172,25 +172,26 @@
 
         window.onload = () => {
             renderizar();
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js');
-            }
-            
-            // Lógica para remover a tela de boas-vindas
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
             setTimeout(() => {
                 const splash = document.getElementById('splash-screen');
                 splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                }, 800); // Tempo para terminar a transição de fade
-            }, 3000); // 3 segundos de exibição
+                setTimeout(() => splash.style.display = 'none', 800);
+            }, 2500);
         };
+
+        // Mostra ou esconde o campo de vencimento
+        function toggleValidade() {
+            const tema = document.getElementById('selTema').value;
+            document.getElementById('group-validade').style.display = (tema === 'tema-validade') ? 'flex' : 'none';
+        }
 
         function adicionar() {
             const item = {
                 id: Date.now(),
                 tema: document.getElementById('selTema').value,
-                temaTexto: document.getElementById('inCustom').value || document.getElementById('selTema').options[document.getElementById('selTema').selectedIndex].text,
+                temaTexto: document.getElementById('selTema').options[document.getElementById('selTema').selectedIndex].text,
+                vencimento: document.getElementById('inVenc').value,
                 prod: document.getElementById('inProd').value,
                 marca: document.getElementById('inMarca').value,
                 gram: document.getElementById('inGram').value,
@@ -204,9 +205,13 @@
             limparInputs();
         }
 
-        function salvarERenderizar() {
-            localStorage.setItem('meus_cartazes', JSON.stringify(cartazes));
-            renderizar();
+        function duplicar(id) {
+            const original = cartazes.find(c => c.id === id);
+            if (original) {
+                const copia = { ...original, id: Date.now() };
+                cartazes.push(copia);
+                salvarERenderizar();
+            }
         }
 
         function remover(id) {
@@ -214,11 +219,13 @@
             salvarERenderizar();
         }
 
+        function salvarERenderizar() {
+            localStorage.setItem('meus_cartazes', JSON.stringify(cartazes));
+            renderizar();
+        }
+
         function limparTudo() {
-            if(confirm("Apagar todos os cartazes da lista?")) { 
-                cartazes = []; 
-                salvarERenderizar(); 
-            }
+            if(confirm("Apagar todos os cartazes?")) { cartazes = []; salvarERenderizar(); }
         }
 
         function renderizar() {
@@ -226,14 +233,20 @@
             container.innerHTML = "";
             cartazes.forEach(c => {
                 const centavos = c.c ? c.c.toString().padStart(2, '0') : "00";
+                const htmlValidade = c.vencimento ? `<div class="selo-validade-info">VÁLIDO ATÉ: ${c.vencimento}</div>` : "";
+                
                 container.innerHTML += `
                     <div class="cartaz-item">
-                        <button class="btn-acao" onclick="remover(${c.id})">✕</button>
+                        <div class="acoes-cartaz">
+                            <button class="btn-acao" onclick="duplicar(${c.id})">👯</button>
+                            <button class="btn-acao" style="color:red" onclick="remover(${c.id})">✕</button>
+                        </div>
                         <div class="selo-topo ${c.tema}"><span>${c.temaTexto}</span></div>
                         <div class="info-produto">
                             <p class="nome-produto">${c.prod}</p>
                             <h1 class="marca-produto" id="m-${c.id}">${c.marca}</h1>
                             <div class="gramatura-produto">${c.gram}</div>
+                            ${htmlValidade}
                         </div>
                         <div class="preco-box">
                             <span class="rs">R$</span><span class="reais">${c.r || 0}</span>
@@ -256,7 +269,7 @@
         }
 
         function limparInputs() {
-            ["inProd", "inMarca", "inGram", "inR", "inC", "inU", "inCustom"].forEach(i => document.getElementById(i).value = "");
+            ["inProd", "inMarca", "inGram", "inR", "inC", "inU", "inVenc"].forEach(i => document.getElementById(i).value = "");
             document.getElementById('inProd').focus();
         }
     </script>
