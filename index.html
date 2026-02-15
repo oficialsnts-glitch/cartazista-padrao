@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro - Versão Temática Final</title>
+    <title>Cartazista Pro - Versão Master Blindada</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@700&display=swap');
 
@@ -38,13 +38,13 @@
         .layout-2 .cartaz-item { height: 148.5mm; border-bottom: 1px solid #eee; }
         .layout-4 .cartaz-item { height: 148.5mm; border: 0.5px solid #eee; }
 
-        /* Elementos Móveis */
-        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; border: 2px solid transparent; }
-        .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); }
+        /* Elementos Móveis - Ajustados para detecção de clique */
+        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; border: 2px solid transparent; }
+        .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); z-index: 10; }
 
-        /* Selos e Temas */
-        .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; }
-        .selo-topo span { color: #fff; display: block; font-weight: 900; }
+        /* Estética dos Selos */
+        .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; pointer-events: auto; }
+        .selo-topo span { color: #fff; display: block; font-weight: 900; pointer-events: none; }
         
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
@@ -56,23 +56,25 @@
         .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.8; }
         .gramatura { color: #333; font-weight: bold; }
 
-        /* Preço */
-        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); }
+        /* Preço - Blindado */
+        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); pointer-events: none; }
         .rs { margin-top: 5%; margin-right: 5px; font-weight: 900; }
         .reais { line-height: 0.7; letter-spacing: -5px; font-weight: 900; }
         .dir-box { display: flex; flex-direction: column; margin-top: 5%; text-align: left; }
         .centavos { line-height: 0.8; border-bottom: 4px solid; font-weight: 900; }
         .unidade-txt { font-weight: 900; color: #000; }
 
-        /* Controles flutuantes */
+        /* Painel de Controle Flutuante */
         #controles-flutuantes {
             position: fixed; bottom: 20px; left: 20px; background: #fff;
             padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             z-index: 9999; display: none; border: 2px solid var(--azul); width: 240px;
         }
         .ctrl-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+
+        /* Botões de Ação no Cartaz */
         .btn-acoes { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 105; }
-        .btn-circular { width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        .btn-circular { width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .btn-clone { background: var(--azul); }
         .btn-del { background: #000; }
 
@@ -95,11 +97,11 @@
                 <option value="layout-1">1 Por Folha</option>
             </select>
             <select id="selTemaBase">
-                <option value="tema-oferta">OFERTA (Vermelho)</option>
-                <option value="tema-horti">HORTIFRUTI (Verde)</option>
-                <option value="tema-bebidas">BEBIDAS (Azul)</option>
-                <option value="tema-validade">VALIDADE (Laranja)</option>
-                <option value="tema-limpeza">LIMPEZA (Roxo)</option>
+                <option value="tema-oferta">OFERTA</option>
+                <option value="tema-horti">HORTIFRUTI</option>
+                <option value="tema-bebidas">BEBIDAS</option>
+                <option value="tema-validade">VALIDADE</option>
+                <option value="tema-limpeza">LIMPEZA</option>
             </select>
             <input type="text" id="inProd" placeholder="Produto">
             <input type="text" id="inMarca" placeholder="Marca">
@@ -129,9 +131,9 @@
             <label style="font-size:10px">TAM:</label>
             <input type="number" id="num-fonte" step="0.1" oninput="atualizarFonte(this.value)">
         </div>
-        <input type="range" id="range-fonte" min="0.5" max="50" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
+        <input type="range" id="range-fonte" min="0.5" max="60" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
         
-        <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:5px; border-radius:4px;">OK / FECHAR</button>
+        <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:8px; border-radius:4px; font-weight:bold;">OK</button>
     </div>
 
     <div id="container-impressao" class="layout-4"></div>
@@ -155,7 +157,7 @@
                 novo = {
                     id: Date.now(),
                     tema: document.getElementById('selTemaBase').value,
-                    temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text.split(' ')[0],
+                    temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text,
                     prod: document.getElementById('inProd').value.toUpperCase() || 'PRODUTO',
                     marca: document.getElementById('inMarca').value.toUpperCase() || 'MARCA',
                     gram: document.getElementById('inGram').value || 'UN',
@@ -215,47 +217,64 @@
         }
 
         function setupInteracao(e, id, campoSize, campoPos, label) {
+            // Se for duplo clique para edição, não inicia o drag
             if(e.target.contentEditable === "true") return;
-            document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
-            e.currentTarget.classList.add('selecionado');
 
-            itemSelecionado = { id, campoSize, campoPos, el: e.currentTarget };
+            // Seleção
+            document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
+            const containerMovel = e.currentTarget;
+            containerMovel.classList.add('selecionado');
+
+            itemSelecionado = { id, campoSize, campoPos, el: containerMovel };
             const c = cartazes.find(x => x.id === id);
 
+            // Abre Controles
             document.getElementById('controles-flutuantes').style.display = 'block';
             document.getElementById('txt-editando').innerText = label;
             document.getElementById('num-fonte').value = c[campoSize];
             document.getElementById('range-fonte').value = c[campoSize];
-            
-            // Mostrar opção de trocar cor se for o Selo/Tema
             document.getElementById('row-tema').style.display = (label === 'TEMA') ? 'flex' : 'none';
             if(label === 'TEMA') document.getElementById('changeTema').value = c.tema;
 
+            // Lógica de Movimento Blindada
             let startY = e.clientY;
-            let startTop = parseInt(e.currentTarget.style.top);
+            let startTop = parseInt(containerMovel.style.top) || 0;
 
-            document.onmousemove = (ev) => {
+            function doDrag(ev) {
                 let delta = ev.clientY - startY;
                 let novaPos = startTop + delta;
-                e.currentTarget.style.top = novaPos + "px";
+                containerMovel.style.top = novaPos + "px";
                 c[campoPos] = novaPos;
-            };
+            }
 
-            document.onmouseup = () => { document.onmousemove = null; document.onmouseup = null; };
+            function stopDrag() {
+                document.removeEventListener('mousemove', doDrag);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function atualizarFonte(val) {
+            if(!itemSelecionado) return;
+            const c = cartazes.find(x => x.id === itemSelecionado.id);
+            const v = parseFloat(val);
+            c[itemSelecionado.campoSize] = v;
+            document.getElementById('num-fonte').value = v;
+            document.getElementById('range-fonte').value = v;
+
+            if(itemSelecionado.campoSize === 'fPreco' || itemSelecionado.campoSize === 'fSelo') {
+                renderizar(); 
+            } else {
+                itemSelecionado.el.style.fontSize = v + "rem";
+            }
         }
 
         function atualizarTema(novaCor) {
             const c = cartazes.find(x => x.id === itemSelecionado.id);
             c.tema = novaCor;
             renderizar();
-        }
-
-        function atualizarFonte(val) {
-            const c = cartazes.find(x => x.id === itemSelecionado.id);
-            c[itemSelecionado.campoSize] = parseFloat(val);
-            document.getElementById('num-fonte').value = val;
-            if(itemSelecionado.campoSize === 'fPreco') renderizar();
-            else itemSelecionado.el.style.fontSize = val + "rem";
         }
 
         function clonar(id) {
@@ -269,7 +288,8 @@
         }
 
         function habilitarEdicao(el) {
-            el.contentEditable = "true"; el.focus();
+            el.contentEditable = "true";
+            el.focus();
             el.onblur = () => el.contentEditable = "false";
         }
 
