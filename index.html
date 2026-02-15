@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro - Versão Ultra Final</title>
+    <title>Cartazista Pro - Edição Dinâmica</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@700&display=swap');
 
@@ -15,7 +15,6 @@
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Painel Administrativo */
         .painel { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 20px; width: 100%; max-width: 950px; border-top: 6px solid var(--vermelho); }
         .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px; }
         .input-group { display: flex; flex-direction: column; }
@@ -27,7 +26,6 @@
         .btn-add { flex: 2; background: var(--preto); color: #fff; padding: 15px; border: none; border-radius: 6px; }
         .btn-print { flex: 1; background: var(--vermelho); color: #fff; padding: 15px; border: none; border-radius: 6px; }
 
-        /* Área de Impressão */
         #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
         .layout-1 { grid-template-columns: 1fr; }
         .layout-2 { grid-template-columns: 1fr; gap: 2mm; }
@@ -41,56 +39,54 @@
         .layout-2 .cartaz-item { height: 148.5mm; }
         .layout-4 .cartaz-item { height: 148.5mm; }
 
-        /* Elementos Móveis */
-        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; }
-        .movel:hover { outline: 2px dashed var(--azul); background: rgba(9, 132, 227, 0.03); }
-        
-        /* Selos */
+        /* Estilo para Itens Móveis */
+        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; transition: outline 0.2s; }
+        .movel:hover { outline: 2px dashed #ccc; }
+        .selecionado { outline: 3px solid var(--azul) !important; z-index: 10; background: rgba(9, 132, 227, 0.05); }
+
         .selo-topo { width: 120%; padding: 15px 0; transform: rotate(-1deg); left: -10%; }
-        .selo-topo span { font-size: 4.5rem; color: #fff; display: block; pointer-events: none; }
+        .selo-topo span { font-size: 4.5rem; color: #fff; display: block; }
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
         .tema-bebidas { background: var(--azul); }
         .tema-validade { background: var(--laranja); }
         .tema-unidades { background: var(--roxo); }
 
-        /* Textos */
         .nome-produto { color: #444; text-transform: uppercase; line-height: 1; }
         .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.85; }
         .gramatura { color: #333; font-weight: bold; line-height: 1; }
 
-        /* Preço */
-        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); pointer-events: none;}
+        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); }
         .rs { margin-top: 8%; margin-right: 5px; font-weight: 900; }
         .reais { line-height: 0.7; letter-spacing: -5px; font-weight: 900; }
         .dir-box { display: flex; flex-direction: column; margin-top: 8%; text-align: left; }
         .centavos { line-height: 0.8; border-bottom: 0.1em solid; font-weight: 900; }
         .unidade-txt { font-weight: 900; color: #000; text-transform: uppercase; }
 
-        [contenteditable="true"] { cursor: text; user-select: text; }
-        [contenteditable="true"]:focus { outline: none; background: #fff3cd; }
-
-        /* Controles */
-        .controles-item { 
-            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,0.95);
-            padding: 8px; border: 2px solid #333; border-radius: 8px; z-index: 100;
+        /* Widget de Tamanho Flutuante */
+        .ajuste-tamanho {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: #fff; border: 2px solid var(--azul); padding: 10px;
+            border-radius: 20px; z-index: 1000; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        .btn-small { width: 28px; height: 28px; border: 1px solid #333; background: #fff; cursor: pointer; font-size: 16px; border-radius: 4px; }
-        .btn-delete { position: absolute; top: 10px; right: 10px; background: var(--vermelho); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; z-index: 101; font-size: 20px; }
+        .ajuste-tamanho input { writing-mode: bt-lr; appearance: slider-vertical; width: 8px; height: 150px; }
+
+        .btn-delete { position: absolute; top: 5px; right: 5px; background: #000; color: #fff; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 101; font-size: 14px; opacity: 0.3; }
+        .btn-delete:hover { opacity: 1; background: red; }
 
         @media print {
-            .painel, .controles-item, .btn-delete { display: none !important; }
+            .painel, .ajuste-tamanho, .btn-delete { display: none !important; }
             #container-impressao { width: 100%; border: none; }
-            .cartaz-item { border: none !important; page-break-after: always; }
-            .movel:hover { outline: none; }
+            .cartaz-item { border: none !important; page-break-after: always; outline: none !important; }
+            .selecionado { outline: none !important; }
         }
     </style>
 </head>
 <body>
 
     <div class="painel">
-        <h2 style="text-align:center; margin:0 0 15px 0;">🛒 Cartazista Pro - Mobilidade Total</h2>
+        <h2 style="text-align:center; margin:0 0 15px 0;">🛒 Cartazista Pro - Customizador</h2>
         <div class="grid-inputs">
             <div class="input-group"><label>Layout</label>
                 <select id="selLayout">
@@ -99,35 +95,31 @@
                     <option value="layout-1">1 Por Folha</option>
                 </select>
             </div>
+            <div class="input-group"><label>Fonte</label>
+                <select id="selFonte">
+                    <option value="'Archivo Black', sans-serif">Padrão</option>
+                    <option value="'Oswald', sans-serif">Condensada</option>
+                </select>
+            </div>
             <div class="input-group"><label>Tema</label>
                 <select id="selTema">
                     <option value="tema-oferta">OFERTA</option>
                     <option value="tema-horti">HORTIFRUTI</option>
                     <option value="tema-bebidas">BEBIDAS</option>
-                    <option value="tema-validade">VALIDADE PRÓXIMA</option>
-                    <option value="tema-unidades">ÚLTIMAS UNIDADES</option>
-                </select>
-            </div>
-            <div class="input-group"><label>Fonte</label>
-                <select id="selFonte">
-                    <option value="'Archivo Black', sans-serif">Padrão (Larga)</option>
-                    <option value="'Oswald', sans-serif">Condensada (Estreita)</option>
+                    <option value="tema-validade">VALIDADE</option>
                 </select>
             </div>
         </div>
         <div class="grid-inputs">
-            <div class="input-group"><label>Produto</label><input type="text" id="inProd" placeholder="Ex: Arroz"></div>
-            <div class="input-group"><label>Marca</label><input type="text" id="inMarca" placeholder="Ex: Tio Urbano"></div>
-            <div class="input-group"><label>Gramatura</label><input type="text" id="inGram" placeholder="Ex: 5kg"></div>
-        </div>
-        <div class="grid-inputs">
-            <div class="input-group"><label>Reais</label><input type="number" id="inR" value="0"></div>
-            <div class="input-group"><label>Centavos</label><input type="number" id="inC" value="00"></div>
-            <div class="input-group"><label>Unidade</label><input type="text" id="inU" value="UN"></div>
+            <input type="text" id="inProd" placeholder="Produto">
+            <input type="text" id="inMarca" placeholder="Marca">
+            <input type="text" id="inGram" placeholder="Gramatura">
+            <input type="number" id="inR" value="0" style="width: 60px">
+            <input type="number" id="inC" value="00" style="width: 50px">
         </div>
         <div class="botoes-topo">
-            <button class="btn-add" onclick="adicionar()">➕ Adicionar Cartaz</button>
-            <button class="btn-print" onclick="window.print()">🖨️ Gerar Impressão</button>
+            <button class="btn-add" onclick="adicionar()">➕ Criar Cartaz</button>
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
         </div>
     </div>
 
@@ -136,18 +128,17 @@
     <script>
         let cartazes = [];
         let dragElement = null;
-        let startY = 0;
-        let startTop = 0;
+        let selectedInfo = null; // Armazena qual elemento do cartaz está selecionado
 
         function adicionar() {
             const layout = document.getElementById('selLayout').value;
             const config = {
-                'layout-1': { p: 2.5, m: 12, r: 30, g: 2.2, posS: -5, posP: 250, posPre: 600 },
-                'layout-2': { p: 1.5, m: 7, r: 18, g: 1.3, posS: -5, posP: 120, posPre: 300 },
-                'layout-4': { p: 1, m: 4.5, r: 11, g: 0.9, posS: -5, posP: 100, posPre: 280 }
+                'layout-1': { p: 5, m: 3, g: 2, r: 35 },
+                'layout-2': { p: 3, m: 2, g: 1.5, r: 20 },
+                'layout-4': { p: 1.8, m: 1.2, g: 0.8, r: 12 }
             }[layout];
 
-            cartazes.push({
+            const novo = {
                 id: Date.now(),
                 tema: document.getElementById('selTema').value,
                 temaTxt: document.getElementById('selTema').options[document.getElementById('selTema').selectedIndex].text,
@@ -155,46 +146,18 @@
                 marca: document.getElementById('inMarca').value.toUpperCase(),
                 gram: document.getElementById('inGram').value,
                 r: document.getElementById('inR').value,
-                c: document.getElementById('inC').value.toString().padStart(2, '0'),
-                u: document.getElementById('inU').value.toUpperCase(),
-                fP: config.p, fM: config.m, fR: config.r, fG: config.g,
-                posSelo: config.posS, posProd: config.posP, posPreco: config.posPre,
-                familia: document.getElementById('selFonte').value
-            });
+                c: document.getElementById('inC').value.padStart(2, '0'),
+                u: "UN",
+                familia: document.getElementById('selFonte').value,
+                // Posições Iniciais
+                posSelo: 0, posProd: 120, posMarca: 180, posGram: 220, posPreco: 300,
+                // Tamanhos Iniciais (rem)
+                fSelo: 4, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r
+            };
+
+            cartazes.push(novo);
             renderizar();
         }
-
-        function ajustar(id, campo, delta) {
-            const c = cartazes.find(item => item.id === id);
-            if(c) { c[campo] += delta; renderizar(); }
-        }
-
-        function remover(id) {
-            cartazes = cartazes.filter(c => c.id !== id);
-            renderizar();
-        }
-
-        function startDrag(e, id, campoPos) {
-            if(e.target.getAttribute('contenteditable')) return; 
-            dragElement = { id, campoPos };
-            startY = e.clientY;
-            const el = document.getElementById(`${campoPos}-${id}`);
-            startTop = parseInt(el.style.top) || 0;
-            document.onmousemove = doDrag;
-            document.onmouseup = stopDrag;
-        }
-
-        function doDrag(e) {
-            if (!dragElement) return;
-            const delta = e.clientY - startY;
-            const novaPos = startTop + delta;
-            const c = cartazes.find(item => item.id === dragElement.id);
-            c[dragElement.campoPos] = novaPos;
-            const el = document.getElementById(`${dragElement.campoPos}-${dragElement.id}`);
-            if(el) el.style.top = novaPos + "px";
-        }
-
-        function stopDrag() { dragElement = null; document.onmousemove = null; document.onmouseup = null; }
 
         function renderizar() {
             const container = document.getElementById('container-impressao');
@@ -202,44 +165,99 @@
             container.innerHTML = "";
 
             cartazes.forEach(c => {
-                container.innerHTML += `
-                    <div class="cartaz-item" style="font-family: ${c.familia}">
-                        <button class="btn-delete" onclick="remover(${c.id})">✕</button>
-                        
-                        <div class="controles-item">
-                            <div class="control-group" style="font-size:8px">TAMANHOS</div>
-                            <button class="btn-small" onclick="ajustar(${c.id},'fP',0.1)">P+</button>
-                            <button class="btn-small" onclick="ajustar(${c.id},'fP',-0.1)">P-</button>
-                            <button class="btn-small" onclick="ajustar(${c.id},'fR',1)">$+</button>
-                            <button class="btn-small" onclick="ajustar(${c.id},'fR',-1)">$-</button>
-                        </div>
+                const div = document.createElement('div');
+                div.className = 'cartaz-item';
+                div.style.fontFamily = c.familia;
+                div.innerHTML = `
+                    <button class="btn-delete" onclick="remover(${c.id})">✕</button>
+                    
+                    <div class="ajuste-tamanho">
+                        <label style="font-size:8px">TAM</label>
+                        <input type="range" min="0.5" max="50" step="0.1" oninput="mudarTamanho(${c.id}, this.value)">
+                    </div>
 
-                        <div id="posSelo-${c.id}" class="movel selo-topo ${c.tema}" 
-                             style="top: ${c.posSelo}px" onmousedown="startDrag(event, ${c.id}, 'posSelo')">
-                             <span contenteditable="true">${c.temaTxt}</span>
-                        </div>
-                        
-                        <div id="posProd-${c.id}" class="movel" 
-                             style="top: ${c.posProd}px" onmousedown="startDrag(event, ${c.id}, 'posProd')">
-                            <div contenteditable="true" class="nome-produto" style="font-size: ${c.fP}rem">${c.prod}</div>
-                            <div contenteditable="true" class="marca-produto" style="font-size: ${c.fM}rem">${c.marca}</div>
-                            <div contenteditable="true" class="gramatura" style="font-size: ${c.fG}rem">${c.gram}</div>
-                        </div>
+                    <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posSelo', 'fSelo')">
+                        <span contenteditable="true">${c.temaTxt}</span>
+                    </div>
 
-                        <div id="posPreco-${c.id}" class="movel" 
-                             style="top: ${c.posPreco}px" onmousedown="startDrag(event, ${c.id}, 'posPreco')">
-                            <div class="preco-box">
-                                <span class="rs" style="font-size: ${c.fR * 0.12}rem">R$</span>
-                                <span contenteditable="true" class="reais" style="font-size: ${c.fR}rem">${c.r}</span>
-                                <div class="dir-box">
-                                    <span contenteditable="true" class="centavos" style="font-size: ${c.fR * 0.35}rem">${c.c}</span>
-                                    <span contenteditable="true" class="unidade-txt" style="font-size: ${c.fR * 0.08}rem">${c.u}</span>
-                                </div>
+                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posProd', 'fProd')">
+                        <span contenteditable="true">${c.prod}</span>
+                    </div>
+
+                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posMarca', 'fMarca')">
+                        <span contenteditable="true">${c.marca}</span>
+                    </div>
+
+                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posGram', 'fGram')">
+                        <span contenteditable="true">${c.gram}</span>
+                    </div>
+
+                    <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="iniciarDrag(event, ${c.id}, 'posPreco', 'fPreco')">
+                        <div class="preco-box">
+                            <span class="rs" style="font-size: ${c.fPreco * 0.15}rem">R$</span>
+                            <span contenteditable="true" class="reais" style="font-size: ${c.fPreco}rem">${c.r}</span>
+                            <div class="dir-box">
+                                <span contenteditable="true" class="centavos" style="font-size: ${c.fPreco * 0.4}rem">${c.c}</span>
+                                <span contenteditable="true" class="unidade-txt" style="font-size: ${c.fPreco * 0.1}rem">${c.u}</span>
                             </div>
                         </div>
                     </div>
                 `;
+                container.appendChild(div);
             });
+        }
+
+        function iniciarDrag(e, id, campoPos, campoSize) {
+            if(e.target.getAttribute('contenteditable')) return;
+            
+            // Remover seleção anterior
+            document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
+            
+            const target = e.currentTarget;
+            target.classList.add('selecionado');
+            
+            selectedInfo = { id, campoPos, campoSize };
+            dragElement = target;
+            
+            const startY = e.clientY;
+            const startTop = parseInt(target.style.top) || 0;
+
+            // Atualiza o slider de tamanho para o valor atual do item
+            const c = cartazes.find(item => item.id === id);
+            target.parentElement.querySelector('input[type="range"]').value = c[campoSize];
+
+            document.onmousemove = (ev) => {
+                const delta = ev.clientY - startY;
+                const novaPos = startTop + delta;
+                target.style.top = novaPos + "px";
+                c[campoPos] = novaPos;
+            };
+
+            document.onmouseup = () => {
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+        }
+
+        function mudarTamanho(id, val) {
+            if(!selectedInfo || selectedInfo.id !== id) return;
+            
+            const c = cartazes.find(item => item.id === id);
+            c[selectedInfo.fSize || selectedInfo.campoSize] = parseFloat(val);
+            
+            const el = document.getElementById(selectedInfo.campoPos.replace('pos', '').toLowerCase() + '-' + id);
+            
+            if(selectedInfo.campoSize === 'fPreco') {
+                // Ajuste especial para o bloco de preço (proporcional)
+                renderizar(); 
+            } else {
+                el.style.fontSize = val + "rem";
+            }
+        }
+
+        function remover(id) {
+            cartazes = cartazes.filter(c => c.id !== id);
+            renderizar();
         }
     </script>
 </body>
