@@ -41,39 +41,41 @@
         .layout-2 .cartaz-item { height: 148.5mm; }
         .layout-4 .cartaz-item { height: 148.5mm; }
 
+        /* Elementos Móveis */
+        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; }
+        .movel:hover { outline: 2px dashed var(--azul); background: rgba(9, 132, 227, 0.03); }
+        
         /* Selos */
-        .selo-topo { width: 120%; padding: 15px 0; transform: rotate(-1deg); position: absolute; top: -5px; left: -10%; z-index: 1; pointer-events: none; }
-        .selo-topo span { font-size: 4.5rem; color: #fff; display: block; }
+        .selo-topo { width: 120%; padding: 15px 0; transform: rotate(-1deg); left: -10%; }
+        .selo-topo span { font-size: 4.5rem; color: #fff; display: block; pointer-events: none; }
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
         .tema-bebidas { background: var(--azul); }
         .tema-validade { background: var(--laranja); }
         .tema-unidades { background: var(--roxo); }
 
-        /* Elementos Móveis e Editáveis */
-        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; }
-        .movel:hover { outline: 1px dashed var(--azul); }
-        [contenteditable="true"]:focus { outline: 2px solid var(--azul); background: rgba(9, 132, 227, 0.05); }
-
+        /* Textos */
         .nome-produto { color: #444; text-transform: uppercase; line-height: 1; }
         .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.85; }
         .gramatura { color: #333; font-weight: bold; line-height: 1; }
 
         /* Preço */
-        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); }
+        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); pointer-events: none;}
         .rs { margin-top: 8%; margin-right: 5px; font-weight: 900; }
         .reais { line-height: 0.7; letter-spacing: -5px; font-weight: 900; }
         .dir-box { display: flex; flex-direction: column; margin-top: 8%; text-align: left; }
         .centavos { line-height: 0.8; border-bottom: 0.1em solid; font-weight: 900; }
         .unidade-txt { font-weight: 900; color: #000; text-transform: uppercase; }
 
-        /* Controles Flutuantes Restaurados e Ampliados */
+        [contenteditable="true"] { cursor: text; user-select: text; }
+        [contenteditable="true"]:focus { outline: none; background: #fff3cd; }
+
+        /* Controles */
         .controles-item { 
             position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
             display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,0.95);
             padding: 8px; border: 2px solid #333; border-radius: 8px; z-index: 100;
         }
-        .control-group { display: flex; flex-direction: column; align-items: center; font-size: 8px; font-weight: bold; }
         .btn-small { width: 28px; height: 28px; border: 1px solid #333; background: #fff; cursor: pointer; font-size: 16px; border-radius: 4px; }
         .btn-delete { position: absolute; top: 10px; right: 10px; background: var(--vermelho); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; z-index: 101; font-size: 20px; }
 
@@ -88,10 +90,10 @@
 <body>
 
     <div class="painel">
-        <h2 style="text-align:center; margin:0 0 15px 0;">🛒 Cartazista Pro - Versão Ultra</h2>
+        <h2 style="text-align:center; margin:0 0 15px 0;">🛒 Cartazista Pro - Mobilidade Total</h2>
         <div class="grid-inputs">
             <div class="input-group"><label>Layout</label>
-                <select id="selLayout" onchange="renderizar()">
+                <select id="selLayout">
                     <option value="layout-4">4 Por Folha</option>
                     <option value="layout-2">2 Por Folha</option>
                     <option value="layout-1">1 Por Folha</option>
@@ -140,9 +142,9 @@
         function adicionar() {
             const layout = document.getElementById('selLayout').value;
             const config = {
-                'layout-1': { p: 2.5, m: 12, r: 30, g: 2.2, posP: 250, pos$: 600 },
-                'layout-2': { p: 1.5, m: 7, r: 18, g: 1.3, posP: 120, pos$: 300 },
-                'layout-4': { p: 1, m: 4.5, r: 11, g: 0.9, posP: 100, pos$: 280 }
+                'layout-1': { p: 2.5, m: 12, r: 30, g: 2.2, posS: -5, posP: 250, posPre: 600 },
+                'layout-2': { p: 1.5, m: 7, r: 18, g: 1.3, posS: -5, posP: 120, posPre: 300 },
+                'layout-4': { p: 1, m: 4.5, r: 11, g: 0.9, posS: -5, posP: 100, posPre: 280 }
             }[layout];
 
             cartazes.push({
@@ -156,7 +158,7 @@
                 c: document.getElementById('inC').value.toString().padStart(2, '0'),
                 u: document.getElementById('inU').value.toUpperCase(),
                 fP: config.p, fM: config.m, fR: config.r, fG: config.g,
-                posProd: config.posP, posPreco: config.pos$ ,
+                posSelo: config.posS, posProd: config.posP, posPreco: config.posPre,
                 familia: document.getElementById('selFonte').value
             });
             renderizar();
@@ -172,12 +174,11 @@
             renderizar();
         }
 
-        // Sistema de Arraste
         function startDrag(e, id, campoPos) {
-            if(e.target.getAttribute('contenteditable')) return; // Não arrasta se estiver editando texto
+            if(e.target.getAttribute('contenteditable')) return; 
             dragElement = { id, campoPos };
             startY = e.clientY;
-            const el = e.currentTarget;
+            const el = document.getElementById(`${campoPos}-${id}`);
             startTop = parseInt(el.style.top) || 0;
             document.onmousemove = doDrag;
             document.onmouseup = stopDrag;
@@ -186,10 +187,11 @@
         function doDrag(e) {
             if (!dragElement) return;
             const delta = e.clientY - startY;
+            const novaPos = startTop + delta;
             const c = cartazes.find(item => item.id === dragElement.id);
-            c[dragElement.campoPos] = startTop + delta;
+            c[dragElement.campoPos] = novaPos;
             const el = document.getElementById(`${dragElement.campoPos}-${dragElement.id}`);
-            if(el) el.style.top = (startTop + delta) + "px";
+            if(el) el.style.top = novaPos + "px";
         }
 
         function stopDrag() { dragElement = null; document.onmousemove = null; document.onmouseup = null; }
@@ -205,29 +207,27 @@
                         <button class="btn-delete" onclick="remover(${c.id})">✕</button>
                         
                         <div class="controles-item">
-                            <div class="control-group">PROD<div class="btns-row">
-                                <button class="btn-small" onclick="ajustar(${c.id},'fP',-0.1)">-</button>
-                                <button class="btn-small" onclick="ajustar(${c.id},'fP',0.1)">+</button>
-                            </div></div>
-                            <div class="control-group">MARCA<div class="btns-row">
-                                <button class="btn-small" onclick="ajustar(${c.id},'fM',-0.2)">-</button>
-                                <button class="btn-small" onclick="ajustar(${c.id},'fM',0.2)">+</button>
-                            </div></div>
-                            <div class="control-group">PREÇO<div class="btns-row">
-                                <button class="btn-small" onclick="ajustar(${c.id},'fR',-1)">-</button>
-                                <button class="btn-small" onclick="ajustar(${c.id},'fR',1)">+</button>
-                            </div></div>
+                            <div class="control-group" style="font-size:8px">TAMANHOS</div>
+                            <button class="btn-small" onclick="ajustar(${c.id},'fP',0.1)">P+</button>
+                            <button class="btn-small" onclick="ajustar(${c.id},'fP',-0.1)">P-</button>
+                            <button class="btn-small" onclick="ajustar(${c.id},'fR',1)">$+</button>
+                            <button class="btn-small" onclick="ajustar(${c.id},'fR',-1)">$-</button>
                         </div>
 
-                        <div class="selo-topo ${c.tema}"><span>${c.temaTxt}</span></div>
+                        <div id="posSelo-${c.id}" class="movel selo-topo ${c.tema}" 
+                             style="top: ${c.posSelo}px" onmousedown="startDrag(event, ${c.id}, 'posSelo')">
+                             <span contenteditable="true">${c.temaTxt}</span>
+                        </div>
                         
-                        <div id="posProd-${c.id}" class="movel" style="top: ${c.posProd}px" onmousedown="startDrag(event, ${c.id}, 'posProd')">
+                        <div id="posProd-${c.id}" class="movel" 
+                             style="top: ${c.posProd}px" onmousedown="startDrag(event, ${c.id}, 'posProd')">
                             <div contenteditable="true" class="nome-produto" style="font-size: ${c.fP}rem">${c.prod}</div>
                             <div contenteditable="true" class="marca-produto" style="font-size: ${c.fM}rem">${c.marca}</div>
                             <div contenteditable="true" class="gramatura" style="font-size: ${c.fG}rem">${c.gram}</div>
                         </div>
 
-                        <div id="posPreco-${c.id}" class="movel" style="top: ${c.posPreco}px" onmousedown="startDrag(event, ${c.id}, 'posPreco')">
+                        <div id="posPreco-${c.id}" class="movel" 
+                             style="top: ${c.posPreco}px" onmousedown="startDrag(event, ${c.id}, 'posPreco')">
                             <div class="preco-box">
                                 <span class="rs" style="font-size: ${c.fR * 0.12}rem">R$</span>
                                 <span contenteditable="true" class="reais" style="font-size: ${c.fR}rem">${c.r}</span>
