@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro - Edição Dinâmica</title>
+    <title>Cartazista Pro - Versão Temática Final</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@700&display=swap');
 
@@ -15,146 +15,156 @@
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 
-        .painel { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 20px; width: 100%; max-width: 950px; border-top: 6px solid var(--vermelho); }
-        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px; }
-        .input-group { display: flex; flex-direction: column; }
-        label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 3px; }
-        input, select { padding: 10px; border: 2px solid #eee; border-radius: 6px; font-size: 14px; }
+        /* Painel Admin */
+        .painel { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; width: 100%; max-width: 950px; border-top: 6px solid var(--vermelho); }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        input, select { padding: 8px; border: 2px solid #eee; border-radius: 6px; font-size: 14px; width: 100%; }
         
-        .botoes-topo { display: flex; gap: 8px; margin-top: 10px; }
-        button { cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        .btn-add { flex: 2; background: var(--preto); color: #fff; padding: 15px; border: none; border-radius: 6px; }
-        .btn-print { flex: 1; background: var(--vermelho); color: #fff; padding: 15px; border: none; border-radius: 6px; }
+        .btn-add { width: 100%; background: var(--preto); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
+        .btn-print { width: 100%; background: var(--vermelho); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
+        /* Área de Impressão */
         #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
         .layout-1 { grid-template-columns: 1fr; }
-        .layout-2 { grid-template-columns: 1fr; gap: 2mm; }
-        .layout-4 { grid-template-columns: 1fr 1fr; gap: 1mm; }
+        .layout-2 { grid-template-columns: 1fr; }
+        .layout-4 { grid-template-columns: 1fr 1fr; }
 
         .cartaz-item { 
             width: 100%; position: relative; overflow: hidden; 
             border: 1px dashed #ccc; background: #fff; text-align: center;
+            page-break-inside: avoid;
         }
         .layout-1 .cartaz-item { height: 297mm; }
-        .layout-2 .cartaz-item { height: 148.5mm; }
-        .layout-4 .cartaz-item { height: 148.5mm; }
+        .layout-2 .cartaz-item { height: 148.5mm; border-bottom: 1px solid #eee; }
+        .layout-4 .cartaz-item { height: 148.5mm; border: 0.5px solid #eee; }
 
-        /* Estilo para Itens Móveis */
-        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; transition: outline 0.2s; }
-        .movel:hover { outline: 2px dashed #ccc; }
-        .selecionado { outline: 3px solid var(--azul) !important; z-index: 10; background: rgba(9, 132, 227, 0.05); }
+        /* Elementos Móveis */
+        .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; user-select: none; border: 2px solid transparent; }
+        .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); }
 
-        .selo-topo { width: 120%; padding: 15px 0; transform: rotate(-1deg); left: -10%; }
-        .selo-topo span { font-size: 4.5rem; color: #fff; display: block; }
+        /* Selos e Temas */
+        .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; }
+        .selo-topo span { color: #fff; display: block; font-weight: 900; }
+        
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
         .tema-bebidas { background: var(--azul); }
         .tema-validade { background: var(--laranja); }
-        .tema-unidades { background: var(--roxo); }
+        .tema-limpeza { background: var(--roxo); }
 
         .nome-produto { color: #444; text-transform: uppercase; line-height: 1; }
-        .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.85; }
-        .gramatura { color: #333; font-weight: bold; line-height: 1; }
+        .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.8; }
+        .gramatura { color: #333; font-weight: bold; }
 
+        /* Preço */
         .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); }
-        .rs { margin-top: 8%; margin-right: 5px; font-weight: 900; }
+        .rs { margin-top: 5%; margin-right: 5px; font-weight: 900; }
         .reais { line-height: 0.7; letter-spacing: -5px; font-weight: 900; }
-        .dir-box { display: flex; flex-direction: column; margin-top: 8%; text-align: left; }
-        .centavos { line-height: 0.8; border-bottom: 0.1em solid; font-weight: 900; }
-        .unidade-txt { font-weight: 900; color: #000; text-transform: uppercase; }
+        .dir-box { display: flex; flex-direction: column; margin-top: 5%; text-align: left; }
+        .centavos { line-height: 0.8; border-bottom: 4px solid; font-weight: 900; }
+        .unidade-txt { font-weight: 900; color: #000; }
 
-        /* Widget de Tamanho Flutuante */
-        .ajuste-tamanho {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-            background: #fff; border: 2px solid var(--azul); padding: 10px;
-            border-radius: 20px; z-index: 1000; display: flex; flex-direction: column; align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        /* Controles flutuantes */
+        #controles-flutuantes {
+            position: fixed; bottom: 20px; left: 20px; background: #fff;
+            padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 9999; display: none; border: 2px solid var(--azul); width: 240px;
         }
-        .ajuste-tamanho input { writing-mode: bt-lr; appearance: slider-vertical; width: 8px; height: 150px; }
-
-        .btn-delete { position: absolute; top: 5px; right: 5px; background: #000; color: #fff; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 101; font-size: 14px; opacity: 0.3; }
-        .btn-delete:hover { opacity: 1; background: red; }
+        .ctrl-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+        .btn-acoes { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 105; }
+        .btn-circular { width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+        .btn-clone { background: var(--azul); }
+        .btn-del { background: #000; }
 
         @media print {
-            .painel, .ajuste-tamanho, .btn-delete { display: none !important; }
-            #container-impressao { width: 100%; border: none; }
-            .cartaz-item { border: none !important; page-break-after: always; outline: none !important; }
-            .selecionado { outline: none !important; }
+            body { background: #fff; padding: 0; }
+            .painel, #controles-flutuantes, .btn-acoes { display: none !important; }
+            #container-impressao { width: 210mm; height: 297mm; border: none; }
+            .cartaz-item { border: none !important; }
+            .selecionado { border: none !important; background: none !important; }
         }
     </style>
 </head>
 <body>
 
     <div class="painel">
-        <h2 style="text-align:center; margin:0 0 15px 0;">🛒 Cartazista Pro - Customizador</h2>
         <div class="grid-inputs">
-            <div class="input-group"><label>Layout</label>
-                <select id="selLayout">
-                    <option value="layout-4">4 Por Folha</option>
-                    <option value="layout-2">2 Por Folha</option>
-                    <option value="layout-1">1 Por Folha</option>
-                </select>
-            </div>
-            <div class="input-group"><label>Fonte</label>
-                <select id="selFonte">
-                    <option value="'Archivo Black', sans-serif">Padrão</option>
-                    <option value="'Oswald', sans-serif">Condensada</option>
-                </select>
-            </div>
-            <div class="input-group"><label>Tema</label>
-                <select id="selTema">
-                    <option value="tema-oferta">OFERTA</option>
-                    <option value="tema-horti">HORTIFRUTI</option>
-                    <option value="tema-bebidas">BEBIDAS</option>
-                    <option value="tema-validade">VALIDADE</option>
-                </select>
-            </div>
-        </div>
-        <div class="grid-inputs">
+            <select id="selLayout">
+                <option value="layout-4">4 Por Folha</option>
+                <option value="layout-2">2 Por Folha</option>
+                <option value="layout-1">1 Por Folha</option>
+            </select>
+            <select id="selTemaBase">
+                <option value="tema-oferta">OFERTA (Vermelho)</option>
+                <option value="tema-horti">HORTIFRUTI (Verde)</option>
+                <option value="tema-bebidas">BEBIDAS (Azul)</option>
+                <option value="tema-validade">VALIDADE (Laranja)</option>
+                <option value="tema-limpeza">LIMPEZA (Roxo)</option>
+            </select>
             <input type="text" id="inProd" placeholder="Produto">
             <input type="text" id="inMarca" placeholder="Marca">
             <input type="text" id="inGram" placeholder="Gramatura">
-            <input type="number" id="inR" value="0" style="width: 60px">
-            <input type="number" id="inC" value="00" style="width: 50px">
+            <input type="number" id="inR" placeholder="Reais">
+            <input type="number" id="inC" placeholder="00">
         </div>
-        <div class="botoes-topo">
-            <button class="btn-add" onclick="adicionar()">➕ Criar Cartaz</button>
-            <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn-add" onclick="adicionar()">➕ Criar Novo Cartaz</button>
+        <button class="btn-print" onclick="window.print()">🖨️ Imprimir Tudo</button>
+    </div>
+
+    <div id="controles-flutuantes">
+        <div style="font-size: 11px; font-weight: bold; color: var(--azul);">EDITANDO: <span id="txt-editando">-</span></div>
+        
+        <div class="ctrl-row" id="row-tema" style="display:none;">
+            <label style="font-size:10px">COR:</label>
+            <select id="changeTema" onchange="atualizarTema(this.value)" style="font-size:10px">
+                <option value="tema-oferta">Vermelho</option>
+                <option value="tema-horti">Verde</option>
+                <option value="tema-bebidas">Azul</option>
+                <option value="tema-validade">Laranja</option>
+                <option value="tema-limpeza">Roxo</option>
+            </select>
         </div>
+
+        <div class="ctrl-row">
+            <label style="font-size:10px">TAM:</label>
+            <input type="number" id="num-fonte" step="0.1" oninput="atualizarFonte(this.value)">
+        </div>
+        <input type="range" id="range-fonte" min="0.5" max="50" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
+        
+        <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:5px; border-radius:4px;">OK / FECHAR</button>
     </div>
 
     <div id="container-impressao" class="layout-4"></div>
 
     <script>
         let cartazes = [];
-        let dragElement = null;
-        let selectedInfo = null; // Armazena qual elemento do cartaz está selecionado
+        let itemSelecionado = null;
 
-        function adicionar() {
-            const layout = document.getElementById('selLayout').value;
-            const config = {
-                'layout-1': { p: 5, m: 3, g: 2, r: 35 },
-                'layout-2': { p: 3, m: 2, g: 1.5, r: 20 },
-                'layout-4': { p: 1.8, m: 1.2, g: 0.8, r: 12 }
-            }[layout];
+        function adicionar(dadosClonados = null) {
+            let novo;
+            if (dadosClonados) {
+                novo = { ...dadosClonados, id: Date.now() };
+            } else {
+                const layout = document.getElementById('selLayout').value;
+                const config = {
+                    'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750 },
+                    'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400 },
+                    'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250 }
+                }[layout];
 
-            const novo = {
-                id: Date.now(),
-                tema: document.getElementById('selTema').value,
-                temaTxt: document.getElementById('selTema').options[document.getElementById('selTema').selectedIndex].text,
-                prod: document.getElementById('inProd').value.toUpperCase(),
-                marca: document.getElementById('inMarca').value.toUpperCase(),
-                gram: document.getElementById('inGram').value,
-                r: document.getElementById('inR').value,
-                c: document.getElementById('inC').value.padStart(2, '0'),
-                u: "UN",
-                familia: document.getElementById('selFonte').value,
-                // Posições Iniciais
-                posSelo: 0, posProd: 120, posMarca: 180, posGram: 220, posPreco: 300,
-                // Tamanhos Iniciais (rem)
-                fSelo: 4, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r
-            };
-
+                novo = {
+                    id: Date.now(),
+                    tema: document.getElementById('selTemaBase').value,
+                    temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text.split(' ')[0],
+                    prod: document.getElementById('inProd').value.toUpperCase() || 'PRODUTO',
+                    marca: document.getElementById('inMarca').value.toUpperCase() || 'MARCA',
+                    gram: document.getElementById('inGram').value || 'UN',
+                    r: document.getElementById('inR').value || '0',
+                    c: document.getElementById('inC').value.padStart(2, '0') || '00',
+                    posSelo: config.ps, posProd: config.pp, posMarca: config.pm, posGram: config.pg, posPreco: config.ppre,
+                    fSelo: config.s, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r
+                };
+            }
             cartazes.push(novo);
             renderizar();
         }
@@ -165,99 +175,107 @@
             container.innerHTML = "";
 
             cartazes.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'cartaz-item';
-                div.style.fontFamily = c.familia;
-                div.innerHTML = `
-                    <button class="btn-delete" onclick="remover(${c.id})">✕</button>
+                const item = document.createElement('div');
+                item.className = 'cartaz-item';
+                item.innerHTML = `
+                    <div class="btn-acoes">
+                        <button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button>
+                        <button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button>
+                    </div>
                     
-                    <div class="ajuste-tamanho">
-                        <label style="font-size:8px">TAM</label>
-                        <input type="range" min="0.5" max="50" step="0.1" oninput="mudarTamanho(${c.id}, this.value)">
+                    <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')">
+                        <span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span>
                     </div>
 
-                    <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posSelo', 'fSelo')">
-                        <span contenteditable="true">${c.temaTxt}</span>
+                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')">
+                        <span ondblclick="habilitarEdicao(this)">${c.prod}</span>
                     </div>
 
-                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posProd', 'fProd')">
-                        <span contenteditable="true">${c.prod}</span>
+                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')">
+                        <span ondblclick="habilitarEdicao(this)">${c.marca}</span>
                     </div>
 
-                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posMarca', 'fMarca')">
-                        <span contenteditable="true">${c.marca}</span>
+                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')">
+                        <span ondblclick="habilitarEdicao(this)">${c.gram}</span>
                     </div>
 
-                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="iniciarDrag(event, ${c.id}, 'posGram', 'fGram')">
-                        <span contenteditable="true">${c.gram}</span>
-                    </div>
-
-                    <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="iniciarDrag(event, ${c.id}, 'posPreco', 'fPreco')">
+                    <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="setupInteracao(event, ${c.id}, 'fPreco', 'posPreco', 'PREÇO')">
                         <div class="preco-box">
-                            <span class="rs" style="font-size: ${c.fPreco * 0.15}rem">R$</span>
-                            <span contenteditable="true" class="reais" style="font-size: ${c.fPreco}rem">${c.r}</span>
+                            <span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span>
+                            <span class="reais" style="font-size:${c.fPreco}rem" ondblclick="habilitarEdicao(this)">${c.r}</span>
                             <div class="dir-box">
-                                <span contenteditable="true" class="centavos" style="font-size: ${c.fPreco * 0.4}rem">${c.c}</span>
-                                <span contenteditable="true" class="unidade-txt" style="font-size: ${c.fPreco * 0.1}rem">${c.u}</span>
+                                <span class="centavos" style="font-size:${c.fPreco*0.4}rem" ondblclick="habilitarEdicao(this)">${c.c}</span>
+                                <span class="unidade-txt" style="font-size:${c.fPreco*0.1}rem">UN</span>
                             </div>
                         </div>
                     </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(item);
             });
         }
 
-        function iniciarDrag(e, id, campoPos, campoSize) {
-            if(e.target.getAttribute('contenteditable')) return;
-            
-            // Remover seleção anterior
+        function setupInteracao(e, id, campoSize, campoPos, label) {
+            if(e.target.contentEditable === "true") return;
             document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
-            
-            const target = e.currentTarget;
-            target.classList.add('selecionado');
-            
-            selectedInfo = { id, campoPos, campoSize };
-            dragElement = target;
-            
-            const startY = e.clientY;
-            const startTop = parseInt(target.style.top) || 0;
+            e.currentTarget.classList.add('selecionado');
 
-            // Atualiza o slider de tamanho para o valor atual do item
-            const c = cartazes.find(item => item.id === id);
-            target.parentElement.querySelector('input[type="range"]').value = c[campoSize];
+            itemSelecionado = { id, campoSize, campoPos, el: e.currentTarget };
+            const c = cartazes.find(x => x.id === id);
+
+            document.getElementById('controles-flutuantes').style.display = 'block';
+            document.getElementById('txt-editando').innerText = label;
+            document.getElementById('num-fonte').value = c[campoSize];
+            document.getElementById('range-fonte').value = c[campoSize];
+            
+            // Mostrar opção de trocar cor se for o Selo/Tema
+            document.getElementById('row-tema').style.display = (label === 'TEMA') ? 'flex' : 'none';
+            if(label === 'TEMA') document.getElementById('changeTema').value = c.tema;
+
+            let startY = e.clientY;
+            let startTop = parseInt(e.currentTarget.style.top);
 
             document.onmousemove = (ev) => {
-                const delta = ev.clientY - startY;
-                const novaPos = startTop + delta;
-                target.style.top = novaPos + "px";
+                let delta = ev.clientY - startY;
+                let novaPos = startTop + delta;
+                e.currentTarget.style.top = novaPos + "px";
                 c[campoPos] = novaPos;
             };
 
-            document.onmouseup = () => {
-                document.onmousemove = null;
-                document.onmouseup = null;
-            };
+            document.onmouseup = () => { document.onmousemove = null; document.onmouseup = null; };
         }
 
-        function mudarTamanho(id, val) {
-            if(!selectedInfo || selectedInfo.id !== id) return;
-            
-            const c = cartazes.find(item => item.id === id);
-            c[selectedInfo.fSize || selectedInfo.campoSize] = parseFloat(val);
-            
-            const el = document.getElementById(selectedInfo.campoPos.replace('pos', '').toLowerCase() + '-' + id);
-            
-            if(selectedInfo.campoSize === 'fPreco') {
-                // Ajuste especial para o bloco de preço (proporcional)
-                renderizar(); 
-            } else {
-                el.style.fontSize = val + "rem";
-            }
+        function atualizarTema(novaCor) {
+            const c = cartazes.find(x => x.id === itemSelecionado.id);
+            c.tema = novaCor;
+            renderizar();
+        }
+
+        function atualizarFonte(val) {
+            const c = cartazes.find(x => x.id === itemSelecionado.id);
+            c[itemSelecionado.campoSize] = parseFloat(val);
+            document.getElementById('num-fonte').value = val;
+            if(itemSelecionado.campoSize === 'fPreco') renderizar();
+            else itemSelecionado.el.style.fontSize = val + "rem";
+        }
+
+        function clonar(id) {
+            const original = cartazes.find(c => c.id === id);
+            if (original) adicionar(JSON.parse(JSON.stringify(original)));
         }
 
         function remover(id) {
-            cartazes = cartazes.filter(c => c.id !== id);
+            cartazes = cartazes.filter(x => x.id !== id);
             renderizar();
+        }
+
+        function habilitarEdicao(el) {
+            el.contentEditable = "true"; el.focus();
+            el.onblur = () => el.contentEditable = "false";
+        }
+
+        function fecharControles() {
+            document.getElementById('controles-flutuantes').style.display = 'none';
+            document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
         }
     </script>
 </body>
