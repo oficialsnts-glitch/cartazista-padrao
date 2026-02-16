@@ -46,7 +46,7 @@
         .btn-add { width: 100%; background: var(--preto); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         .btn-print { width: 100%; background: var(--vermelho); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        /* CONTAINER DE IMPRESSÃO - CORE DO PROBLEMA RESOLVIDO */
+        /* CONTAINER DE IMPRESSÃO */
         #container-impressao { 
             width: 210mm; 
             background: #fff; 
@@ -64,21 +64,18 @@
             overflow: hidden; 
             background: #fff; 
             text-align: center;
-            outline: 1px dashed var(--cor-corte); /* Linha de corte visível na tela */
+            outline: 1px dashed var(--cor-corte);
         }
 
-        /* Alturas fixas para A4 */
         .layout-1 .cartaz-item { height: 297mm; }
         .layout-2 .cartaz-item { height: 148.5mm; }
         .layout-4 .cartaz-item { height: 148.5mm; }
 
-        /* ELEMENTOS DO CARTAZ */
         .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; border: 2px solid transparent; }
         .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); z-index: 10; }
         .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; }
         .selo-topo span { color: #fff; display: block; font-weight: 900; }
         
-        /* Nova classe para imagem de cabeçalho */
         .img-header { width: 100%; height: auto; display: block; }
         .selo-imagem { width: 100%; left: 0; transform: none; padding: 0; }
 
@@ -98,7 +95,6 @@
         .centavos { line-height: 0.8; border-bottom: 4px solid; font-weight: 900; }
         .unidade-txt { font-weight: 900; color: #000; }
 
-        /* CONTROLES */
         #controles-flutuantes {
             position: fixed; bottom: 20px; left: 20px; background: #fff;
             padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -110,17 +106,12 @@
         .btn-clone { background: var(--azul); }
         .btn-del { background: #000; }
 
-        /* AJUSTES DE IMPRESSÃO */
         @media print {
             @page { size: A4; margin: 0; }
             body { background: #fff; padding: 0; margin: 0; }
             .painel, #controles-flutuantes, .btn-acoes, #splash { display: none !important; }
             #container-impressao { width: 210mm; height: 297mm; }
-            .cartaz-item { 
-                outline: none; 
-                border: 0.1mm dotted #000 !important; /* Linha de corte pontilhada na impressão */
-            }
-            /* Forçar quebra de página */
+            .cartaz-item { outline: none; border: 0.1mm dotted #000 !important; }
             .layout-2 .cartaz-item:nth-child(2n),
             .layout-4 .cartaz-item:nth-child(4n) { page-break-after: always; }
         }
@@ -141,7 +132,7 @@
                 <option value="layout-2">2 Por Folha (A5)</option>
                 <option value="layout-1">1 Por Folha (A4)</option>
             </select>
-            <select id="selTemaBase">
+            <select id="selTemaBase" onchange="atualizarAoDigitar()">
                 <option value="tema-oferta">OFERTA</option>
                 <option value="tema-horti">HORTIFRUTI</option>
                 <option value="tema-bebidas">BEBIDAS</option>
@@ -150,13 +141,13 @@
                 <option value="tema-imagem">USAR MINHA IMAGEM</option>
             </select>
             <input type="file" id="inImgHeader" accept="image/*" style="display:none" onchange="processarImagem(this)">
-            <input type="text" id="inProd" placeholder="Produto (Ex: Arroz)">
-            <input type="text" id="inMarca" placeholder="Marca (Ex: Tio João)">
-            <input type="text" id="inGram" placeholder="Gramatura (Ex: 5kg)">
-            <input type="number" id="inR" placeholder="Reais">
-            <input type="number" id="inC" placeholder="Centavos">
+            <input type="text" id="inProd" placeholder="Produto" oninput="atualizarAoDigitar()" onkeydown="if(event.key==='Enter') novaEntrada()">
+            <input type="text" id="inMarca" placeholder="Marca" oninput="atualizarAoDigitar()" onkeydown="if(event.key==='Enter') novaEntrada()">
+            <input type="text" id="inGram" placeholder="Gramatura" oninput="atualizarAoDigitar()" onkeydown="if(event.key==='Enter') novaEntrada()">
+            <input type="number" id="inR" placeholder="Reais" oninput="atualizarAoDigitar()" onkeydown="if(event.key==='Enter') novaEntrada()">
+            <input type="number" id="inC" placeholder="Centavos" oninput="atualizarAoDigitar()" onkeydown="if(event.key==='Enter') novaEntrada()">
         </div>
-        <button class="btn-add" onclick="adicionar()">➕ Criar Novo Cartaz</button>
+        <button class="btn-add" onclick="novaEntrada()">➕ Finalizar e Criar Novo</button>
         <button class="btn-print" onclick="window.print()">🖨️ Imprimir Tudo</button>
     </div>
 
@@ -189,53 +180,68 @@
 
         window.addEventListener('load', () => {
             setTimeout(() => document.getElementById('splash').classList.add('splash-hidden'), 2000); 
+            novaEntrada(); // Inicia com um cartaz vazio pronto para edição
         });
 
-        // Monitora seleção de tema para abrir upload de arquivo
         document.getElementById('selTemaBase').addEventListener('change', function() {
-            if(this.value === 'tema-imagem') {
-                document.getElementById('inImgHeader').click();
-            }
+            if(this.value === 'tema-imagem') document.getElementById('inImgHeader').click();
         });
 
         function processarImagem(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => imagemBase64 = e.target.result;
+                reader.onload = (e) => {
+                    imagemBase64 = e.target.result;
+                    atualizarAoDigitar();
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        function adicionar(dadosClonados = null) {
-            let novo;
-            if (dadosClonados) {
-                novo = { ...dadosClonados, id: Date.now() };
-            } else {
-                const layout = document.getElementById('selLayout').value;
-                const config = {
-                    'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750, imgS: 100 },
-                    'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400, imgS: 100 },
-                    'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250, imgS: 100 }
-                }[layout];
+        // Esta função cria um NOVO espaço de cartaz e limpa os campos
+        function novaEntrada() {
+            const layout = document.getElementById('selLayout').value;
+            const config = {
+                'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750, imgS: 100 },
+                'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400, imgS: 100 },
+                'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250, imgS: 100 }
+            }[layout];
 
-                const temaSel = document.getElementById('selTemaBase').value;
-
-                novo = {
-                    id: Date.now(),
-                    tema: temaSel,
-                    temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text,
-                    imgData: temaSel === 'tema-imagem' ? imagemBase64 : "",
-                    prod: document.getElementById('inProd').value.toUpperCase() || 'PRODUTO',
-                    marca: document.getElementById('inMarca').value.toUpperCase() || 'MARCA',
-                    gram: document.getElementById('inGram').value || 'UN',
-                    r: document.getElementById('inR').value || '0',
-                    c: document.getElementById('inC').value.padStart(2, '0') || '00',
-                    posSelo: config.ps, posProd: config.pp, posMarca: config.pm, posGram: config.pg, posPreco: config.ppre,
-                    fSelo: config.s, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r,
-                    imgSize: config.imgS // Tamanho da imagem em %
-                };
-            }
+            const novo = {
+                id: Date.now(),
+                tema: document.getElementById('selTemaBase').value,
+                temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text,
+                imgData: imagemBase64,
+                prod: 'PRODUTO', marca: 'MARCA', gram: 'UN', r: '0', c: '00',
+                posSelo: config.ps, posProd: config.pp, posMarca: config.pm, posGram: config.pg, posPreco: config.ppre,
+                fSelo: config.s, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r, imgSize: config.imgS
+            };
+            
             cartazes.push(novo);
+            // Limpa campos para o próximo
+            document.getElementById('inProd').value = "";
+            document.getElementById('inMarca').value = "";
+            document.getElementById('inGram').value = "";
+            document.getElementById('inR').value = "";
+            document.getElementById('inC').value = "";
+            document.getElementById('inProd').focus();
+            renderizar();
+        }
+
+        // Esta função atualiza o ÚLTIMO cartaz da lista enquanto você digita
+        function atualizarAoDigitar() {
+            if (cartazes.length === 0) return;
+            const c = cartazes[cartazes.length - 1];
+            
+            c.tema = document.getElementById('selTemaBase').value;
+            c.temaTxt = document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text;
+            c.imgData = c.tema === 'tema-imagem' ? imagemBase64 : "";
+            c.prod = document.getElementById('inProd').value.toUpperCase() || 'PRODUTO';
+            c.marca = document.getElementById('inMarca').value.toUpperCase() || 'MARCA';
+            c.gram = document.getElementById('inGram').value || 'UN';
+            c.r = document.getElementById('inR').value || '0';
+            c.c = document.getElementById('inC').value.padStart(2, '0') || '00';
+            
             renderizar();
         }
 
@@ -247,54 +253,25 @@
             cartazes.forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'cartaz-item';
-                
-                let cabecalhoHTML = "";
-                if(c.tema === 'tema-imagem') {
-                    cabecalhoHTML = `
-                        <div id="selo-${c.id}" class="movel selo-imagem" style="top:${c.posSelo}px; width:${c.imgSize}%" onmousedown="setupInteracao(event, ${c.id}, 'imgSize', 'posSelo', 'IMAGEM')">
-                            <img src="${c.imgData || 'https://via.placeholder.com/400x100?text=Sem+Imagem'}" class="img-header">
-                        </div>
-                    `;
-                } else {
-                    cabecalhoHTML = `
-                        <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')">
-                            <span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span>
-                        </div>
-                    `;
-                }
+                let cabecalhoHTML = c.tema === 'tema-imagem' ? 
+                    `<div id="selo-${c.id}" class="movel selo-imagem" style="top:${c.posSelo}px; width:${c.imgSize}%" onmousedown="setupInteracao(event, ${c.id}, 'imgSize', 'posSelo', 'IMAGEM')"><img src="${c.imgData || ''}" class="img-header"></div>` :
+                    `<div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')"><span>${c.temaTxt}</span></div>`;
 
                 item.innerHTML = `
-                    <div class="btn-acoes">
-                        <button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button>
-                        <button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button>
-                    </div>
+                    <div class="btn-acoes"><button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button><button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button></div>
                     ${cabecalhoHTML}
-                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')">
-                        <span ondblclick="habilitarEdicao(this)">${c.prod}</span>
-                    </div>
-                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')">
-                        <span ondblclick="habilitarEdicao(this)">${c.marca}</span>
-                    </div>
-                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')">
-                        <span ondblclick="habilitarEdicao(this)">${c.gram}</span>
-                    </div>
+                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')"><span>${c.prod}</span></div>
+                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')"><span>${c.marca}</span></div>
+                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')"><span>${c.gram}</span></div>
                     <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="setupInteracao(event, ${c.id}, 'fPreco', 'posPreco', 'PREÇO')">
-                        <div class="preco-box">
-                            <span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span>
-                            <span class="reais" style="font-size:${c.fPreco}rem" ondblclick="habilitarEdicao(this)">${c.r}</span>
-                            <div class="dir-box">
-                                <span class="centavos" style="font-size:${c.fPreco*0.4}rem" ondblclick="habilitarEdicao(this)">${c.c}</span>
-                                <span class="unidade-txt" style="font-size:${c.fPreco*0.1}rem"></span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                        <div class="preco-box"><span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span><span class="reais" style="font-size:${c.fPreco}rem">${c.r}</span>
+                        <div class="dir-box"><span class="centavos" style="font-size:${c.fPreco*0.4}rem">${c.c}</span><span class="unidade-txt" style="font-size:${c.fPreco*0.1}rem"></span></div></div>
+                    </div>`;
                 container.appendChild(item);
             });
         }
 
         function setupInteracao(e, id, campoSize, campoPos, label) {
-            if(e.target.contentEditable === "true") return;
             document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
             const containerMovel = e.currentTarget;
             containerMovel.classList.add('selecionado');
@@ -313,10 +290,7 @@
                 containerMovel.style.top = (startTop + delta) + "px";
                 c[campoPos] = (startTop + delta);
             }
-            function stopDrag() {
-                document.removeEventListener('mousemove', doDrag);
-                document.removeEventListener('mouseup', stopDrag);
-            }
+            function stopDrag() { document.removeEventListener('mousemove', doDrag); document.removeEventListener('mouseup', stopDrag); }
             document.addEventListener('mousemove', doDrag);
             document.addEventListener('mouseup', stopDrag);
         }
@@ -324,39 +298,14 @@
         function atualizarFonte(val) {
             if(!itemSelecionado) return;
             const c = cartazes.find(x => x.id === itemSelecionado.id);
-            const v = parseFloat(val);
-            c[itemSelecionado.campoSize] = v;
-            document.getElementById('num-fonte').value = v;
-            document.getElementById('range-fonte').value = v;
-            
-            if(['fPreco', 'fSelo', 'imgSize'].includes(itemSelecionado.campoSize)) {
-                renderizar();
-                // Re-seleciona visualmente após renderizar
-                setTimeout(() => {
-                    const el = document.getElementById(`selo-${c.id}`) || document.getElementById(`preco-${c.id}`);
-                    if(el) el.classList.add('selecionado');
-                }, 10);
-            }
-            else itemSelecionado.el.style.fontSize = v + "rem";
+            c[itemSelecionado.campoSize] = parseFloat(val);
+            renderizar();
         }
 
         function atualizarTema(novaCor) {
             const c = cartazes.find(x => x.id === itemSelecionado.id);
             if(novaCor === 'tema-imagem') {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        c.tema = 'tema-imagem';
-                        c.imgData = ev.target.result;
-                        c.imgSize = 100;
-                        renderizar();
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                };
-                input.click();
+                document.getElementById('inImgHeader').click();
             } else {
                 c.tema = novaCor;
                 c.temaTxt = document.querySelector(`#changeTema option[value="${novaCor}"]`).innerText.toUpperCase();
@@ -366,17 +315,17 @@
 
         function clonar(id) {
             const original = cartazes.find(c => c.id === id);
-            if (original) adicionar(JSON.parse(JSON.stringify(original)));
+            if (original) {
+                const copia = JSON.parse(JSON.stringify(original));
+                copia.id = Date.now();
+                cartazes.push(copia);
+                renderizar();
+            }
         }
 
         function remover(id) {
             cartazes = cartazes.filter(x => x.id !== id);
             renderizar();
-        }
-
-        function habilitarEdicao(el) {
-            el.contentEditable = "true"; el.focus();
-            el.onblur = () => el.contentEditable = "false";
         }
 
         function fecharControles() {
