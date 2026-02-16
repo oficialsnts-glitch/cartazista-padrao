@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro - Master Blindada</title>
+    <title>Cartazista Pro</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -78,6 +78,10 @@
         .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; }
         .selo-topo span { color: #fff; display: block; font-weight: 900; }
         
+        /* Nova classe para imagem de cabeçalho */
+        .img-header { width: 100%; height: auto; display: block; }
+        .selo-imagem { width: 100%; left: 0; transform: none; padding: 0; }
+
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
         .tema-bebidas { background: var(--azul); }
@@ -143,7 +147,9 @@
                 <option value="tema-bebidas">BEBIDAS</option>
                 <option value="tema-validade">VALIDADE</option>
                 <option value="tema-limpeza">LIMPEZA</option>
+                <option value="tema-imagem">USAR MINHA IMAGEM</option>
             </select>
+            <input type="file" id="inImgHeader" accept="image/*" style="display:none" onchange="processarImagem(this)">
             <input type="text" id="inProd" placeholder="Produto (Ex: Arroz)">
             <input type="text" id="inMarca" placeholder="Marca (Ex: Tio João)">
             <input type="text" id="inGram" placeholder="Gramatura (Ex: 5kg)">
@@ -163,13 +169,14 @@
                 <option value="tema-bebidas">Azul</option>
                 <option value="tema-validade">Laranja</option>
                 <option value="tema-limpeza">Roxo</option>
+                <option value="tema-imagem">Minha Imagem</option>
             </select>
         </div>
         <div class="ctrl-row">
-            <label style="font-size:10px">FONTE:</label>
+            <label style="font-size:10px">TAMANHO:</label>
             <input type="number" id="num-fonte" step="0.1" oninput="atualizarFonte(this.value)">
         </div>
-        <input type="range" id="range-fonte" min="0.5" max="60" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
+        <input type="range" id="range-fonte" min="0.5" max="100" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
         <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:8px; border-radius:4px; font-weight:bold;">FECHAR</button>
     </div>
 
@@ -178,10 +185,26 @@
     <script>
         let cartazes = [];
         let itemSelecionado = null;
+        let imagemBase64 = "";
 
         window.addEventListener('load', () => {
             setTimeout(() => document.getElementById('splash').classList.add('splash-hidden'), 2000); 
         });
+
+        // Monitora seleção de tema para abrir upload de arquivo
+        document.getElementById('selTemaBase').addEventListener('change', function() {
+            if(this.value === 'tema-imagem') {
+                document.getElementById('inImgHeader').click();
+            }
+        });
+
+        function processarImagem(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => imagemBase64 = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
 
         function adicionar(dadosClonados = null) {
             let novo;
@@ -190,22 +213,26 @@
             } else {
                 const layout = document.getElementById('selLayout').value;
                 const config = {
-                    'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750 },
-                    'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400 },
-                    'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250 }
+                    'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750, imgS: 100 },
+                    'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400, imgS: 100 },
+                    'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250, imgS: 100 }
                 }[layout];
+
+                const temaSel = document.getElementById('selTemaBase').value;
 
                 novo = {
                     id: Date.now(),
-                    tema: document.getElementById('selTemaBase').value,
+                    tema: temaSel,
                     temaTxt: document.getElementById('selTemaBase').options[document.getElementById('selTemaBase').selectedIndex].text,
+                    imgData: temaSel === 'tema-imagem' ? imagemBase64 : "",
                     prod: document.getElementById('inProd').value.toUpperCase() || 'PRODUTO',
                     marca: document.getElementById('inMarca').value.toUpperCase() || 'MARCA',
                     gram: document.getElementById('inGram').value || 'UN',
                     r: document.getElementById('inR').value || '0',
                     c: document.getElementById('inC').value.padStart(2, '0') || '00',
                     posSelo: config.ps, posProd: config.pp, posMarca: config.pm, posGram: config.pg, posPreco: config.ppre,
-                    fSelo: config.s, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r
+                    fSelo: config.s, fProd: config.p, fMarca: config.m, fGram: config.g, fPreco: config.r,
+                    imgSize: config.imgS // Tamanho da imagem em %
                 };
             }
             cartazes.push(novo);
@@ -220,14 +247,28 @@
             cartazes.forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'cartaz-item';
+                
+                let cabecalhoHTML = "";
+                if(c.tema === 'tema-imagem') {
+                    cabecalhoHTML = `
+                        <div id="selo-${c.id}" class="movel selo-imagem" style="top:${c.posSelo}px; width:${c.imgSize}%" onmousedown="setupInteracao(event, ${c.id}, 'imgSize', 'posSelo', 'IMAGEM')">
+                            <img src="${c.imgData || 'https://via.placeholder.com/400x100?text=Sem+Imagem'}" class="img-header">
+                        </div>
+                    `;
+                } else {
+                    cabecalhoHTML = `
+                        <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')">
+                            <span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span>
+                        </div>
+                    `;
+                }
+
                 item.innerHTML = `
                     <div class="btn-acoes">
                         <button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button>
                         <button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button>
                     </div>
-                    <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')">
-                        <span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span>
-                    </div>
+                    ${cabecalhoHTML}
                     <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')">
                         <span ondblclick="habilitarEdicao(this)">${c.prod}</span>
                     </div>
@@ -263,7 +304,7 @@
             document.getElementById('txt-editando').innerText = label;
             document.getElementById('num-fonte').value = c[campoSize];
             document.getElementById('range-fonte').value = c[campoSize];
-            document.getElementById('row-tema').style.display = (label === 'TEMA') ? 'flex' : 'none';
+            document.getElementById('row-tema').style.display = (label === 'TEMA' || label === 'IMAGEM') ? 'flex' : 'none';
             
             let startY = e.clientY;
             let startTop = parseInt(containerMovel.style.top) || 0;
@@ -287,14 +328,40 @@
             c[itemSelecionado.campoSize] = v;
             document.getElementById('num-fonte').value = v;
             document.getElementById('range-fonte').value = v;
-            if(['fPreco', 'fSelo'].includes(itemSelecionado.campoSize)) renderizar();
+            
+            if(['fPreco', 'fSelo', 'imgSize'].includes(itemSelecionado.campoSize)) {
+                renderizar();
+                // Re-seleciona visualmente após renderizar
+                setTimeout(() => {
+                    const el = document.getElementById(`selo-${c.id}`) || document.getElementById(`preco-${c.id}`);
+                    if(el) el.classList.add('selecionado');
+                }, 10);
+            }
             else itemSelecionado.el.style.fontSize = v + "rem";
         }
 
         function atualizarTema(novaCor) {
             const c = cartazes.find(x => x.id === itemSelecionado.id);
-            c.tema = novaCor;
-            renderizar();
+            if(novaCor === 'tema-imagem') {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        c.tema = 'tema-imagem';
+                        c.imgData = ev.target.result;
+                        c.imgSize = 100;
+                        renderizar();
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                };
+                input.click();
+            } else {
+                c.tema = novaCor;
+                c.temaTxt = document.querySelector(`#changeTema option[value="${novaCor}"]`).innerText.toUpperCase();
+                renderizar();
+            }
         }
 
         function clonar(id) {
