@@ -180,7 +180,7 @@
 
         window.addEventListener('load', () => {
             setTimeout(() => document.getElementById('splash').classList.add('splash-hidden'), 2000); 
-            novaEntrada(); // Inicia com um cartaz vazio pronto para edição
+            novaEntrada();
         });
 
         document.getElementById('selTemaBase').addEventListener('change', function() {
@@ -198,7 +198,6 @@
             }
         }
 
-        // Esta função cria um NOVO espaço de cartaz e limpa os campos
         function novaEntrada() {
             const layout = document.getElementById('selLayout').value;
             const config = {
@@ -218,7 +217,6 @@
             };
             
             cartazes.push(novo);
-            // Limpa campos para o próximo
             document.getElementById('inProd').value = "";
             document.getElementById('inMarca').value = "";
             document.getElementById('inGram').value = "";
@@ -228,7 +226,6 @@
             renderizar();
         }
 
-        // Esta função atualiza o ÚLTIMO cartaz da lista enquanto você digita
         function atualizarAoDigitar() {
             if (cartazes.length === 0) return;
             const c = cartazes[cartazes.length - 1];
@@ -253,25 +250,27 @@
             cartazes.forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'cartaz-item';
+                
                 let cabecalhoHTML = c.tema === 'tema-imagem' ? 
                     `<div id="selo-${c.id}" class="movel selo-imagem" style="top:${c.posSelo}px; width:${c.imgSize}%" onmousedown="setupInteracao(event, ${c.id}, 'imgSize', 'posSelo', 'IMAGEM')"><img src="${c.imgData || ''}" class="img-header"></div>` :
-                    `<div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')"><span>${c.temaTxt}</span></div>`;
+                    `<div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')"><span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span></div>`;
 
                 item.innerHTML = `
                     <div class="btn-acoes"><button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button><button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button></div>
                     ${cabecalhoHTML}
-                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')"><span>${c.prod}</span></div>
-                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')"><span>${c.marca}</span></div>
-                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')"><span>${c.gram}</span></div>
+                    <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')"><span ondblclick="habilitarEdicao(this)">${c.prod}</span></div>
+                    <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')"><span ondblclick="habilitarEdicao(this)">${c.marca}</span></div>
+                    <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')"><span ondblclick="habilitarEdicao(this)">${c.gram}</span></div>
                     <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="setupInteracao(event, ${c.id}, 'fPreco', 'posPreco', 'PREÇO')">
-                        <div class="preco-box"><span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span><span class="reais" style="font-size:${c.fPreco}rem">${c.r}</span>
-                        <div class="dir-box"><span class="centavos" style="font-size:${c.fPreco*0.4}rem">${c.c}</span><span class="unidade-txt" style="font-size:${c.fPreco*0.1}rem"></span></div></div>
+                        <div class="preco-box"><span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span><span class="reais" style="font-size:${c.fPreco}rem" ondblclick="habilitarEdicao(this)">${c.r}</span>
+                        <div class="dir-box"><span class="centavos" style="font-size:${c.fPreco*0.4}rem" ondblclick="habilitarEdicao(this)">${c.c}</span><span class="unidade-txt" style="font-size:${c.fPreco*0.1}rem"></span></div></div>
                     </div>`;
                 container.appendChild(item);
             });
         }
 
         function setupInteracao(e, id, campoSize, campoPos, label) {
+            if(e.target.contentEditable === "true") return;
             document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
             const containerMovel = e.currentTarget;
             containerMovel.classList.add('selecionado');
@@ -300,6 +299,10 @@
             const c = cartazes.find(x => x.id === itemSelecionado.id);
             c[itemSelecionado.campoSize] = parseFloat(val);
             renderizar();
+            setTimeout(() => {
+                const el = document.getElementById(itemSelecionado.el.id);
+                if(el) el.classList.add('selecionado');
+            }, 10);
         }
 
         function atualizarTema(novaCor) {
@@ -326,6 +329,21 @@
         function remover(id) {
             cartazes = cartazes.filter(x => x.id !== id);
             renderizar();
+        }
+
+        function habilitarEdicao(el) {
+            el.contentEditable = "true"; el.focus();
+            el.onblur = () => {
+                el.contentEditable = "false";
+                const id = el.closest('.movel').id.split('-')[1];
+                const c = cartazes.find(x => x.id == id);
+                if(el.closest('.selo-topo')) c.temaTxt = el.innerText;
+                if(el.closest('.nome-produto')) c.prod = el.innerText;
+                if(el.closest('.marca-produto')) c.marca = el.innerText;
+                if(el.closest('.gramatura')) c.gram = el.innerText;
+                if(el.classList.contains('reais')) c.r = el.innerText;
+                if(el.classList.contains('centavos')) c.c = el.innerText;
+            };
         }
 
         function fecharControles() {
