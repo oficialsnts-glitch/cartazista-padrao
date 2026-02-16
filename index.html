@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162499.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1162/1162499.png">
-    <link rel="manifest" href="data:application/manifest+json,{'name':'CartazistaPro','short_name':'Cartazista','start_url':'.','display':'standalone','background_color':'#e61e25','theme_color':'#e61e25','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/1162/1162499.png','sizes':'512x512','type':'image/png'}]}">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@700&display=swap');
@@ -17,75 +16,27 @@
         :root {
             --vermelho: #e61e25; --verde: #009432; --preto: #1e272e; 
             --azul: #0984e3; --laranja: #f39c12; --roxo: #8e44ad;
+            --cor-corte: #ccc;
         }
 
-        /* TELA DE BOAS VINDAS ATUALIZADA */
+        /* TELA DE BOAS VINDAS */
         #splash {
             position: fixed; top:0; left:0; width: 100%; height: 100%;
-            background: #0984e3; /* Azul no tom da logo */
-            display: flex; flex-direction: column;
+            background: #0984e3; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 10000;
-            transition: opacity 0.8s ease, visibility 0.8s;
-            text-align: center;
+            transition: opacity 0.8s ease, visibility 0.8s; text-align: center;
         }
-
-        .logo-splash {
-            width: 150px;
-            height: 150px;
-            border-radius: 25px; /* Bordas arredondadas */
-            margin-bottom: 25px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-
-        /* Efeito de Digitação */
-        .typing-container {
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        .typing-text {
-            color: white;
-            font-family: 'Oswald', sans-serif;
-            font-size: 2rem;
-            overflow: hidden;
-            border-right: 3px solid white;
-            white-space: nowrap;
-            margin: 0 auto;
-            width: 0;
-            animation: 
-                typing 3s steps(30, end) forwards,
-                blink-caret 0.75s step-end infinite;
-        }
-
-        @keyframes typing {
-            from { width: 0 }
-            to { width: 100% }
-        }
-
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: white }
-        }
-
-        /* Ícone de Carregamento */
-        .loader {
-            border: 5px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            border-top: 5px solid #ffffff;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        .logo-splash { width: 150px; height: 150px; border-radius: 25px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .typing-container { display: inline-block; margin-bottom: 20px; }
+        .typing-text { color: white; font-family: 'Oswald', sans-serif; font-size: 2rem; overflow: hidden; border-right: 3px solid white; white-space: nowrap; width: 0; animation: typing 3s steps(30, end) forwards, blink-caret 0.75s step-end infinite; }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: white } }
+        .loader { border: 5px solid rgba(255, 255, 255, 0.2); border-radius: 50%; border-top: 5px solid #ffffff; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .splash-hidden { opacity: 0; visibility: hidden; }
 
-        /* RESTANTE DO CÓDIGO ORIGINAL PRESERVADO */
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        /* CONFIGURAÇÃO BASE */
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { font-family: 'Archivo Black', sans-serif; background-color: #cbd5e0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
 
         .painel { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; width: 100%; max-width: 950px; border-top: 6px solid var(--vermelho); }
@@ -95,25 +46,37 @@
         .btn-add { width: 100%; background: var(--preto); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         .btn-print { width: 100%; background: var(--vermelho); color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        #container-impressao { width: 210mm; margin: 0 auto; background: #fff; display: grid; }
+        /* CONTAINER DE IMPRESSÃO - CORE DO PROBLEMA RESOLVIDO */
+        #container-impressao { 
+            width: 210mm; 
+            background: #fff; 
+            display: grid; 
+            margin: 0 auto;
+        }
+        
         .layout-1 { grid-template-columns: 1fr; }
         .layout-2 { grid-template-columns: 1fr; }
         .layout-4 { grid-template-columns: 1fr 1fr; }
 
         .cartaz-item { 
-            width: 100%; position: relative; overflow: hidden; 
-            border: 1px dashed #ccc; background: #fff; text-align: center;
-            page-break-inside: avoid;
+            width: 100%; 
+            position: relative; 
+            overflow: hidden; 
+            background: #fff; 
+            text-align: center;
+            outline: 1px dashed var(--cor-corte); /* Linha de corte visível na tela */
         }
-        .layout-1 .cartaz-item { height: 297mm; }
-        .layout-2 .cartaz-item { height: 148.5mm; border-bottom: 1px solid #eee; }
-        .layout-4 .cartaz-item { height: 148.5mm; border: 0.5px solid #eee; }
 
+        /* Alturas fixas para A4 */
+        .layout-1 .cartaz-item { height: 297mm; }
+        .layout-2 .cartaz-item { height: 148.5mm; }
+        .layout-4 .cartaz-item { height: 148.5mm; }
+
+        /* ELEMENTOS DO CARTAZ */
         .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; border: 2px solid transparent; }
         .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); z-index: 10; }
-
-        .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; pointer-events: auto; }
-        .selo-topo span { color: #fff; display: block; font-weight: 900; pointer-events: none; }
+        .selo-topo { width: 120%; padding: 10px 0; transform: rotate(-1deg); left: -10%; }
+        .selo-topo span { color: #fff; display: block; font-weight: 900; }
         
         .tema-oferta { background: var(--vermelho); }
         .tema-horti { background: var(--verde); }
@@ -124,32 +87,38 @@
         .nome-produto { color: #444; text-transform: uppercase; line-height: 1; }
         .marca-produto { font-weight: 900; color: #000; text-transform: uppercase; line-height: 0.8; }
         .gramatura { color: #333; font-weight: bold; }
-
-        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); pointer-events: none; }
+        .preco-box { display: flex; justify-content: center; align-items: flex-start; color: var(--vermelho); }
         .rs { margin-top: 5%; margin-right: 5px; font-weight: 900; }
         .reais { line-height: 0.7; letter-spacing: -5px; font-weight: 900; }
         .dir-box { display: flex; flex-direction: column; margin-top: 5%; text-align: left; }
         .centavos { line-height: 0.8; border-bottom: 4px solid; font-weight: 900; }
         .unidade-txt { font-weight: 900; color: #000; }
 
+        /* CONTROLES */
         #controles-flutuantes {
             position: fixed; bottom: 20px; left: 20px; background: #fff;
             padding: 15px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             z-index: 9999; display: none; border: 2px solid var(--azul); width: 240px;
         }
         .ctrl-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-
         .btn-acoes { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 105; }
         .btn-circular { width: 32px; height: 32px; border: none; border-radius: 50%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .btn-clone { background: var(--azul); }
         .btn-del { background: #000; }
 
+        /* AJUSTES DE IMPRESSÃO */
         @media print {
-            body { background: #fff; padding: 0; }
+            @page { size: A4; margin: 0; }
+            body { background: #fff; padding: 0; margin: 0; }
             .painel, #controles-flutuantes, .btn-acoes, #splash { display: none !important; }
-            #container-impressao { width: 210mm; height: 297mm; border: none; }
-            .cartaz-item { border: none !important; }
-            .selecionado { border: none !important; background: none !important; }
+            #container-impressao { width: 210mm; height: 297mm; }
+            .cartaz-item { 
+                outline: none; 
+                border: 0.1mm dotted #000 !important; /* Linha de corte pontilhada na impressão */
+            }
+            /* Forçar quebra de página */
+            .layout-2 .cartaz-item:nth-child(2n),
+            .layout-4 .cartaz-item:nth-child(4n) { page-break-after: always; }
         }
     </style>
 </head>
@@ -157,21 +126,16 @@
 
     <div id="splash">
         <img src="https://cdn-icons-png.flaticon.com/512/1162/1162499.png" class="logo-splash" alt="Logo">
-        
-        <div class="typing-container">
-            <h1 class="typing-text">Bem vindo ao cartazista padrão</h1>
-        </div>
-
+        <div class="typing-container"><h1 class="typing-text">Cartazista Profissional</h1></div>
         <div class="loader"></div>
-        <p style="color: white; margin-top: 15px; font-family: sans-serif; opacity: 0.8;">Configurando ambiente...</p>
     </div>
 
     <div class="painel">
         <div class="grid-inputs">
             <select id="selLayout">
-                <option value="layout-4">4 Por Folha</option>
-                <option value="layout-2">2 Por Folha</option>
-                <option value="layout-1">1 Por Folha</option>
+                <option value="layout-4">4 Por Folha (A6)</option>
+                <option value="layout-2">2 Por Folha (A5)</option>
+                <option value="layout-1">1 Por Folha (A4)</option>
             </select>
             <select id="selTemaBase">
                 <option value="tema-oferta">OFERTA</option>
@@ -180,11 +144,11 @@
                 <option value="tema-validade">VALIDADE</option>
                 <option value="tema-limpeza">LIMPEZA</option>
             </select>
-            <input type="text" id="inProd" placeholder="Produto">
-            <input type="text" id="inMarca" placeholder="Marca">
-            <input type="text" id="inGram" placeholder="Gramatura">
+            <input type="text" id="inProd" placeholder="Produto (Ex: Arroz)">
+            <input type="text" id="inMarca" placeholder="Marca (Ex: Tio João)">
+            <input type="text" id="inGram" placeholder="Gramatura (Ex: 5kg)">
             <input type="number" id="inR" placeholder="Reais">
-            <input type="number" id="inC" placeholder="00">
+            <input type="number" id="inC" placeholder="Centavos">
         </div>
         <button class="btn-add" onclick="adicionar()">➕ Criar Novo Cartaz</button>
         <button class="btn-print" onclick="window.print()">🖨️ Imprimir Tudo</button>
@@ -193,7 +157,6 @@
     <div id="controles-flutuantes">
         <div style="font-size: 11px; font-weight: bold; color: var(--azul);">EDITANDO: <span id="txt-editando">-</span></div>
         <div class="ctrl-row" id="row-tema" style="display:none;">
-            <label style="font-size:10px">COR:</label>
             <select id="changeTema" onchange="atualizarTema(this.value)">
                 <option value="tema-oferta">Vermelho</option>
                 <option value="tema-horti">Verde</option>
@@ -203,11 +166,11 @@
             </select>
         </div>
         <div class="ctrl-row">
-            <label style="font-size:10px">TAM:</label>
+            <label style="font-size:10px">FONTE:</label>
             <input type="number" id="num-fonte" step="0.1" oninput="atualizarFonte(this.value)">
         </div>
         <input type="range" id="range-fonte" min="0.5" max="60" step="0.1" oninput="atualizarFonte(this.value)" style="width:100%; margin-top:5px;">
-        <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:8px; border-radius:4px; font-weight:bold;">OK</button>
+        <button onclick="fecharControles()" style="width:100%; margin-top:10px; cursor:pointer; background:var(--azul); color:white; border:none; padding:8px; border-radius:4px; font-weight:bold;">FECHAR</button>
     </div>
 
     <div id="container-impressao" class="layout-4"></div>
@@ -216,11 +179,8 @@
         let cartazes = [];
         let itemSelecionado = null;
 
-        // Ocultar Splash Screen após carregar - tempo ajustado para ver a animação
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                document.getElementById('splash').classList.add('splash-hidden');
-            }, 4000); 
+            setTimeout(() => document.getElementById('splash').classList.add('splash-hidden'), 2000); 
         });
 
         function adicionar(dadosClonados = null) {
@@ -265,23 +225,18 @@
                         <button class="btn-circular btn-clone" onclick="clonar(${c.id})">❐</button>
                         <button class="btn-circular btn-del" onclick="remover(${c.id})">✕</button>
                     </div>
-                    
                     <div id="selo-${c.id}" class="movel selo-topo ${c.tema}" style="top:${c.posSelo}px; font-size:${c.fSelo}rem" onmousedown="setupInteracao(event, ${c.id}, 'fSelo', 'posSelo', 'TEMA')">
                         <span ondblclick="habilitarEdicao(this)">${c.temaTxt}</span>
                     </div>
-
                     <div id="prod-${c.id}" class="movel nome-produto" style="top:${c.posProd}px; font-size:${c.fProd}rem" onmousedown="setupInteracao(event, ${c.id}, 'fProd', 'posProd', 'PRODUTO')">
                         <span ondblclick="habilitarEdicao(this)">${c.prod}</span>
                     </div>
-
                     <div id="marca-${c.id}" class="movel marca-produto" style="top:${c.posMarca}px; font-size:${c.fMarca}rem" onmousedown="setupInteracao(event, ${c.id}, 'fMarca', 'posMarca', 'MARCA')">
                         <span ondblclick="habilitarEdicao(this)">${c.marca}</span>
                     </div>
-
                     <div id="gram-${c.id}" class="movel gramatura" style="top:${c.posGram}px; font-size:${c.fGram}rem" onmousedown="setupInteracao(event, ${c.id}, 'fGram', 'posGram', 'GRAMATURA')">
                         <span ondblclick="habilitarEdicao(this)">${c.gram}</span>
                     </div>
-
                     <div id="preco-${c.id}" class="movel" style="top:${c.posPreco}px" onmousedown="setupInteracao(event, ${c.id}, 'fPreco', 'posPreco', 'PREÇO')">
                         <div class="preco-box">
                             <span class="rs" style="font-size:${c.fPreco*0.15}rem">R$</span>
@@ -309,8 +264,7 @@
             document.getElementById('num-fonte').value = c[campoSize];
             document.getElementById('range-fonte').value = c[campoSize];
             document.getElementById('row-tema').style.display = (label === 'TEMA') ? 'flex' : 'none';
-            if(label === 'TEMA') document.getElementById('changeTema').value = c.tema;
-
+            
             let startY = e.clientY;
             let startTop = parseInt(containerMovel.style.top) || 0;
             function doDrag(ev) {
@@ -333,7 +287,7 @@
             c[itemSelecionado.campoSize] = v;
             document.getElementById('num-fonte').value = v;
             document.getElementById('range-fonte').value = v;
-            if(itemSelecionado.campoSize === 'fPreco' || itemSelecionado.campoSize === 'fSelo') renderizar();
+            if(['fPreco', 'fSelo'].includes(itemSelecionado.campoSize)) renderizar();
             else itemSelecionado.el.style.fontSize = v + "rem";
         }
 
