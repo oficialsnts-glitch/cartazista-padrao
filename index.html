@@ -53,10 +53,19 @@
             display: grid; 
             margin: 0 auto;
         }
+
+        /* AJUSTES PARA ORIENTAÇÃO HORIZONTAL */
+        #container-impressao.horizontal {
+            width: 297mm;
+        }
         
         .layout-1 { grid-template-columns: 1fr; }
         .layout-2 { grid-template-columns: 1fr; }
         .layout-4 { grid-template-columns: 1fr 1fr; }
+
+        /* Ajuste de grid para Horizontal */
+        .horizontal.layout-2 { grid-template-columns: 1fr 1fr; }
+        .horizontal.layout-4 { grid-template-columns: 1fr 1fr; }
 
         .cartaz-item { 
             width: 100%; 
@@ -67,9 +76,15 @@
             outline: 1px dashed var(--cor-corte);
         }
 
+        /* Tamanhos em Vertical (Portrait) */
         .layout-1 .cartaz-item { height: 297mm; }
         .layout-2 .cartaz-item { height: 148.5mm; }
         .layout-4 .cartaz-item { height: 148.5mm; }
+
+        /* Tamanhos em Horizontal (Landscape) */
+        .horizontal.layout-1 .cartaz-item { height: 210mm; width: 297mm; }
+        .horizontal.layout-2 .cartaz-item { height: 210mm; width: 148.5mm; }
+        .horizontal.layout-4 .cartaz-item { height: 105mm; width: 148.5mm; }
 
         .movel { position: absolute; cursor: move; width: 100%; left: 0; z-index: 2; border: 2px solid transparent; }
         .selecionado { border: 2px dashed var(--azul) !important; background: rgba(9, 132, 227, 0.05); z-index: 10; }
@@ -107,13 +122,15 @@
         .btn-del { background: #000; }
 
         @media print {
-            @page { size: A4; margin: 0; }
+            @page { size: auto; margin: 0; }
             body { background: #fff; padding: 0; margin: 0; }
             .painel, #controles-flutuantes, .btn-acoes, #splash { display: none !important; }
-            #container-impressao { width: 210mm; height: 297mm; }
+            #container-impressao { border: none; }
             .cartaz-item { outline: none; border: 0.1mm dotted #000 !important; }
-            .layout-2 .cartaz-item:nth-child(2n),
-            .layout-4 .cartaz-item:nth-child(4n) { page-break-after: always; }
+            
+            /* Detecta se deve imprimir em paisagem */
+            #container-impressao.horizontal { width: 297mm; }
+            #container-impressao.horizontal .cartaz-item { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -127,10 +144,14 @@
 
     <div class="painel">
         <div class="grid-inputs">
-            <select id="selLayout">
+            <select id="selLayout" onchange="renderizar()">
                 <option value="layout-4">4 Por Folha (A6)</option>
                 <option value="layout-2">2 Por Folha (A5)</option>
                 <option value="layout-1">1 Por Folha (A4)</option>
+            </select>
+            <select id="selOrientacao" onchange="renderizar()">
+                <option value="vertical">Vertical (Retrato)</option>
+                <option value="horizontal">Horizontal (Paisagem)</option>
             </select>
             <select id="selTemaBase" onchange="atualizarAoDigitar()">
                 <option value="tema-oferta">OFERTA</option>
@@ -200,11 +221,19 @@
 
         function novaEntrada() {
             const layout = document.getElementById('selLayout').value;
-            const config = {
+            const orientacao = document.getElementById('selOrientacao').value;
+
+            // Configuração base (Vertical)
+            let config = {
                 'layout-1': { p: 8, m: 5, g: 3, r: 40, s: 5, ps: 0, pp: 350, pm: 500, pg: 600, ppre: 750, imgS: 100 },
                 'layout-2': { p: 4, m: 3, g: 2, r: 25, s: 4, ps: 0, pp: 180, pm: 250, pg: 300, ppre: 400, imgS: 100 },
                 'layout-4': { p: 2, m: 1.5, g: 1, r: 15, s: 2.5, ps: 0, pp: 120, pm: 160, pg: 190, ppre: 250, imgS: 100 }
             }[layout];
+
+            // Ajuste simples de posição se for Horizontal
+            if(orientacao === 'horizontal'){
+                config.pp -= 50; config.pm -= 50; config.pg -= 50; config.ppre -= 80;
+            }
 
             const novo = {
                 id: Date.now(),
@@ -244,7 +273,10 @@
 
         function renderizar() {
             const container = document.getElementById('container-impressao');
-            container.className = document.getElementById('selLayout').value;
+            const layout = document.getElementById('selLayout').value;
+            const orientacao = document.getElementById('selOrientacao').value;
+
+            container.className = layout + " " + orientacao;
             container.innerHTML = "";
 
             cartazes.forEach(c => {
