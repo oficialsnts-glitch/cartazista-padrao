@@ -2,120 +2,155 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Cartazista Pro 5.0 - BR & Memória</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartazista Pro 9.0 - Estável</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
 
     <style>
-        :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; }
+        :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --cinza: #2d3436; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
-        body { font-family: 'Segoe UI', sans-serif; background: #cbd5e0; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-
-        /* TOOLBAR SUPERIOR */
-        .toolbar {
-            background: #2d3436; padding: 10px 20px; display: flex; gap: 10px; 
-            align-items: center; color: white; z-index: 1000;
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #cbd5e0; margin: 0; display: flex; flex-direction: column; 
+            height: 100vh; overflow: hidden; 
         }
-        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+
+        /* TOOLBAR */
+        .toolbar { 
+            background: var(--cinza); padding: 10px 20px; display: flex; 
+            gap: 15px; align-items: center; color: white; z-index: 2000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
         .btn-add { background: var(--sucesso); color: white; }
-        .btn-save { background: #f1c40f; color: #000; }
-        .btn-load { background: #9b59b6; color: white; }
         .btn-print { background: var(--danger); color: white; }
+        .layout-select { padding: 8px; border-radius: 4px; background: #636e72; color: white; border: 1px solid white; cursor: pointer; }
 
-        /* LAYOUT */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-
-        /* GALERIA DE SELOS BR */
-        .sidebar-selos {
-            width: 140px; background: #dfe6e9; padding: 10px; 
-            display: flex; flex-direction: column; gap: 15px; border-right: 1px solid #b2bec3;
-        }
-        .selo-br {
-            width: 100%; height: 80px; cursor: pointer; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center; font-family: 'Bebas Neue'; color: white;
-            font-size: 18px; line-height: 1; transition: 0.2s; box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        }
-        .selo-br:hover { transform: scale(1.05); }
-        .bg-oferta { background: #d63031; border: 3px double white; }
-        .bg-horti { background: #27ae60; border-radius: 50% 50% 10% 10%; }
-        .bg-limpeza { background: #0984e3; clip-path: polygon(10% 0, 90% 0, 100% 100%, 0% 100%); }
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
 
         /* ÁREA DE TRABALHO */
-        .workspace { flex: 1; overflow: auto; padding: 40px; display: flex; justify-content: center; background: #7f8c8d; }
-        #folha-impressao {
-            width: 210mm; background: white; display: grid; grid-template-columns: 1fr 1fr;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5); min-height: 297mm;
+        .workspace { flex: 1; overflow: auto; padding: 40px; display: flex; justify-content: center; background: #555; scroll-behavior: smooth; }
+        
+        #folha-impressao { 
+            width: 210mm; background: white; display: grid; 
+            min-height: 297mm; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
         }
-        .cartaz-area { height: 148.5mm; border: 0.2mm dashed #ccc; position: relative; overflow: hidden; background: #fff; }
 
-        /* ITENS */
-        .item-movel { position: absolute; cursor: move; user-select: none; }
-        .selecionado { outline: 2px solid var(--azul) !important; z-index: 1000 !important; }
+        /* GRIDS DE IMPRESSÃO */
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
-        /* EDITOR LATERAL */
-        .editor-panel { width: 280px; background: white; padding: 20px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 15px; }
-        .campo { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 10px; font-weight: bold; color: #666; }
-        input, select { padding: 8px; border: 1px solid #ddd; }
+        .cartaz-area { 
+            border: 0.2mm dashed #ccc; position: relative; 
+            overflow: hidden; background: #fff; height: 100%; width: 100%; 
+        }
+
+        /* ELEMENTOS DO CARTAZ */
+        .item-movel { 
+            position: absolute; cursor: move; user-select: none; 
+            white-space: nowrap; line-height: 0.85; padding: 10px;
+            transform-origin: center;
+        }
+        .selecionado { 
+            outline: 2px solid var(--azul) !important; 
+            background: rgba(9, 132, 227, 0.05); 
+            z-index: 1500 !important; 
+        }
+        .com-sombra { text-shadow: 4px 4px 0px rgba(0,0,0,0.15); }
+
+        /* CONTROLES DO CARTAZ */
+        .btn-ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 100; }
+        .btn-ctrl button { font-size: 10px; padding: 5px 8px; cursor: pointer; border: none; border-radius: 3px; color: white; opacity: 0.7; font-weight: bold; }
+        .btn-ctrl button:hover { opacity: 1; }
+
+        /* PAINEL EDITOR */
+        .editor-panel { 
+            width: 320px; background: white; padding: 25px; 
+            border-left: 1px solid #ccc; display: none; 
+            flex-direction: column; gap: 15px; overflow-y: auto;
+            z-index: 1900; box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+        .campo { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .input-moeda { font-weight: bold; color: var(--danger); font-size: 22px; text-align: right; border: 2px solid var(--danger); }
 
         @media print {
-            .toolbar, .sidebar-selos, .editor-panel { display: none !important; }
+            .toolbar, .editor-panel, .btn-ctrl { display: none !important; }
             body { background: white; overflow: visible; }
             .main-container { display: block; }
-            #folha-impressao { margin: 0; box-shadow: none; border: none; }
-            .cartaz-area { border: 0.1mm solid #eee !important; }
+            #folha-impressao { margin: 0; box-shadow: none; border: none; width: 210mm; }
+            .cartaz-area { border: 0.1mm solid #eee !important; outline: none; page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 
 <div class="toolbar">
-    <span style="font-weight:bold; color:var(--sucesso)">PRO 5.0</span>
-    <button class="btn btn-add" onclick="adicionarCartaz()">+ Novo (A6)</button>
-    <button class="btn btn-save" onclick="salvarProjeto()">💾 Salvar</button>
-    <input type="file" id="inputLoad" style="display:none" onchange="abrirProjeto(this)">
-    <button class="btn btn-load" onclick="document.getElementById('inputLoad').click()">📂 Abrir</button>
-    <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir</button>
+    <div style="font-weight:900; font-size:20px; color:var(--sucesso); letter-spacing: 1px;">CARTAZISTA PRO</div>
+    
+    <div style="margin-left: 10px;">
+        <select id="layoutSelect" class="layout-select" onchange="mudarLayout(this.value)">
+            <option value="grid-1">1 por Folha (A4)</option>
+            <option value="grid-2">2 por Folha (A5)</option>
+            <option value="grid-4" selected>4 por Folha (A6)</option>
+        </select>
+    </div>
+
+    <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO CARTAZ</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
 </div>
 
 <div class="main-container">
-    <div class="sidebar-selos">
-        <label>SELOS BR</label>
-        <div class="selo-br bg-oferta" onclick="addSeloTxt('OFERTA', '#d63031')">OFERTA</div>
-        <div class="selo-br bg-horti" onclick="addSeloTxt('HORTI FRUTI', '#27ae60')">HORTI<br>FRUTI</div>
-        <div class="selo-br bg-limpeza" onclick="addSeloTxt('LIMPEZA', '#0984e3')">LIMPEZA</div>
-        <div class="selo-br" style="background:#f39c12" onclick="addSeloTxt('PADARIA', '#f39c12')">PADARIA</div>
-        <div style="font-size: 10px; color:#666; text-align:center">Clique para inserir no cartaz</div>
-    </div>
-
     <div class="workspace">
-        <div id="folha-impressao"></div>
+        <div id="folha-impressao" class="grid-4"></div>
     </div>
 
     <div class="editor-panel" id="edPanel">
-        <h4 style="margin:0">Ajustes</h4>
-        <div class="campo">
-            <label>Texto / Preço (use vírgula)</label>
-            <input type="text" id="edVal" oninput="aplicar()">
+        <h3 style="margin:0; color:var(--cinza); border-bottom: 2px solid var(--azul); padding-bottom: 10px;">EDITAR ITEM</h3>
+        
+        <div class="campo" id="divTexto">
+            <label>Texto do Produto / Marca</label>
+            <input type="text" id="edVal" oninput="aplicar()" placeholder="Ex: Arroz Integral">
         </div>
-        <div class="campo">
-            <label>Tamanho</label>
-            <input type="range" id="edSize" min="10" max="600" oninput="aplicar()">
+        
+        <div class="campo" id="divMoeda" style="display:none">
+            <label>Preço (R$)</label>
+            <input type="text" id="edMoeda" class="input-moeda" oninput="mascaraMoeda(this)" placeholder="0,00">
         </div>
+
         <div class="campo">
-            <label>Cor</label>
-            <input type="color" id="edColor" onchange="aplicar()">
+            <label>Posicionamento</label>
+            <button class="btn" onclick="centralizarItem()" style="background:var(--azul); color:white; width:100%">↔ CENTRALIZAR HORIZONTAL</button>
         </div>
+
         <div class="campo">
-            <label>Fonte</label>
+            <label>Tamanho da Fonte</label>
+            <input type="range" id="edSize" min="10" max="800" oninput="aplicar()">
+        </div>
+
+        <div class="campo">
+            <label>Estilo da Fonte</label>
             <select id="edFont" onchange="aplicar()">
-                <option value="'Bebas Neue'">Bebas Neue</option>
-                <option value="'Archivo Black'">Archivo Black</option>
-                <option value="'Anton'">Anton</option>
+                <option value="'Bebas Neue'">BEBAS NEUE (Recomendado)</option>
+                <option value="'Anton'">ANTON (Preços)</option>
+                <option value="'Archivo Black'">ARCHIVO BLACK (Títulos)</option>
+                <option value="'Oswald'">OSWALD</option>
             </select>
         </div>
-        <button class="btn" style="background:#636e72; color:white; width:100%" onclick="remover()">Excluir</button>
+
+        <div class="campo">
+            <label>Cor</label>
+            <input type="color" id="edColor" onchange="aplicar()" style="width:100%; height:45px; cursor:pointer;">
+        </div>
+
+        <button class="btn" onclick="toggleSombra()" style="background:#f1f2f6; color:#2d3436; border:1px solid #ccc; width:100%">EFEITO SOMBRA 3D</button>
+        
+        <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+        <button class="btn" style="background:var(--danger); color:white; width:100%" onclick="removerItem()">✖ EXCLUIR ITEM SELECIONADO</button>
     </div>
 </div>
 
@@ -125,59 +160,112 @@
     let dragging = false;
     let offset = { x: 0, y: 0 };
 
-    function adicionarCartaz() {
+    function mudarLayout(classe) {
+        document.getElementById('folha-impressao').className = classe;
+    }
+
+    function adicionarCartaz(dados = null) {
         const id = Date.now();
-        cartazes.push({
-            id: id,
-            itens: [
-                { id: 't'+id, tipo: 'txt', val: 'NOME DO PRODUTO', x: 20, y: 30, size: 35, font: "'Bebas Neue'", col: '#000' },
-                { id: 'p'+id, tipo: 'preco', reais: '0', cent: '00', x: 40, y: 150, size: 150, font: "'Anton'", col: '#d63031' }
-            ]
-        });
+        if(dados) {
+            const copia = JSON.parse(JSON.stringify(dados));
+            copia.id = id;
+            // Gera novos IDs para os itens da cópia
+            copia.itens.forEach((it, idx) => it.id = 'it-' + id + '-' + idx);
+            cartazes.push(copia);
+        } else {
+            cartazes.push({
+                id: id,
+                itens: [
+                    { id: 'p'+id, tipo: 'txt', val: 'NOME DO PRODUTO', x: 20, y: 30, size: 45, font: "'Bebas Neue'", col: '#000', sombra: false },
+                    { id: 'm'+id, tipo: 'txt', val: 'MARCA / PESO', x: 20, y: 90, size: 25, font: "'Bebas Neue'", col: '#d63031', sombra: false },
+                    { id: 'v'+id, tipo: 'preco', val: '0,00', x: 40, y: 180, size: 160, font: "'Anton'", col: '#000', sombra: true }
+                ]
+            });
+        }
         render();
     }
 
-    function addSeloTxt(texto, cor) {
-        if(!cartazes.length) adicionarCartaz();
-        const c = cartazes[cartazes.length-1];
-        c.itens.push({ id: 's'+Date.now(), tipo: 'selo', val: texto, x: 200, y: 20, size: 40, col: '#fff', bg: cor });
+    function mascaraMoeda(i) {
+        let v = i.value.replace(/\D/g,'');
+        v = (v/100).toFixed(2) + '';
+        v = v.replace(".", ",");
+        i.value = v;
+        aplicar();
+    }
+
+    function centralizarItem() {
+        if(!sel) return;
+        // Pega o container do cartaz onde o item está
+        const cartazArea = sel.el.closest('.cartaz-area');
+        const larguraCartaz = cartazArea.clientWidth;
+        const larguraItem = sel.el.offsetWidth;
+        
+        sel.data.x = (larguraCartaz / 2) - (larguraItem / 2);
+        sel.el.style.left = sel.data.x + 'px';
         render();
+        // Mantém o estado visual
+        const elRelevante = document.getElementById(sel.data.id);
+        if(elRelevante) elRelevante.classList.add('selecionado');
     }
 
     function render() {
         const f = document.getElementById('folha-impressao');
         f.innerHTML = '';
-        cartazes.forEach(c => {
+        cartazes.forEach((c, index) => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
+            
+            const ctrl = document.createElement('div');
+            ctrl.className = 'btn-ctrl';
+            ctrl.innerHTML = `
+                <button style="background:var(--sucesso)" onclick="adicionarCartaz(cartazes[${index}])">CLONAR</button>
+                <button style="background:var(--danger)" onclick="removerCartaz(${index})">APAGAR</button>
+            `;
+            area.appendChild(ctrl);
+
             c.itens.forEach(it => {
                 const el = document.createElement('div');
-                el.className = 'item-movel';
+                el.className = `item-movel ${it.sombra ? 'com-sombra' : ''}`;
                 el.id = it.id;
-                el.style.left = it.x + 'px'; el.style.top = it.y + 'px';
-                el.style.fontSize = it.size + 'px'; el.style.fontFamily = it.font || "'Bebas Neue'";
+                el.style.left = it.x + 'px'; 
+                el.style.top = it.y + 'px';
+                el.style.fontSize = it.size + 'px'; 
+                el.style.fontFamily = it.font;
                 el.style.color = it.col;
 
-                if(it.tipo === 'txt') el.innerText = it.val;
-                else if(it.tipo === 'selo') {
+                if(it.tipo === 'txt') {
                     el.innerText = it.val;
-                    el.style.background = it.bg;
-                    el.style.padding = '5px 15px';
-                    el.style.border = '2px solid white';
-                }
-                else if(it.tipo === 'preco') {
-                    el.innerHTML = `<div style="display:flex"><span style="font-size:0.3em; margin-top:0.2em">R$</span>${it.reais}<span style="font-size:0.5em; border-bottom:4px solid">,${it.cent}</span></div>`;
+                } else {
+                    let p = it.val.split(',');
+                    el.innerHTML = `
+                        <div style="display:flex; align-items: flex-start;">
+                            <span style="font-size:0.3em; margin-top:0.2em; margin-right:2px">R$</span>
+                            <span>${p[0]}</span>
+                            <span style="font-size:0.5em; border-bottom:5px solid; margin-top:5px">,${p[1]||'00'}</span>
+                        </div>`;
                 }
 
                 el.onmousedown = (e) => {
-                    sel = { data: it, el: el }; dragging = true;
+                    sel = { data: it, el: el }; 
+                    dragging = true;
                     document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
                     el.classList.add('selecionado');
-                    offset.x = e.clientX - el.offsetLeft; offset.y = e.clientY - el.offsetTop;
+                    offset.x = e.clientX - el.offsetLeft; 
+                    offset.y = e.clientY - el.offsetTop;
+                    
                     document.getElementById('edPanel').style.display = 'flex';
-                    document.getElementById('edVal').value = it.tipo === 'preco' ? `${it.reais},${it.cent}` : it.val;
+                    if(it.tipo === 'preco') {
+                        document.getElementById('divMoeda').style.display = 'flex';
+                        document.getElementById('divTexto').style.display = 'none';
+                        document.getElementById('edMoeda').value = it.val;
+                    } else {
+                        document.getElementById('divMoeda').style.display = 'none';
+                        document.getElementById('divTexto').style.display = 'flex';
+                        document.getElementById('edVal').value = it.val;
+                    }
                     document.getElementById('edSize').value = it.size;
                     document.getElementById('edColor').value = it.col;
+                    document.getElementById('edFont').value = it.font;
                 };
                 area.appendChild(el);
             });
@@ -187,51 +275,46 @@
 
     function aplicar() {
         if(!sel) return;
-        const d = sel.data;
-        d.size = document.getElementById('edSize').value;
-        d.col = document.getElementById('edColor').value;
-        d.font = document.getElementById('edFont').value;
-        if(d.tipo === 'txt' || d.tipo === 'selo') d.val = document.getElementById('edVal').value;
-        else if(d.tipo === 'preco') {
-            const v = document.getElementById('edVal').value.split(',');
-            d.reais = v[0]; d.cent = v[1] || '00';
-        }
+        sel.data.size = parseInt(document.getElementById('edSize').value);
+        sel.data.col = document.getElementById('edColor').value;
+        sel.data.font = document.getElementById('edFont').value;
+        sel.data.val = (sel.data.tipo === 'preco') ? document.getElementById('edMoeda').value : document.getElementById('edVal').value;
         render();
-        document.getElementById(d.id).classList.add('selecionado');
+        const el = document.getElementById(sel.data.id);
+        if(el) el.classList.add('selecionado');
     }
 
-    function remover() {
-        cartazes.forEach(c => c.itens = c.itens.filter(i => i.id !== sel.data.id));
-        document.getElementById('edPanel').style.display = 'none';
-        render();
+    function toggleSombra() { 
+        if(sel) { 
+            sel.data.sombra = !sel.data.sombra; 
+            render(); 
+            document.getElementById(sel.data.id).classList.add('selecionado'); 
+        } 
     }
-
-    // MEMÓRIA: SALVAR E ABRIR
-    function salvarProjeto() {
-        const data = JSON.stringify(cartazes);
-        const blob = new Blob([data], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'meus-cartazes.json';
-        a.click();
+    
+    function removerItem() { 
+        if(!sel) return;
+        cartazes.forEach(c => c.itens = c.itens.filter(i => i.id !== sel.data.id)); 
+        document.getElementById('edPanel').style.display = 'none'; 
+        render(); 
     }
-
-    function abrirProjeto(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            cartazes = JSON.parse(e.target.result);
-            render();
-        };
-        reader.readAsText(input.files[0]);
+    
+    function removerCartaz(idx) { 
+        cartazes.splice(idx, 1); 
+        render(); 
     }
 
     document.onmousemove = (e) => {
-        if(!dragging) return;
-        sel.data.x = e.clientX - offset.x; sel.data.y = e.clientY - offset.y;
-        sel.el.style.left = sel.data.x + 'px'; sel.el.style.top = sel.data.y + 'px';
+        if(!dragging || !sel) return;
+        sel.data.x = e.clientX - offset.x; 
+        sel.data.y = e.clientY - offset.y;
+        sel.el.style.left = sel.data.x + 'px'; 
+        sel.el.style.top = sel.data.y + 'px';
     };
-    document.onmouseup = () => dragging = false;
+    
+    document.onmouseup = () => { dragging = false; };
 
+    // Iniciar com um cartaz padrão
     adicionarCartaz();
 </script>
 </body>
