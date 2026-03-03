@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 18.2 - Edição Estável</title>
+    <title>Cartazista Pro 18.3 - Final Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --dark: #1e272e; --warning: #f1c40f; }
@@ -16,6 +16,7 @@
         .btn-add { background: var(--sucesso); color: white; }
         .btn-duplica { background: var(--azul); color: white; }
         .btn-print { background: var(--danger); color: white; }
+        .btn-fechar { background: #636e72; color: white; width: 100%; margin-bottom: 10px; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; }
@@ -43,14 +44,15 @@
             .toolbar, .editor-panel { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; }
             #folha-impressao { box-shadow: none !important; border: none !important; margin: 0 !important; }
-            .selecionado { outline: none !important; }
+            .selecionado { outline: none !important; background: none !important; }
+            .cartaz-area { border: none !important; }
         }
     </style>
 </head>
 <body onmouseup="pararArrasto()">
 
 <div class="toolbar">
-    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.2</span></div>
+    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.3</span></div>
     <select onchange="mudarLayout(this.value)" style="padding:5px;">
         <option value="grid-4">4 POR FOLHA</option>
         <option value="grid-2">2 POR FOLHA</option>
@@ -62,11 +64,13 @@
 </div>
 
 <div class="main-container">
-    <div class="workspace">
+    <div class="workspace" onclick="desmarcarTudo()">
         <div id="folha-impressao" class="grid-4"></div>
     </div>
 
     <div class="editor-panel" id="edPanel" onmouseenter="pararArrasto()">
+        <button class="btn btn-fechar" onclick="desmarcarTudo()">✖ FECHAR EDIÇÃO E LIMPAR SELEÇÃO</button>
+        
         <div class="secao">
             <h4>CONTEÚDO (EDITAR)</h4>
             <div class="campo"><label>Chamada</label><textarea id="inHead" onfocus="focarItem('head')" oninput="atualizarTextos('head')"></textarea></div>
@@ -124,6 +128,12 @@
         render();
     }
 
+    function desmarcarTudo() {
+        sel = null;
+        document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
+        document.getElementById('edPanel').style.display = 'none';
+    }
+
     function duplicarCartaz() {
         if(!sel) return alert("Selecione um cartaz primeiro.");
         const clone = JSON.parse(JSON.stringify(sel.cartaz));
@@ -151,6 +161,7 @@
         cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
+            area.onclick = (e) => e.stopPropagation(); // Impede desmarcar ao clicar no cartaz
             c.itens.forEach(it => {
                 const el = document.createElement('div');
                 el.id = it.id;
@@ -202,7 +213,6 @@
         const alvo = sel.cartaz.itens.find(i => i.tipo === tipo);
         alvo.val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
         render();
-        // Mantém a seleção visual após o render
         const el = document.getElementById(sel.data.id);
         if(el) el.classList.add('selecionado');
     }
