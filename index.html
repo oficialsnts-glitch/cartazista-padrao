@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 18.0 - Full Edition</title>
+    <title>Cartazista Pro 18.2 - Edição Estável</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --dark: #1e272e; --warning: #f1c40f; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; flex-wrap: wrap; }
-        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 900; font-size: 10px; text-transform: uppercase; transition: 0.2s; }
+        .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 900; font-size: 10px; text-transform: uppercase; }
         .btn-add { background: var(--sucesso); color: white; }
         .btn-duplica { background: var(--azul); color: white; }
         .btn-print { background: var(--danger); color: white; }
@@ -19,38 +20,44 @@
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; }
         
-        #folha-impressao { width: 210mm; background: white; display: grid; min-height: 297mm; position: relative; }
+        #folha-impressao { width: 210mm; min-height: 297mm; background: white; display: grid; position: relative; }
         .grid-1 { grid-template-columns: 1fr; }
-        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 148.5mm 148.5mm; }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
-        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 0.2mm dashed #ccc; }
+        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 0.1mm dashed #ddd; }
         .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; }
-        .tarja-fundo { z-index: 5 !important; border: none; }
-        .selecionado { outline: 3px solid var(--azul) !important; z-index: 100 !important; }
+        .tarja-fundo { z-index: 5; border: none; }
+        .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.05); }
 
         .editor-panel { width: 420px; background: #f1f2f6; padding: 15px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .secao { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 5px; }
+        .secao { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 6px; }
         .campo { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
         label { font-size: 9px; font-weight: 800; color: #57606f; text-transform: uppercase; }
-        
         textarea { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; resize: none; font-family: inherit; }
         input[type="number"], select { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; }
 
-        @media print { .toolbar, .editor-panel { display: none !important; } .cartaz-area { border: none !important; } }
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white !important; overflow: visible !important; }
+            .toolbar, .editor-panel { display: none !important; }
+            .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; }
+            #folha-impressao { box-shadow: none !important; border: none !important; margin: 0 !important; }
+            .selecionado { outline: none !important; }
+        }
     </style>
 </head>
-<body>
+<body onmouseup="pararArrasto()">
 
 <div class="toolbar">
-    <div style="font-weight: 900; margin-right: 10px;">CARTAZISTA <span style="color:var(--warning)">PRO V18</span></div>
-    <select onchange="mudarLayout(this.value)" style="padding:5px; font-size:10px; font-weight:bold;">
-        <option value="grid-4">4 POR FOLHA (A6)</option>
-        <option value="grid-2">2 POR FOLHA (A5)</option>
+    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.2</span></div>
+    <select onchange="mudarLayout(this.value)" style="padding:5px;">
+        <option value="grid-4">4 POR FOLHA</option>
+        <option value="grid-2">2 POR FOLHA</option>
         <option value="grid-1">1 POR FOLHA (A4)</option>
     </select>
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO</button>
-    <button class="btn btn-duplica" onclick="duplicarCartaz()">📋 DUPLICAR ATUAL</button>
+    <button class="btn btn-duplica" onclick="duplicarCartaz()">📋 DUPLICAR</button>
     <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
 </div>
 
@@ -59,18 +66,18 @@
         <div id="folha-impressao" class="grid-4"></div>
     </div>
 
-    <div class="editor-panel" id="edPanel">
+    <div class="editor-panel" id="edPanel" onmouseenter="pararArrasto()">
         <div class="secao">
-            <h4 style="margin:0 0 10px 0; font-size:12px">CONTEÚDO DO CARTAZ</h4>
-            <div class="campo"><label>Chamada/Headline</label><textarea id="inHead" oninput="atualizarTextos('head')"></textarea></div>
-            <div class="campo"><label>Produto</label><textarea id="inDesc" oninput="atualizarTextos('desc')"></textarea></div>
-            <div class="campo"><label>Marca</label><textarea id="inMarca" oninput="atualizarTextos('marca')"></textarea></div>
-            <div class="campo"><label>Peso/Unid</label><textarea id="inPeso" oninput="atualizarTextos('peso')"></textarea></div>
-            <div class="campo"><label>Preço</label><textarea id="inPreco" oninput="atualizarTextos('preco')"></textarea></div>
+            <h4>CONTEÚDO (EDITAR)</h4>
+            <div class="campo"><label>Chamada</label><textarea id="inHead" onfocus="focarItem('head')" oninput="atualizarTextos('head')"></textarea></div>
+            <div class="campo"><label>Produto</label><textarea id="inDesc" onfocus="focarItem('desc')" oninput="atualizarTextos('desc')"></textarea></div>
+            <div class="campo"><label>Marca</label><textarea id="inMarca" onfocus="focarItem('marca')" oninput="atualizarTextos('marca')"></textarea></div>
+            <div class="campo"><label>Peso</label><textarea id="inPeso" onfocus="focarItem('peso')" oninput="atualizarTextos('peso')"></textarea></div>
+            <div class="campo"><label>Preço</label><textarea id="inPreco" onfocus="focarItem('preco')" oninput="atualizarTextos('preco')"></textarea></div>
         </div>
 
         <div class="secao" style="background:#eef2f7">
-            <h4 id="labelEdit" style="margin:0 0 10px 0; font-size:11px; color:var(--azul)">EDITANDO ESTILO</h4>
+            <h4 id="labelEdit" style="font-size:11px; color:var(--azul)">ESTILO</h4>
             <div class="campo"><label>Fonte</label>
                 <select id="inFont" onchange="atualizarEstilo()">
                     <option value="'Bebas Neue'">Bebas Neue</option>
@@ -83,18 +90,15 @@
                 <div class="campo" style="flex:1"><label>Tamanho</label><input type="range" id="inSize" min="5" max="800" oninput="atualizarEstilo()"></div>
                 <div class="campo"><label>Cor</label><input type="color" id="inColor" onchange="atualizarEstilo()"></div>
             </div>
-
             <div id="controlesFundo" style="display:none; border-top:1px solid #ccc; padding-top:10px; margin-top:10px">
-                <label>Ajuste da Tarja (Fundo)</label>
                 <div style="display:flex; gap:10px">
-                    <div class="campo"><label>L (px)</label><input type="number" id="inW" oninput="atualizarEstilo()"></div>
-                    <div class="campo"><label>A (px)</label><input type="number" id="inH" oninput="atualizarEstilo()"></div>
+                    <div class="campo"><label>Largura</label><input type="number" id="inW" oninput="atualizarEstilo()"></div>
+                    <div class="campo"><label>Altura</label><input type="number" id="inH" oninput="atualizarEstilo()"></div>
                 </div>
             </div>
             <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; width:100%; margin-top:5px">↔ CENTRALIZAR</button>
         </div>
-        
-        <button class="btn" onclick="adicionarTarja()" style="background:#ffa502; color:white">⬛ ADICIONAR TARJA DE FUNDO</button>
+        <button class="btn" onclick="adicionarTarja()" style="background:#ffa502; color:white">⬛ ADICIONAR TARJA</button>
         <button class="btn" onclick="removerCartaz()" style="background:none; border:1px solid red; color:red; margin-top:10px">EXCLUIR CARTAZ</button>
     </div>
 </div>
@@ -107,28 +111,38 @@
 
     function adicionarCartaz() {
         const id = Date.now();
-        const novo = {
+        cartazes.push({
             id: id,
             itens: [
-                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 0, y: 0, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
+                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 20, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
                 { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 20, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
                 { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 20, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
                 { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 130, y: 120, size: 25, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
                 { id: 'p-'+id, tipo: 'preco', val: '0,99', x: 50, y: 180, size: 150, font: "'Anton'", col: '#000', w:0, h:0 }
             ]
-        };
-        cartazes.push(novo);
+        });
         render();
     }
 
     function duplicarCartaz() {
-        if(!sel) return alert("Selecione um cartaz primeiro clicando em qualquer texto dele.");
-        const original = sel.cartaz;
-        const clone = JSON.parse(JSON.stringify(original));
+        if(!sel) return alert("Selecione um cartaz primeiro.");
+        const clone = JSON.parse(JSON.stringify(sel.cartaz));
         clone.id = Date.now();
         clone.itens.forEach(it => it.id = it.id.split('-')[0] + '-' + clone.id);
         cartazes.push(clone);
         render();
+    }
+
+    function focarItem(tipo) {
+        if(!sel) return;
+        const item = sel.cartaz.itens.find(i => i.tipo === tipo);
+        if(item) {
+            sel.data = item;
+            sel.el = document.getElementById(item.id);
+            document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
+            sel.el.classList.add('selecionado');
+            mostrarNoPainel(item, sel.cartaz);
+        }
     }
 
     function render() {
@@ -185,9 +199,12 @@
 
     function atualizarTextos(tipo) {
         if(!sel) return;
-        sel.cartaz.itens.find(i => i.tipo === tipo).val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
+        const alvo = sel.cartaz.itens.find(i => i.tipo === tipo);
+        alvo.val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
         render();
-        document.getElementById(sel.data.id).classList.add('selecionado');
+        // Mantém a seleção visual após o render
+        const el = document.getElementById(sel.data.id);
+        if(el) el.classList.add('selecionado');
     }
 
     function atualizarEstilo() {
@@ -198,14 +215,18 @@
         sel.data.w = document.getElementById('inW').value;
         sel.data.h = document.getElementById('inH').value;
         render();
-        document.getElementById(sel.data.id).classList.add('selecionado');
+        const el = document.getElementById(sel.data.id);
+        if(el) el.classList.add('selecionado');
     }
+
+    function pararArrasto() { dragging = false; }
 
     function centralizar() {
         if(!sel) return;
         sel.data.x = (sel.el.parentElement.offsetWidth / 2) - (sel.el.offsetWidth / 2);
         render();
-        document.getElementById(sel.data.id).classList.add('selecionado');
+        const el = document.getElementById(sel.data.id);
+        if(el) el.classList.add('selecionado');
     }
 
     function adicionarTarja() {
@@ -216,7 +237,7 @@
     }
 
     function mudarLayout(v) { document.getElementById('folha-impressao').className = v; }
-    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; render(); } }
+    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; document.getElementById('edPanel').style.display='none'; render(); } }
 
     document.onmousemove = (e) => {
         if(!dragging || !sel) return;
@@ -225,7 +246,6 @@
         sel.el.style.left = sel.data.x + 'px';
         sel.el.style.top = sel.data.y + 'px';
     };
-    document.onmouseup = () => dragging = false;
 
     adicionarCartaz();
 </script>
