@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 18.4 - Paleta de Cores</title>
+    <title>Cartazista Pro 18.5 - Centralização Nativa</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --dark: #1e272e; --warning: #f1c40f; }
@@ -27,7 +27,8 @@
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
         .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 0.1mm dashed #ddd; }
-        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; }
+        /* Adicionado text-align center para ajudar na centralização do conteúdo multilinha */
+        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; text-align: center; }
         .tarja-fundo { z-index: 5; border: none; }
         .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.05); }
 
@@ -38,7 +39,6 @@
         textarea { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; resize: none; font-family: inherit; }
         input[type="number"], select { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; }
 
-        /* Estilo da Paleta de Cores */
         .color-palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
         .color-box { width: 100%; height: 25px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; transition: 0.1s; }
         .color-box:hover { transform: scale(1.1); border-color: #000; }
@@ -57,7 +57,7 @@
 <body onmouseup="pararArrasto()">
 
 <div class="toolbar">
-    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.4</span></div>
+    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.5</span></div>
     <select onchange="mudarLayout(this.value)" style="padding:5px;">
         <option value="grid-4">4 POR FOLHA</option>
         <option value="grid-2">2 POR FOLHA</option>
@@ -122,7 +122,7 @@
                     <div class="campo"><label>Altura</label><input type="number" id="inH" oninput="atualizarEstilo()"></div>
                 </div>
             </div>
-            <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; width:100%; margin-top:5px">↔ CENTRALIZAR</button>
+            <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; width:100%; margin-top:5px">↔ CENTRALIZAR MANUALMENTE</button>
         </div>
         <button class="btn" onclick="adicionarTarja()" style="background:#ffa502; color:white">⬛ ADICIONAR TARJA</button>
         <button class="btn" onclick="removerCartaz()" style="background:none; border:1px solid red; color:red; margin-top:10px">EXCLUIR CARTAZ</button>
@@ -137,17 +137,29 @@
 
     function adicionarCartaz() {
         const id = Date.now();
+        // Os valores de X agora são definidos como 0 e o elemento terá largura de 100% para centralização nativa inicial
         cartazes.push({
             id: id,
             itens: [
-                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 20, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
-                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 20, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
-                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 20, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
-                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 130, y: 120, size: 25, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
+                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 100, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
+                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 80, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 120, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0 },
+                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 150, y: 150, size: 20, font: "'Bebas Neue'", col: '#d63031', w:0, h:0 },
                 { id: 'p-'+id, tipo: 'preco', val: '0,99', x: 50, y: 180, size: 150, font: "'Anton'", col: '#000', w:0, h:0 }
             ]
         });
         render();
+        // Força a centralização de todos os itens recém criados
+        const ultimo = cartazes[cartazes.length - 1];
+        setTimeout(() => {
+            ultimo.itens.forEach(it => {
+                const el = document.getElementById(it.id);
+                if(el && it.tipo !== 'bg') {
+                    it.x = (el.parentElement.offsetWidth / 2) - (el.offsetWidth / 2);
+                    el.style.left = it.x + 'px';
+                }
+            });
+        }, 50);
     }
 
     function desmarcarTudo() {
