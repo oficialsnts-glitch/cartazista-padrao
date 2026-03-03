@@ -3,103 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 9.0 - Estável</title>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
-
+    <title>Cartazista Pro 11.0 - Campos Separados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --cinza: #2d3436; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        body { font-family: 'Segoe UI', sans-serif; background: #cbd5e0; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #cbd5e0; margin: 0; display: flex; flex-direction: column; 
-            height: 100vh; overflow: hidden; 
-        }
-
         /* TOOLBAR */
-        .toolbar { 
-            background: var(--cinza); padding: 10px 20px; display: flex; 
-            gap: 15px; align-items: center; color: white; z-index: 2000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
+        .toolbar { background: var(--cinza); padding: 10px 20px; display: flex; gap: 15px; align-items: center; color: white; z-index: 2000; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-add { background: var(--sucesso); color: white; }
         .btn-print { background: var(--danger); color: white; }
-        .layout-select { padding: 8px; border-radius: 4px; background: #636e72; color: white; border: 1px solid white; cursor: pointer; }
 
-        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-        /* ÁREA DE TRABALHO */
-        .workspace { flex: 1; overflow: auto; padding: 40px; display: flex; justify-content: center; background: #555; scroll-behavior: smooth; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .workspace { flex: 1; overflow: auto; padding: 40px; background: #555; display: flex; justify-content: center; }
         
-        #folha-impressao { 
-            width: 210mm; background: white; display: grid; 
-            min-height: 297mm; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            transition: all 0.3s ease;
-        }
-
-        /* GRIDS DE IMPRESSÃO */
-        .grid-1 { grid-template-columns: 1fr; }
-        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+        #folha-impressao { width: 210mm; background: white; display: grid; min-height: 297mm; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
-        .cartaz-area { 
-            border: 0.2mm dashed #ccc; position: relative; 
-            overflow: hidden; background: #fff; height: 100%; width: 100%; 
+        .cartaz-area { border: 0.2mm dashed #ccc; position: relative; overflow: hidden; background: #fff; }
+        
+        /* ELEMENTOS */
+        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.9; padding: 5px; }
+        .selecionado { outline: 2px solid var(--azul) !important; background: rgba(9, 132, 227, 0.1); }
+        
+        /* DESTAQUE DE PREÇO */
+        .selo-preco { 
+            background: #ff0000; border-radius: 50%; width: 280px; height: 280px; 
+            display: flex; align-items: center; justify-content: center; color: white; 
         }
 
-        /* ELEMENTOS DO CARTAZ */
-        .item-movel { 
-            position: absolute; cursor: move; user-select: none; 
-            white-space: nowrap; line-height: 0.85; padding: 10px;
-            transform-origin: center;
-        }
-        .selecionado { 
-            outline: 2px solid var(--azul) !important; 
-            background: rgba(9, 132, 227, 0.05); 
-            z-index: 1500 !important; 
-        }
-        .com-sombra { text-shadow: 4px 4px 0px rgba(0,0,0,0.15); }
-
-        /* CONTROLES DO CARTAZ */
-        .btn-ctrl { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; z-index: 100; }
-        .btn-ctrl button { font-size: 10px; padding: 5px 8px; cursor: pointer; border: none; border-radius: 3px; color: white; opacity: 0.7; font-weight: bold; }
-        .btn-ctrl button:hover { opacity: 1; }
-
-        /* PAINEL EDITOR */
-        .editor-panel { 
-            width: 320px; background: white; padding: 25px; 
-            border-left: 1px solid #ccc; display: none; 
-            flex-direction: column; gap: 15px; overflow-y: auto;
-            z-index: 1900; box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-        }
+        /* EDITOR */
+        .editor-panel { width: 350px; background: white; padding: 20px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 15px; overflow-y: auto; }
         .campo { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
-        .input-moeda { font-weight: bold; color: var(--danger); font-size: 22px; text-align: right; border: 2px solid var(--danger); }
+        label { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
 
-        @media print {
-            .toolbar, .editor-panel, .btn-ctrl { display: none !important; }
-            body { background: white; overflow: visible; }
-            .main-container { display: block; }
-            #folha-impressao { margin: 0; box-shadow: none; border: none; width: 210mm; }
-            .cartaz-area { border: 0.1mm solid #eee !important; outline: none; page-break-inside: avoid; }
-        }
+        @media print { .toolbar, .editor-panel { display: none !important; } }
     </style>
 </head>
 <body>
 
 <div class="toolbar">
-    <div style="font-weight:900; font-size:20px; color:var(--sucesso); letter-spacing: 1px;">CARTAZISTA PRO</div>
-    
-    <div style="margin-left: 10px;">
-        <select id="layoutSelect" class="layout-select" onchange="mudarLayout(this.value)">
-            <option value="grid-1">1 por Folha (A4)</option>
-            <option value="grid-2">2 por Folha (A5)</option>
-            <option value="grid-4" selected>4 por Folha (A6)</option>
-        </select>
-    </div>
-
+    <div style="font-weight:900;">CARTAZISTA PRO 11.0</div>
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO CARTAZ</button>
     <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
 </div>
@@ -110,211 +56,138 @@
     </div>
 
     <div class="editor-panel" id="edPanel">
-        <h3 style="margin:0; color:var(--cinza); border-bottom: 2px solid var(--azul); padding-bottom: 10px;">EDITAR ITEM</h3>
+        <h3 id="edTitulo">Editar Item</h3>
         
-        <div class="campo" id="divTexto">
-            <label>Texto do Produto / Marca</label>
-            <input type="text" id="edVal" oninput="aplicar()" placeholder="Ex: Arroz Integral">
-        </div>
-        
-        <div class="campo" id="divMoeda" style="display:none">
-            <label>Preço (R$)</label>
-            <input type="text" id="edMoeda" class="input-moeda" oninput="mascaraMoeda(this)" placeholder="0,00">
-        </div>
-
-        <div class="campo">
-            <label>Posicionamento</label>
-            <button class="btn" onclick="centralizarItem()" style="background:var(--azul); color:white; width:100%">↔ CENTRALIZAR HORIZONTAL</button>
+        <div class="campo" id="campoTexto">
+            <label>Texto do Item</label>
+            <input type="text" id="inputTexto" oninput="atualizarValor()">
         </div>
 
         <div class="campo">
             <label>Tamanho da Fonte</label>
-            <input type="range" id="edSize" min="10" max="800" oninput="aplicar()">
+            <input type="range" id="inputSize" min="10" max="500" oninput="atualizarValor()">
         </div>
 
         <div class="campo">
-            <label>Estilo da Fonte</label>
-            <select id="edFont" onchange="aplicar()">
-                <option value="'Bebas Neue'">BEBAS NEUE (Recomendado)</option>
-                <option value="'Anton'">ANTON (Preços)</option>
-                <option value="'Archivo Black'">ARCHIVO BLACK (Títulos)</option>
-                <option value="'Oswald'">OSWALD</option>
-            </select>
+            <label>Cor do Elemento</label>
+            <input type="color" id="inputColor" onchange="atualizarValor()">
         </div>
 
-        <div class="campo">
-            <label>Cor</label>
-            <input type="color" id="edColor" onchange="aplicar()" style="width:100%; height:45px; cursor:pointer;">
-        </div>
-
-        <button class="btn" onclick="toggleSombra()" style="background:#f1f2f6; color:#2d3436; border:1px solid #ccc; width:100%">EFEITO SOMBRA 3D</button>
-        
-        <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-        <button class="btn" style="background:var(--danger); color:white; width:100%" onclick="removerItem()">✖ EXCLUIR ITEM SELECIONADO</button>
+        <hr>
+        <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; margin-bottom:5px">↔ CENTRALIZAR NO CARTAZ</button>
+        <button class="btn" onclick="toggleSelo()" style="background:#f1c40f; color:#000">🟡 ALTERNAR SELO DE FUNDO</button>
     </div>
 </div>
 
 <script>
     let cartazes = [];
-    let sel = null;
-    let dragging = false;
-    let offset = { x: 0, y: 0 };
+    let itemSelecionado = null;
+    let arrastando = false;
+    let mouseOffset = { x: 0, y: 0 };
 
-    function mudarLayout(classe) {
-        document.getElementById('folha-impressao').className = classe;
-    }
-
-    function adicionarCartaz(dados = null) {
+    function adicionarCartaz() {
         const id = Date.now();
-        if(dados) {
-            const copia = JSON.parse(JSON.stringify(dados));
-            copia.id = id;
-            // Gera novos IDs para os itens da cópia
-            copia.itens.forEach((it, idx) => it.id = 'it-' + id + '-' + idx);
-            cartazes.push(copia);
-        } else {
-            cartazes.push({
-                id: id,
-                itens: [
-                    { id: 'p'+id, tipo: 'txt', val: 'NOME DO PRODUTO', x: 20, y: 30, size: 45, font: "'Bebas Neue'", col: '#000', sombra: false },
-                    { id: 'm'+id, tipo: 'txt', val: 'MARCA / PESO', x: 20, y: 90, size: 25, font: "'Bebas Neue'", col: '#d63031', sombra: false },
-                    { id: 'v'+id, tipo: 'preco', val: '0,00', x: 40, y: 180, size: 160, font: "'Anton'", col: '#000', sombra: true }
-                ]
-            });
-        }
-        render();
+        cartazes.push({
+            id: id,
+            itens: [
+                { id: 'desc-'+id, tipo: 'txt', val: 'NOME DO PRODUTO', x: 40, y: 30, size: 45, col: '#000', font: 'Bebas Neue', selo: false },
+                { id: 'marca-'+id, tipo: 'txt', val: 'MARCA / PESO', x: 40, y: 95, size: 22, col: '#d63031', font: 'Bebas Neue', selo: false },
+                { id: 'preco-'+id, tipo: 'preco', val: '14.90', x: 80, y: 160, size: 130, col: '#000', font: 'Anton', selo: true }
+            ]
+        });
+        renderizar();
     }
 
-    function mascaraMoeda(i) {
-        let v = i.value.replace(/\D/g,'');
-        v = (v/100).toFixed(2) + '';
-        v = v.replace(".", ",");
-        i.value = v;
-        aplicar();
-    }
+    function renderizar() {
+        const folha = document.getElementById('folha-impressao');
+        folha.innerHTML = '';
 
-    function centralizarItem() {
-        if(!sel) return;
-        // Pega o container do cartaz onde o item está
-        const cartazArea = sel.el.closest('.cartaz-area');
-        const larguraCartaz = cartazArea.clientWidth;
-        const larguraItem = sel.el.offsetWidth;
-        
-        sel.data.x = (larguraCartaz / 2) - (larguraItem / 2);
-        sel.el.style.left = sel.data.x + 'px';
-        render();
-        // Mantém o estado visual
-        const elRelevante = document.getElementById(sel.data.id);
-        if(elRelevante) elRelevante.classList.add('selecionado');
-    }
-
-    function render() {
-        const f = document.getElementById('folha-impressao');
-        f.innerHTML = '';
-        cartazes.forEach((c, index) => {
+        cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
             
-            const ctrl = document.createElement('div');
-            ctrl.className = 'btn-ctrl';
-            ctrl.innerHTML = `
-                <button style="background:var(--sucesso)" onclick="adicionarCartaz(cartazes[${index}])">CLONAR</button>
-                <button style="background:var(--danger)" onclick="removerCartaz(${index})">APAGAR</button>
-            `;
-            area.appendChild(ctrl);
-
             c.itens.forEach(it => {
                 const el = document.createElement('div');
-                el.className = `item-movel ${it.sombra ? 'com-sombra' : ''}`;
                 el.id = it.id;
-                el.style.left = it.x + 'px'; 
+                el.className = `item-movel ${it.selo ? 'selo-preco' : ''}`;
+                el.style.left = it.x + 'px';
                 el.style.top = it.y + 'px';
-                el.style.fontSize = it.size + 'px'; 
-                el.style.fontFamily = it.font;
+                el.style.fontSize = it.size + 'px';
                 el.style.color = it.col;
+                el.style.fontFamily = it.font;
 
                 if(it.tipo === 'txt') {
                     el.innerText = it.val;
                 } else {
-                    let p = it.val.split(',');
-                    el.innerHTML = `
-                        <div style="display:flex; align-items: flex-start;">
-                            <span style="font-size:0.3em; margin-top:0.2em; margin-right:2px">R$</span>
-                            <span>${p[0]}</span>
-                            <span style="font-size:0.5em; border-bottom:5px solid; margin-top:5px">,${p[1]||'00'}</span>
-                        </div>`;
+                    const partes = it.val.replace(',', '.').split('.');
+                    el.innerHTML = `<small style="font-size:0.35em; position:relative; top:-0.3em">R$</small>${partes[0]}<small style="font-size:0.5em; border-bottom: 4px solid; margin-left:2px">,${partes[1] || '00'}</small>`;
                 }
 
-                el.onmousedown = (e) => {
-                    sel = { data: it, el: el }; 
-                    dragging = true;
-                    document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
-                    el.classList.add('selecionado');
-                    offset.x = e.clientX - el.offsetLeft; 
-                    offset.y = e.clientY - el.offsetTop;
-                    
-                    document.getElementById('edPanel').style.display = 'flex';
-                    if(it.tipo === 'preco') {
-                        document.getElementById('divMoeda').style.display = 'flex';
-                        document.getElementById('divTexto').style.display = 'none';
-                        document.getElementById('edMoeda').value = it.val;
-                    } else {
-                        document.getElementById('divMoeda').style.display = 'none';
-                        document.getElementById('divTexto').style.display = 'flex';
-                        document.getElementById('edVal').value = it.val;
-                    }
-                    document.getElementById('edSize').value = it.size;
-                    document.getElementById('edColor').value = it.col;
-                    document.getElementById('edFont').value = it.font;
-                };
+                el.onmousedown = (e) => selecionarItem(e, it, el);
                 area.appendChild(el);
             });
-            f.appendChild(area);
+            folha.appendChild(area);
         });
     }
 
-    function aplicar() {
-        if(!sel) return;
-        sel.data.size = parseInt(document.getElementById('edSize').value);
-        sel.data.col = document.getElementById('edColor').value;
-        sel.data.font = document.getElementById('edFont').value;
-        sel.data.val = (sel.data.tipo === 'preco') ? document.getElementById('edMoeda').value : document.getElementById('edVal').value;
-        render();
-        const el = document.getElementById(sel.data.id);
-        if(el) el.classList.add('selecionado');
+    function selecionarItem(e, dados, elemento) {
+        itemSelecionado = { dados, elemento };
+        arrastando = true;
+        
+        document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
+        elemento.classList.add('selecionado');
+
+        mouseOffset.x = e.clientX - elemento.offsetLeft;
+        mouseOffset.y = e.clientY - elemento.offsetTop;
+
+        // Atualizar Painel
+        document.getElementById('edPanel').style.display = 'flex';
+        document.getElementById('inputTexto').value = dados.val;
+        document.getElementById('inputSize').value = dados.size;
+        document.getElementById('inputColor').value = dados.col;
+        
+        // Titulo dinâmico no editor
+        const tipoLabel = dados.id.includes('desc') ? 'Descrição' : (dados.id.includes('marca') ? 'Marca' : 'Preço');
+        document.getElementById('edTitulo').innerText = 'Editando: ' + tipoLabel;
     }
 
-    function toggleSombra() { 
-        if(sel) { 
-            sel.data.sombra = !sel.data.sombra; 
-            render(); 
-            document.getElementById(sel.data.id).classList.add('selecionado'); 
-        } 
+    function atualizarValor() {
+        if(!itemSelecionado) return;
+        itemSelecionado.dados.val = document.getElementById('inputTexto').value;
+        itemSelecionado.dados.size = document.getElementById('inputSize').value;
+        itemSelecionado.dados.col = document.getElementById('inputColor').value;
+        renderizar();
+        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
     }
-    
-    function removerItem() { 
-        if(!sel) return;
-        cartazes.forEach(c => c.itens = c.itens.filter(i => i.id !== sel.data.id)); 
-        document.getElementById('edPanel').style.display = 'none'; 
-        render(); 
+
+    function centralizar() {
+        if(!itemSelecionado) return;
+        const pai = document.getElementById(itemSelecionado.dados.id).parentElement;
+        const larguraPai = pai.offsetWidth;
+        const larguraItem = document.getElementById(itemSelecionado.dados.id).offsetWidth;
+        
+        itemSelecionado.dados.x = (larguraPai / 2) - (larguraItem / 2);
+        renderizar();
+        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
     }
-    
-    function removerCartaz(idx) { 
-        cartazes.splice(idx, 1); 
-        render(); 
+
+    function toggleSelo() {
+        if(!itemSelecionado) return;
+        itemSelecionado.dados.selo = !itemSelecionado.dados.selo;
+        renderizar();
+        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
     }
 
     document.onmousemove = (e) => {
-        if(!dragging || !sel) return;
-        sel.data.x = e.clientX - offset.x; 
-        sel.data.y = e.clientY - offset.y;
-        sel.el.style.left = sel.data.x + 'px'; 
-        sel.el.style.top = sel.data.y + 'px';
+        if(!arrastando || !itemSelecionado) return;
+        itemSelecionado.dados.x = e.clientX - mouseOffset.x;
+        itemSelecionado.dados.y = e.clientY - mouseOffset.y;
+        itemSelecionado.elemento.style.left = itemSelecionado.dados.x + 'px';
+        itemSelecionado.elemento.style.top = itemSelecionado.dados.y + 'px';
     };
-    
-    document.onmouseup = () => { dragging = false; };
 
-    // Iniciar com um cartaz padrão
+    document.onmouseup = () => arrastando = false;
+
     adicionarCartaz();
 </script>
 </body>
