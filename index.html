@@ -3,12 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 18.6 - Double Click Edition</title>
+    <title>Cartazista Pro 19.0 - THODY & GEMINI</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --dark: #1e272e; --warning: #f1c40f; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         
+        /* ESTILO DA ANIMAÇÃO DE ENTRADA - PARCERIA THODY & GEMINI */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            transition: opacity 1.5s ease, visibility 1.5s;
+        }
+
+        .welcome-text {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 50px;
+            text-align: center;
+            animation: zoomIn 2.5s ease-out;
+        }
+
+        .welcome-subtext {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 20px;
+            color: var(--warning);
+            margin-top: 20px;
+            letter-spacing: 4px;
+            opacity: 0;
+            animation: fadeIn 3s ease-in forwards;
+            animation-delay: 1.5s;
+        }
+
+        .partnership-signature {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            animation: fadeIn 2s ease-in forwards;
+            animation-delay: 3s;
+        }
+
+        .dev-label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .names {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            color: #fff;
+            letter-spacing: 2px;
+            border-top: 1px solid var(--warning);
+            padding-top: 10px;
+        }
+
+        .gemini-highlight { color: var(--azul); }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.3); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ESTILOS ORIGINAIS PRESERVADOS */
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
@@ -45,7 +121,7 @@
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
-            .toolbar, .editor-panel { display: none !important; }
+            #splash-screen, .toolbar, .editor-panel { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; }
             #folha-impressao { box-shadow: none !important; border: none !important; margin: 0 !important; }
             .selecionado { outline: none !important; background: none !important; }
@@ -55,8 +131,17 @@
 </head>
 <body onmouseup="pararArrasto()">
 
+<div id="splash-screen">
+    <div class="welcome-text">CARTAZISTA <span style="color:var(--warning)">PRO</span></div>
+    <div class="welcome-subtext">QUALIDADE EM CADA DETALHE</div>
+    <div class="partnership-signature">
+        <div class="dev-label">Desenvolvido por</div>
+        <div class="names">THODY & <span class="gemini-highlight">GEMINI</span></div>
+    </div>
+</div>
+
 <div class="toolbar">
-    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 18.6</span></div>
+    <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 19.0</span></div>
     <select onchange="mudarLayout(this.value)" style="padding:5px;">
         <option value="grid-4">4 POR FOLHA</option>
         <option value="grid-2">2 POR FOLHA</option>
@@ -65,6 +150,9 @@
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO</button>
     <button class="btn btn-duplica" onclick="duplicarCartaz()">📋 DUPLICAR</button>
     <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
+    <div style="flex:1; text-align:right; font-size:9px; opacity:0.7; font-weight:bold; color: white;">
+        THODY & <span style="color:var(--azul)">GEMINI</span>
+    </div>
 </div>
 
 <div class="main-container">
@@ -133,6 +221,16 @@
     let sel = null;
     let dragging = false;
     let offset = { x: 0, y: 0 };
+
+    window.onload = () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.visibility = 'hidden';
+            }, 1500);
+        }, 6000);
+    };
 
     function adicionarCartaz() {
         const id = Date.now();
@@ -214,14 +312,12 @@
                     } else { el.innerText = it.val; }
                 }
 
-                // FUNÇÃO DE CLIQUE DUPLO PARA EDIÇÃO RÁPIDA
                 el.ondblclick = (e) => {
                     if(it.tipo === 'bg') return;
                     const novoTexto = prompt("DIGITE O NOVO TEXTO:", it.val);
                     if(novoTexto !== null) {
-                        it.val = novoTexto.toUpperCase(); // CAIXA ALTA AUTOMÁTICA
+                        it.val = novoTexto.toUpperCase();
                         render();
-                        // Re-seleciona para não perder o foco
                         setTimeout(() => {
                             const reSel = document.getElementById(it.id);
                             if(reSel) reSel.classList.add('selecionado');
