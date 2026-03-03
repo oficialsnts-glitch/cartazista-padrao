@@ -3,93 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro Ultra 14.0 - Full Custom</title>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Roboto+Condensed:wght@700&family=Fjalla+One&family=Staatliches&family=Teko:wght@600&display=swap" rel="stylesheet">
+    <title>Cartazista Pro 16.0 - Headline Focus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Fjalla+One&family=Staatliches&family=Teko:wght@600&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #0984e3; --danger: #d63031; --success: #00b894; --warning: #f1c40f; --dark: #2d3436; 
-        }
+        :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --warning: #f1c40f; --dark: #1e272e; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
-        
-        body { 
-            font-family: 'Segoe UI', sans-serif; background: #aeb9c4; margin: 0; 
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #7f8c8d; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* BARRA DE FERRAMENTAS */
-        .toolbar { 
-            background: var(--dark); padding: 10px 20px; display: flex; 
-            gap: 15px; align-items: center; color: white; z-index: 2000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
-        .btn-add { background: var(--success); color: white; }
+        /* UI TOOLBAR */
+        .toolbar { background: var(--dark); padding: 12px 25px; display: flex; gap: 15px; align-items: center; color: white; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: 900; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
+        .btn-add { background: var(--sucesso); color: white; }
         .btn-print { background: var(--danger); color: white; }
+        .select-layout { background: #4b6584; color: white; border: 1px solid #778ca3; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
-
-        /* WORKSPACE */
-        .workspace { flex: 1; overflow: auto; padding: 50px; background: #4a4a4a; display: flex; justify-content: center; }
+        .workspace { flex: 1; overflow: auto; padding: 40px; background: #2c3e50; display: flex; justify-content: center; }
         
-        #folha-impressao { 
-            width: 210mm; background: white; display: grid; 
-            min-height: 297mm; box-shadow: 0 0 60px rgba(0,0,0,0.8);
-        }
+        /* FOLHA */
+        #folha-impressao { width: 210mm; background: white; display: grid; min-height: 297mm; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         .grid-1 { grid-template-columns: 1fr; }
         .grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
-        /* TEMAS DE SUPERMERCADO */
-        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 1px dashed #ccc; transition: 0.3s; }
+        /* CARTAZ */
+        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 0.2mm dashed #ccc; }
         
-        .tema-oferta { background: #ffea00 !important; border: 12px solid #e74c3c !important; }
-        .tema-promocao { background: #ffffff !important; border: 12px double #27ae60 !important; }
-        .tema-hortifruti { background: #f1f8e9 !important; border: 12px solid #2ecc71 !important; }
-        .tema-acougue { background: #fff5f5 !important; border: 12px solid #c0392b !important; }
-        .tema-black { background: #000 !important; border: 8px solid #f1c40f !important; }
+        /* ELEMENTOS */
+        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.9; white-space: nowrap; z-index: 10; padding: 5px 10px; }
+        .selecionado { outline: 3px solid var(--azul) !important; z-index: 100 !important; background: rgba(9, 132, 227, 0.05); }
 
-        /* ELEMENTOS MÓVEIS */
-        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.85; white-space: nowrap; z-index: 10; }
-        .selecionado { outline: 4px solid var(--primary) !important; background: rgba(9, 132, 227, 0.1); border-radius: 5px; }
+        /* EDITOR PANEL */
+        .editor-panel { width: 420px; background: #fdfdfd; padding: 20px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 12px; overflow-y: auto; }
+        .secao { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 6px; }
+        .secao h4 { margin: 0 0 10px 0; font-size: 11px; color: #333; text-transform: uppercase; border-left: 4px solid var(--azul); padding-left: 8px; }
+        .campo { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+        label { font-size: 9px; font-weight: 800; color: #95a5a6; text-transform: uppercase; }
+        input, select { padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 13px; }
 
-        /* SELOS DE PREÇO (BACKGROUNDS) */
-        .selo-nada { background: none; }
-        .selo-circulo { background: #ff0000; border-radius: 50%; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; z-index: 1; }
-        .selo-explosao { 
-            background: #ff0000; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-            width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; z-index: 1;
-        }
-        .selo-quadrado { background: #000; border: 5px solid #f1c40f; width: 300px; height: 200px; z-index: 1; }
-
-        /* PAINEL EDITOR */
-        .editor-panel { 
-            width: 420px; background: white; padding: 20px; border-left: 1px solid #ddd; 
-            display: none; flex-direction: column; gap: 15px; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-        }
-        .secao-ed { border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
-        .secao-ed h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--primary); text-transform: uppercase; border-bottom: 2px solid; padding-bottom: 5px; }
-        
-        .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-        label { font-size: 10px; font-weight: 800; color: #555; }
-        input[type="text"], select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; width: 100%; }
-        .flex-row { display: flex; gap: 10px; }
-        
-        @media print { .toolbar, .editor-panel { display: none !important; } .cartaz-area { border: none !important; } }
+        @media print { .toolbar, .editor-panel { display: none !important; } .cartaz-area { border: none !important; } #folha-impressao { box-shadow: none; margin: 0; } }
     </style>
 </head>
 <body>
 
 <div class="toolbar">
-    <div style="font-weight: 900; font-size: 18px; color: var(--warning);">CARTAZISTA PRO <span style="color:white">V14</span></div>
+    <div style="font-weight: 900; letter-spacing: 1px;">CARTAZISTA PRO <span style="color:var(--warning)">V16</span></div>
     
-    <select id="selGrid" class="btn" style="background:#444; color:white" onchange="mudarLayout(this.value)">
-        <option value="grid-1">1 por Folha (A4)</option>
-        <option value="grid-2">2 por Folha (A5)</option>
-        <option value="grid-4" selected>4 por Folha (A6)</option>
+    <select class="select-layout" onchange="mudarLayout(this.value)">
+        <option value="grid-1">1 POR FOLHA (A4)</option>
+        <option value="grid-2">2 POR FOLHA (A5)</option>
+        <option value="grid-4" selected>4 POR FOLHA (A6)</option>
     </select>
 
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO CARTAZ</button>
-    <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR TRABALHO</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR AGORA</button>
 </div>
 
 <div class="main-container">
@@ -98,64 +65,43 @@
     </div>
 
     <div class="editor-panel" id="edPanel">
-        <h2 style="margin:0; font-size: 18px;">Personalizar Item</h2>
-        <p id="infoItem" style="font-size:11px; color:#666; margin-top: -5px;">Clique em um texto no cartaz para editar</p>
+        <h3 style="margin:0 0 10px 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Configurações</h3>
 
-        <div class="secao-ed">
-            <h4>1. Textos do Cartaz</h4>
-            <div class="campo"><label>PRODUTO</label><input type="text" id="inDesc" oninput="atualizar('desc')"></div>
-            <div class="campo"><label>MARCA</label><input type="text" id="inMarca" oninput="atualizar('marca')"></div>
-            <div class="campo"><label>PESO / UNIDADE</label><input type="text" id="inPeso" oninput="atualizar('peso')"></div>
-            <div class="campo"><label>PREÇO R$</label><input type="text" id="inPreco" style="color:red; font-weight:bold" oninput="atualizar('preco')"></div>
+        <div class="secao">
+            <h4>1. Textos do Item</h4>
+            <div class="campo"><label>CHAMADA (EX: OFERTA)</label><input type="text" id="inHead" oninput="atualizarTextos('head')"></div>
+            <div class="campo"><label>PRODUTO</label><input type="text" id="inDesc" oninput="atualizarTextos('desc')"></div>
+            <div class="campo"><label>MARCA</label><input type="text" id="inMarca" oninput="atualizarTextos('marca')"></div>
+            <div class="campo"><label>PESO / MEDIDA</label><input type="text" id="inPeso" oninput="atualizarTextos('peso')"></div>
+            <div class="campo"><label>PREÇO R$</label><input type="text" id="inPreco" oninput="atualizarTextos('preco')"></div>
         </div>
 
-        <div class="secao-ed" style="background: #eef2f7;">
-            <h4>2. Estilo do Selecionado</h4>
+        <div class="secao" style="background: #f8f9fa;">
+            <h4 id="labelEdit">2. Estilo do Selecionado</h4>
             <div class="campo">
                 <label>FONTE</label>
-                <select id="inFont" onchange="atualizar('font')">
-                    <option value="'Bebas Neue'">Bebas Neue (Impactante)</option>
-                    <option value="'Anton'">Anton (Forte)</option>
-                    <option value="'Archivo Black'">Archivo Black (Larga)</option>
-                    <option value="'Oswald'">Oswald (Moderna)</option>
-                    <option value="'Roboto Condensed'">Roboto Condensed</option>
-                    <option value="'Fjalla One'">Fjalla One</option>
-                    <option value="'Staatliches'">Staatliches</option>
-                    <option value="'Teko'">Teko (Alta)</option>
+                <select id="inFont" onchange="atualizarEstilo()">
+                    <option value="'Bebas Neue'">Bebas Neue</option>
+                    <option value="'Anton'">Anton</option>
+                    <option value="'Archivo Black'">Archivo Black</option>
+                    <option value="'Oswald'">Oswald</option>
+                    <option value="'Teko'">Teko</option>
                 </select>
             </div>
-            <div class="flex-row">
-                <div class="campo" style="flex:1"><label>TAMANHO</label><input type="range" id="inSize" min="10" max="800" oninput="atualizar('size')"></div>
-                <div class="campo"><label>COR</label><input type="color" id="inColor" onchange="atualizar('color')"></div>
+            <div style="display:flex; gap:10px">
+                <div class="campo" style="flex:1"><label>TAMANHO</label><input type="range" id="inSize" min="10" max="800" oninput="atualizarEstilo()"></div>
+                <div class="campo"><label>COR TEXTO</label><input type="color" id="inColor" onchange="atualizarEstilo()"></div>
             </div>
-            <button class="btn" onclick="centralizar()" style="background:var(--primary); color:white; width:100%">↔ CENTRALIZAR HORIZONTAL</button>
+            
+            <div class="campo" id="boxFundoHead" style="display:none">
+                <label>COR DO FUNDO (DESTAQUE)</label>
+                <input type="color" id="inBgColor" onchange="atualizarEstilo()">
+            </div>
+
+            <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; width:100%; margin-top:5px">↔ CENTRALIZAR NO CARTAZ</button>
         </div>
 
-        <div class="secao-ed">
-            <h4>3. Visual do Cartaz</h4>
-            <div class="campo">
-                <label>TEMA VISUAL</label>
-                <select id="inTema" onchange="mudarTema(this.value)">
-                    <option value="">BRANCO SIMPLES</option>
-                    <option value="tema-oferta">OFERTA (AMARELO/VERMELHO)</option>
-                    <option value="tema-promocao">PROMOÇÃO (BRANCO/VERDE)</option>
-                    <option value="tema-hortifruti">HORTIFRUTI (VERDE)</option>
-                    <option value="tema-acougue">AÇOUGUE (CARNES)</option>
-                    <option value="tema-black">BLACK FRIDAY (PRETO/OURO)</option>
-                </select>
-            </div>
-            <div class="campo">
-                <label>FUNDO DO PREÇO (SELO)</label>
-                <select id="inSelo" onchange="mudarSelo(this.value)">
-                    <option value="selo-nada">SEM SELO (LIMPO)</option>
-                    <option value="selo-circulo">CÍRCULO VERMELHO</option>
-                    <option value="selo-explosao">EXPLOSÃO DE OFERTA</option>
-                    <option value="selo-quadrado">ETIQUETA PRETA</option>
-                </select>
-            </div>
-        </div>
-
-        <button class="btn" onclick="removerCartaz()" style="background:#eee; color:red">✖ EXCLUIR ESTE CARTAZ</button>
+        <button class="btn" onclick="removerCartaz()" style="margin-top:10px; width:100%; color:red; background:#fff; border:1px solid red">✖ EXCLUIR CARTAZ</button>
     </div>
 </div>
 
@@ -167,36 +113,37 @@
 
     function adicionarCartaz() {
         const id = Date.now();
-        const novo = {
-            id: id, tema: '',
+        cartazes.push({
+            id: id,
             itens: [
-                { id: 'd-'+id, tipo: 'desc', val: 'NOME DO PRODUTO', x: 20, y: 30, size: 50, font: "'Bebas Neue'", col: '#000' },
-                { id: 'm-'+id, tipo: 'marca', val: 'MARCA AQUI', x: 20, y: 90, size: 25, font: "'Bebas Neue'", col: '#000' },
-                { id: 'w-'+id, tipo: 'peso', val: '1KG', x: 150, y: 90, size: 25, font: "'Bebas Neue'", col: '#d63031' },
-                { id: 'p-'+id, tipo: 'preco', val: '19,90', x: 60, y: 160, size: 160, font: "'Anton'", col: '#000', selo: 'selo-nada' }
+                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 0, y: 0, size: 40, font: "'Bebas Neue'", col: '#ffffff', bg: '#d63031' },
+                { id: 'd-'+id, tipo: 'desc', val: 'NOME DO PRODUTO', x: 20, y: 70, size: 50, font: "'Bebas Neue'", col: '#000000', bg: 'transparent' },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 20, y: 130, size: 25, font: "'Bebas Neue'", col: '#000000', bg: 'transparent' },
+                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 150, y: 130, size: 25, font: "'Bebas Neue'", col: '#d63031', bg: 'transparent' },
+                { id: 'p-'+id, tipo: 'preco', val: '19,90', x: 50, y: 190, size: 160, font: "'Anton'", col: '#000000', bg: 'transparent' }
             ]
-        };
-        cartazes.push(novo);
+        });
         render();
     }
 
     function render() {
-        const container = document.getElementById('folha-impressao');
-        container.innerHTML = '';
+        const folha = document.getElementById('folha-impressao');
+        folha.innerHTML = '';
 
         cartazes.forEach(c => {
             const area = document.createElement('div');
-            area.className = `cartaz-area ${c.tema}`;
+            area.className = 'cartaz-area';
             
             c.itens.forEach(it => {
                 const el = document.createElement('div');
                 el.id = it.id;
-                el.className = `item-movel ${it.tipo === 'preco' ? it.selo : ''}`;
-                el.style.left = it.x + 'px'; el.style.top = it.y + 'px';
-                el.style.fontSize = it.size + 'px'; el.style.fontFamily = it.font;
-                
-                // Cor inteligente se tiver selo
-                el.style.color = (it.selo && it.selo !== 'selo-nada') ? '#fff' : it.col;
+                el.className = 'item-movel';
+                el.style.left = it.x + 'px';
+                el.style.top = it.y + 'px';
+                el.style.fontSize = it.size + 'px';
+                el.style.fontFamily = it.font;
+                el.style.color = it.col;
+                el.style.backgroundColor = it.bg;
 
                 if(it.tipo === 'preco') {
                     const p = it.val.replace(',', '.').split('.');
@@ -214,40 +161,42 @@
                     offset.y = e.clientY - el.offsetTop;
 
                     document.getElementById('edPanel').style.display = 'flex';
-                    // Carrega dados nos inputs
+                    // Carrega textos
+                    document.getElementById('inHead').value = c.itens.find(i => i.tipo === 'head').val;
                     document.getElementById('inDesc').value = c.itens.find(i => i.tipo === 'desc').val;
                     document.getElementById('inMarca').value = c.itens.find(i => i.tipo === 'marca').val;
                     document.getElementById('inPeso').value = c.itens.find(i => i.tipo === 'peso').val;
                     document.getElementById('inPreco').value = c.itens.find(i => i.tipo === 'preco').val;
-                    // Carrega estilo do item clicado
+                    
+                    // Carrega estilos do item clicado
                     document.getElementById('inFont').value = it.font;
                     document.getElementById('inSize').value = it.size;
                     document.getElementById('inColor').value = it.col;
-                    document.getElementById('inTema').value = c.tema;
-                    document.getElementById('inSelo').value = c.itens.find(i => i.tipo === 'preco').selo || 'selo-nada';
+                    document.getElementById('inBgColor').value = it.bg === 'transparent' ? '#ffffff' : it.bg;
+                    
+                    // Mostra opção de fundo se for cabeçalho
+                    document.getElementById('boxFundoHead').style.display = 'block';
+                    document.getElementById('labelEdit').innerText = `EDITANDO: ${it.tipo.toUpperCase()}`;
                 };
                 area.appendChild(el);
             });
-            container.appendChild(area);
+            folha.appendChild(area);
         });
     }
 
-    function atualizar(campo) {
+    function atualizarTextos(tipo) {
         if(!sel) return;
-        const itDesc = sel.cartaz.itens.find(i => i.tipo === 'desc');
-        const itMarca = sel.cartaz.itens.find(i => i.tipo === 'marca');
-        const itPeso = sel.cartaz.itens.find(i => i.tipo === 'peso');
-        const itPreco = sel.cartaz.itens.find(i => i.tipo === 'preco');
+        sel.cartaz.itens.find(i => i.tipo === tipo).val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
+        render();
+        document.getElementById(sel.data.id).classList.add('selecionado');
+    }
 
-        if(campo === 'desc') itDesc.val = document.getElementById('inDesc').value;
-        if(campo === 'marca') itMarca.val = document.getElementById('inMarca').value;
-        if(campo === 'peso') itPeso.val = document.getElementById('inPeso').value;
-        if(campo === 'preco') itPreco.val = document.getElementById('inPreco').value;
-        
-        if(campo === 'font') sel.data.font = document.getElementById('inFont').value;
-        if(campo === 'size') sel.data.size = document.getElementById('inSize').value;
-        if(campo === 'color') sel.data.col = document.getElementById('inColor').value;
-
+    function atualizarEstilo() {
+        if(!sel) return;
+        sel.data.font = document.getElementById('inFont').value;
+        sel.data.size = document.getElementById('inSize').value;
+        sel.data.col = document.getElementById('inColor').value;
+        sel.data.bg = document.getElementById('inBgColor').value;
         render();
         document.getElementById(sel.data.id).classList.add('selecionado');
     }
@@ -260,18 +209,8 @@
         document.getElementById(sel.data.id).classList.add('selecionado');
     }
 
-    function mudarTema(v) { if(sel) { sel.cartaz.tema = v; render(); } }
-    
-    function mudarSelo(v) { 
-        if(sel) { 
-            const p = sel.cartaz.itens.find(i => i.tipo === 'preco');
-            p.selo = v; 
-            render(); 
-        } 
-    }
-
     function mudarLayout(v) { document.getElementById('folha-impressao').className = v; }
-    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; render(); } }
+    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; document.getElementById('edPanel').style.display = 'none'; render(); } }
 
     document.onmousemove = (e) => {
         if(!dragging || !sel) return;
@@ -282,7 +221,6 @@
     };
     document.onmouseup = () => dragging = false;
 
-    // Inicializa
     adicionarCartaz();
 </script>
 </body>
