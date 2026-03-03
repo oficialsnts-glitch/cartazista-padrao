@@ -3,51 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartazista Pro 11.0 - Campos Separados</title>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
+    <title>Cartazista Pro Ultra 14.0 - Full Custom</title>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Roboto+Condensed:wght@700&family=Fjalla+One&family=Staatliches&family=Teko:wght@600&display=swap" rel="stylesheet">
     <style>
-        :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --cinza: #2d3436; }
-        body { font-family: 'Segoe UI', sans-serif; background: #cbd5e0; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { 
+            --primary: #0984e3; --danger: #d63031; --success: #00b894; --warning: #f1c40f; --dark: #2d3436; 
+        }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
         
-        /* TOOLBAR */
-        .toolbar { background: var(--cinza); padding: 10px 20px; display: flex; gap: 15px; align-items: center; color: white; z-index: 2000; }
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-add { background: var(--sucesso); color: white; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: #aeb9c4; margin: 0; 
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden; 
+        }
+
+        /* BARRA DE FERRAMENTAS */
+        .toolbar { 
+            background: var(--dark); padding: 10px 20px; display: flex; 
+            gap: 15px; align-items: center; color: white; z-index: 2000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
+        .btn-add { background: var(--success); color: white; }
         .btn-print { background: var(--danger); color: white; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .workspace { flex: 1; overflow: auto; padding: 40px; background: #555; display: flex; justify-content: center; }
+
+        /* WORKSPACE */
+        .workspace { flex: 1; overflow: auto; padding: 50px; background: #4a4a4a; display: flex; justify-content: center; }
         
-        #folha-impressao { width: 210mm; background: white; display: grid; min-height: 297mm; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        #folha-impressao { 
+            width: 210mm; background: white; display: grid; 
+            min-height: 297mm; box-shadow: 0 0 60px rgba(0,0,0,0.8);
+        }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
 
-        .cartaz-area { border: 0.2mm dashed #ccc; position: relative; overflow: hidden; background: #fff; }
+        /* TEMAS DE SUPERMERCADO */
+        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 1px dashed #ccc; transition: 0.3s; }
         
-        /* ELEMENTOS */
-        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.9; padding: 5px; }
-        .selecionado { outline: 2px solid var(--azul) !important; background: rgba(9, 132, 227, 0.1); }
-        
-        /* DESTAQUE DE PREÇO */
-        .selo-preco { 
-            background: #ff0000; border-radius: 50%; width: 280px; height: 280px; 
-            display: flex; align-items: center; justify-content: center; color: white; 
+        .tema-oferta { background: #ffea00 !important; border: 12px solid #e74c3c !important; }
+        .tema-promocao { background: #ffffff !important; border: 12px double #27ae60 !important; }
+        .tema-hortifruti { background: #f1f8e9 !important; border: 12px solid #2ecc71 !important; }
+        .tema-acougue { background: #fff5f5 !important; border: 12px solid #c0392b !important; }
+        .tema-black { background: #000 !important; border: 8px solid #f1c40f !important; }
+
+        /* ELEMENTOS MÓVEIS */
+        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.85; white-space: nowrap; z-index: 10; }
+        .selecionado { outline: 4px solid var(--primary) !important; background: rgba(9, 132, 227, 0.1); border-radius: 5px; }
+
+        /* SELOS DE PREÇO (BACKGROUNDS) */
+        .selo-nada { background: none; }
+        .selo-circulo { background: #ff0000; border-radius: 50%; width: 350px; height: 350px; display: flex; align-items: center; justify-content: center; z-index: 1; }
+        .selo-explosao { 
+            background: #ff0000; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; z-index: 1;
         }
+        .selo-quadrado { background: #000; border: 5px solid #f1c40f; width: 300px; height: 200px; z-index: 1; }
 
-        /* EDITOR */
-        .editor-panel { width: 350px; background: white; padding: 20px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 15px; overflow-y: auto; }
-        .campo { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-
-        @media print { .toolbar, .editor-panel { display: none !important; } }
+        /* PAINEL EDITOR */
+        .editor-panel { 
+            width: 420px; background: white; padding: 20px; border-left: 1px solid #ddd; 
+            display: none; flex-direction: column; gap: 15px; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        .secao-ed { border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
+        .secao-ed h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--primary); text-transform: uppercase; border-bottom: 2px solid; padding-bottom: 5px; }
+        
+        .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        label { font-size: 10px; font-weight: 800; color: #555; }
+        input[type="text"], select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; width: 100%; }
+        .flex-row { display: flex; gap: 10px; }
+        
+        @media print { .toolbar, .editor-panel { display: none !important; } .cartaz-area { border: none !important; } }
     </style>
 </head>
 <body>
 
 <div class="toolbar">
-    <div style="font-weight:900;">CARTAZISTA PRO 11.0</div>
+    <div style="font-weight: 900; font-size: 18px; color: var(--warning);">CARTAZISTA PRO <span style="color:white">V14</span></div>
+    
+    <select id="selGrid" class="btn" style="background:#444; color:white" onchange="mudarLayout(this.value)">
+        <option value="grid-1">1 por Folha (A4)</option>
+        <option value="grid-2">2 por Folha (A5)</option>
+        <option value="grid-4" selected>4 por Folha (A6)</option>
+    </select>
+
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO CARTAZ</button>
-    <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR TRABALHO</button>
 </div>
 
 <div class="main-container">
@@ -56,138 +98,191 @@
     </div>
 
     <div class="editor-panel" id="edPanel">
-        <h3 id="edTitulo">Editar Item</h3>
-        
-        <div class="campo" id="campoTexto">
-            <label>Texto do Item</label>
-            <input type="text" id="inputTexto" oninput="atualizarValor()">
+        <h2 style="margin:0; font-size: 18px;">Personalizar Item</h2>
+        <p id="infoItem" style="font-size:11px; color:#666; margin-top: -5px;">Clique em um texto no cartaz para editar</p>
+
+        <div class="secao-ed">
+            <h4>1. Textos do Cartaz</h4>
+            <div class="campo"><label>PRODUTO</label><input type="text" id="inDesc" oninput="atualizar('desc')"></div>
+            <div class="campo"><label>MARCA</label><input type="text" id="inMarca" oninput="atualizar('marca')"></div>
+            <div class="campo"><label>PESO / UNIDADE</label><input type="text" id="inPeso" oninput="atualizar('peso')"></div>
+            <div class="campo"><label>PREÇO R$</label><input type="text" id="inPreco" style="color:red; font-weight:bold" oninput="atualizar('preco')"></div>
         </div>
 
-        <div class="campo">
-            <label>Tamanho da Fonte</label>
-            <input type="range" id="inputSize" min="10" max="500" oninput="atualizarValor()">
+        <div class="secao-ed" style="background: #eef2f7;">
+            <h4>2. Estilo do Selecionado</h4>
+            <div class="campo">
+                <label>FONTE</label>
+                <select id="inFont" onchange="atualizar('font')">
+                    <option value="'Bebas Neue'">Bebas Neue (Impactante)</option>
+                    <option value="'Anton'">Anton (Forte)</option>
+                    <option value="'Archivo Black'">Archivo Black (Larga)</option>
+                    <option value="'Oswald'">Oswald (Moderna)</option>
+                    <option value="'Roboto Condensed'">Roboto Condensed</option>
+                    <option value="'Fjalla One'">Fjalla One</option>
+                    <option value="'Staatliches'">Staatliches</option>
+                    <option value="'Teko'">Teko (Alta)</option>
+                </select>
+            </div>
+            <div class="flex-row">
+                <div class="campo" style="flex:1"><label>TAMANHO</label><input type="range" id="inSize" min="10" max="800" oninput="atualizar('size')"></div>
+                <div class="campo"><label>COR</label><input type="color" id="inColor" onchange="atualizar('color')"></div>
+            </div>
+            <button class="btn" onclick="centralizar()" style="background:var(--primary); color:white; width:100%">↔ CENTRALIZAR HORIZONTAL</button>
         </div>
 
-        <div class="campo">
-            <label>Cor do Elemento</label>
-            <input type="color" id="inputColor" onchange="atualizarValor()">
+        <div class="secao-ed">
+            <h4>3. Visual do Cartaz</h4>
+            <div class="campo">
+                <label>TEMA VISUAL</label>
+                <select id="inTema" onchange="mudarTema(this.value)">
+                    <option value="">BRANCO SIMPLES</option>
+                    <option value="tema-oferta">OFERTA (AMARELO/VERMELHO)</option>
+                    <option value="tema-promocao">PROMOÇÃO (BRANCO/VERDE)</option>
+                    <option value="tema-hortifruti">HORTIFRUTI (VERDE)</option>
+                    <option value="tema-acougue">AÇOUGUE (CARNES)</option>
+                    <option value="tema-black">BLACK FRIDAY (PRETO/OURO)</option>
+                </select>
+            </div>
+            <div class="campo">
+                <label>FUNDO DO PREÇO (SELO)</label>
+                <select id="inSelo" onchange="mudarSelo(this.value)">
+                    <option value="selo-nada">SEM SELO (LIMPO)</option>
+                    <option value="selo-circulo">CÍRCULO VERMELHO</option>
+                    <option value="selo-explosao">EXPLOSÃO DE OFERTA</option>
+                    <option value="selo-quadrado">ETIQUETA PRETA</option>
+                </select>
+            </div>
         </div>
 
-        <hr>
-        <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; margin-bottom:5px">↔ CENTRALIZAR NO CARTAZ</button>
-        <button class="btn" onclick="toggleSelo()" style="background:#f1c40f; color:#000">🟡 ALTERNAR SELO DE FUNDO</button>
+        <button class="btn" onclick="removerCartaz()" style="background:#eee; color:red">✖ EXCLUIR ESTE CARTAZ</button>
     </div>
 </div>
 
 <script>
     let cartazes = [];
-    let itemSelecionado = null;
-    let arrastando = false;
-    let mouseOffset = { x: 0, y: 0 };
+    let sel = null;
+    let dragging = false;
+    let offset = { x: 0, y: 0 };
 
     function adicionarCartaz() {
         const id = Date.now();
-        cartazes.push({
-            id: id,
+        const novo = {
+            id: id, tema: '',
             itens: [
-                { id: 'desc-'+id, tipo: 'txt', val: 'NOME DO PRODUTO', x: 40, y: 30, size: 45, col: '#000', font: 'Bebas Neue', selo: false },
-                { id: 'marca-'+id, tipo: 'txt', val: 'MARCA / PESO', x: 40, y: 95, size: 22, col: '#d63031', font: 'Bebas Neue', selo: false },
-                { id: 'preco-'+id, tipo: 'preco', val: '14.90', x: 80, y: 160, size: 130, col: '#000', font: 'Anton', selo: true }
+                { id: 'd-'+id, tipo: 'desc', val: 'NOME DO PRODUTO', x: 20, y: 30, size: 50, font: "'Bebas Neue'", col: '#000' },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA AQUI', x: 20, y: 90, size: 25, font: "'Bebas Neue'", col: '#000' },
+                { id: 'w-'+id, tipo: 'peso', val: '1KG', x: 150, y: 90, size: 25, font: "'Bebas Neue'", col: '#d63031' },
+                { id: 'p-'+id, tipo: 'preco', val: '19,90', x: 60, y: 160, size: 160, font: "'Anton'", col: '#000', selo: 'selo-nada' }
             ]
-        });
-        renderizar();
+        };
+        cartazes.push(novo);
+        render();
     }
 
-    function renderizar() {
-        const folha = document.getElementById('folha-impressao');
-        folha.innerHTML = '';
+    function render() {
+        const container = document.getElementById('folha-impressao');
+        container.innerHTML = '';
 
         cartazes.forEach(c => {
             const area = document.createElement('div');
-            area.className = 'cartaz-area';
+            area.className = `cartaz-area ${c.tema}`;
             
             c.itens.forEach(it => {
                 const el = document.createElement('div');
                 el.id = it.id;
-                el.className = `item-movel ${it.selo ? 'selo-preco' : ''}`;
-                el.style.left = it.x + 'px';
-                el.style.top = it.y + 'px';
-                el.style.fontSize = it.size + 'px';
-                el.style.color = it.col;
-                el.style.fontFamily = it.font;
+                el.className = `item-movel ${it.tipo === 'preco' ? it.selo : ''}`;
+                el.style.left = it.x + 'px'; el.style.top = it.y + 'px';
+                el.style.fontSize = it.size + 'px'; el.style.fontFamily = it.font;
+                
+                // Cor inteligente se tiver selo
+                el.style.color = (it.selo && it.selo !== 'selo-nada') ? '#fff' : it.col;
 
-                if(it.tipo === 'txt') {
-                    el.innerText = it.val;
+                if(it.tipo === 'preco') {
+                    const p = it.val.replace(',', '.').split('.');
+                    el.innerHTML = `<small style="font-size:0.35em">R$</small>${p[0]}<small style="font-size:0.5em; border-bottom:8px solid">,${p[1]||'00'}</small>`;
                 } else {
-                    const partes = it.val.replace(',', '.').split('.');
-                    el.innerHTML = `<small style="font-size:0.35em; position:relative; top:-0.3em">R$</small>${partes[0]}<small style="font-size:0.5em; border-bottom: 4px solid; margin-left:2px">,${partes[1] || '00'}</small>`;
+                    el.innerText = it.val;
                 }
 
-                el.onmousedown = (e) => selecionarItem(e, it, el);
+                el.onmousedown = (e) => {
+                    sel = { data: it, el: el, cartaz: c };
+                    dragging = true;
+                    document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
+                    el.classList.add('selecionado');
+                    offset.x = e.clientX - el.offsetLeft;
+                    offset.y = e.clientY - el.offsetTop;
+
+                    document.getElementById('edPanel').style.display = 'flex';
+                    // Carrega dados nos inputs
+                    document.getElementById('inDesc').value = c.itens.find(i => i.tipo === 'desc').val;
+                    document.getElementById('inMarca').value = c.itens.find(i => i.tipo === 'marca').val;
+                    document.getElementById('inPeso').value = c.itens.find(i => i.tipo === 'peso').val;
+                    document.getElementById('inPreco').value = c.itens.find(i => i.tipo === 'preco').val;
+                    // Carrega estilo do item clicado
+                    document.getElementById('inFont').value = it.font;
+                    document.getElementById('inSize').value = it.size;
+                    document.getElementById('inColor').value = it.col;
+                    document.getElementById('inTema').value = c.tema;
+                    document.getElementById('inSelo').value = c.itens.find(i => i.tipo === 'preco').selo || 'selo-nada';
+                };
                 area.appendChild(el);
             });
-            folha.appendChild(area);
+            container.appendChild(area);
         });
     }
 
-    function selecionarItem(e, dados, elemento) {
-        itemSelecionado = { dados, elemento };
-        arrastando = true;
+    function atualizar(campo) {
+        if(!sel) return;
+        const itDesc = sel.cartaz.itens.find(i => i.tipo === 'desc');
+        const itMarca = sel.cartaz.itens.find(i => i.tipo === 'marca');
+        const itPeso = sel.cartaz.itens.find(i => i.tipo === 'peso');
+        const itPreco = sel.cartaz.itens.find(i => i.tipo === 'preco');
+
+        if(campo === 'desc') itDesc.val = document.getElementById('inDesc').value;
+        if(campo === 'marca') itMarca.val = document.getElementById('inMarca').value;
+        if(campo === 'peso') itPeso.val = document.getElementById('inPeso').value;
+        if(campo === 'preco') itPreco.val = document.getElementById('inPreco').value;
         
-        document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
-        elemento.classList.add('selecionado');
+        if(campo === 'font') sel.data.font = document.getElementById('inFont').value;
+        if(campo === 'size') sel.data.size = document.getElementById('inSize').value;
+        if(campo === 'color') sel.data.col = document.getElementById('inColor').value;
 
-        mouseOffset.x = e.clientX - elemento.offsetLeft;
-        mouseOffset.y = e.clientY - elemento.offsetTop;
-
-        // Atualizar Painel
-        document.getElementById('edPanel').style.display = 'flex';
-        document.getElementById('inputTexto').value = dados.val;
-        document.getElementById('inputSize').value = dados.size;
-        document.getElementById('inputColor').value = dados.col;
-        
-        // Titulo dinâmico no editor
-        const tipoLabel = dados.id.includes('desc') ? 'Descrição' : (dados.id.includes('marca') ? 'Marca' : 'Preço');
-        document.getElementById('edTitulo').innerText = 'Editando: ' + tipoLabel;
-    }
-
-    function atualizarValor() {
-        if(!itemSelecionado) return;
-        itemSelecionado.dados.val = document.getElementById('inputTexto').value;
-        itemSelecionado.dados.size = document.getElementById('inputSize').value;
-        itemSelecionado.dados.col = document.getElementById('inputColor').value;
-        renderizar();
-        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
+        render();
+        document.getElementById(sel.data.id).classList.add('selecionado');
     }
 
     function centralizar() {
-        if(!itemSelecionado) return;
-        const pai = document.getElementById(itemSelecionado.dados.id).parentElement;
-        const larguraPai = pai.offsetWidth;
-        const larguraItem = document.getElementById(itemSelecionado.dados.id).offsetWidth;
-        
-        itemSelecionado.dados.x = (larguraPai / 2) - (larguraItem / 2);
-        renderizar();
-        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
+        if(!sel) return;
+        const el = document.getElementById(sel.data.id);
+        sel.data.x = (el.parentElement.offsetWidth / 2) - (el.offsetWidth / 2);
+        render();
+        document.getElementById(sel.data.id).classList.add('selecionado');
     }
 
-    function toggleSelo() {
-        if(!itemSelecionado) return;
-        itemSelecionado.dados.selo = !itemSelecionado.dados.selo;
-        renderizar();
-        document.getElementById(itemSelecionado.dados.id).classList.add('selecionado');
+    function mudarTema(v) { if(sel) { sel.cartaz.tema = v; render(); } }
+    
+    function mudarSelo(v) { 
+        if(sel) { 
+            const p = sel.cartaz.itens.find(i => i.tipo === 'preco');
+            p.selo = v; 
+            render(); 
+        } 
     }
+
+    function mudarLayout(v) { document.getElementById('folha-impressao').className = v; }
+    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; render(); } }
 
     document.onmousemove = (e) => {
-        if(!arrastando || !itemSelecionado) return;
-        itemSelecionado.dados.x = e.clientX - mouseOffset.x;
-        itemSelecionado.dados.y = e.clientY - mouseOffset.y;
-        itemSelecionado.elemento.style.left = itemSelecionado.dados.x + 'px';
-        itemSelecionado.elemento.style.top = itemSelecionado.dados.y + 'px';
+        if(!dragging || !sel) return;
+        sel.data.x = e.clientX - offset.x;
+        sel.data.y = e.clientY - offset.y;
+        sel.el.style.left = sel.data.x + 'px';
+        sel.el.style.top = sel.data.y + 'px';
     };
+    document.onmouseup = () => dragging = false;
 
-    document.onmouseup = () => arrastando = false;
-
+    // Inicializa
     adicionarCartaz();
 </script>
 </body>
