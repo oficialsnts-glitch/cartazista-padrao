@@ -84,7 +84,7 @@
             to { opacity: 1; }
         }
 
-        /* ESTILOS ORIGINAIS PRESERVADOS */
+        /* ESTILOS ORIGINAIS PRESERVADOS COM CORREÇÃO DE LAYOUT */
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
@@ -97,12 +97,19 @@
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; }
         
-        #folha-impressao { width: 210mm; min-height: 297mm; background: white; display: grid; position: relative; }
+        /* CORREÇÃO DO CONTAINER DE FOLHAS */
+        #folha-impressao { width: 210mm; background: transparent; display: grid; position: relative; gap: 0; }
+        
         .grid-1 { grid-template-columns: 1fr; }
-        .grid-2 { grid-template-columns: 1fr; grid-template-rows: 148.5mm 148.5mm; }
-        .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 148.5mm 148.5mm; }
+        .grid-1 .cartaz-area { width: 210mm; height: 297mm; page-break-after: always; margin-bottom: 20px; background: white; }
 
-        .cartaz-area { position: relative; overflow: hidden; background: #fff; border: 0.1mm dashed #ddd; }
+        .grid-2 { grid-template-columns: 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
+        .grid-2 .cartaz-area { height: 148.5mm; background: white; }
+
+        .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
+        .grid-4 .cartaz-area { height: 148.5mm; background: white; }
+
+        .cartaz-area { position: relative; overflow: hidden; border: 0.1mm dashed #ddd; }
         .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; text-align: center; }
         .tarja-fundo { z-index: 5; border: none; }
         .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.05); }
@@ -122,10 +129,15 @@
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
             #splash-screen, .toolbar, .editor-panel { display: none !important; }
-            .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; }
-            #folha-impressao { box-shadow: none !important; border: none !important; margin: 0 !important; }
+            .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; }
+            #folha-impressao { display: block !important; width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
+            .cartaz-area { 
+                page-break-after: always !important; 
+                border: none !important; 
+                margin-bottom: 0 !important;
+                box-shadow: none !important;
+            }
             .selecionado { outline: none !important; background: none !important; }
-            .cartaz-area { border: none !important; }
         }
     </style>
 </head>
@@ -296,6 +308,7 @@
         cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
+            
             c.itens.forEach(it => {
                 const el = document.createElement('div');
                 el.id = it.id;
@@ -395,7 +408,11 @@
         render();
     }
 
-    function mudarLayout(v) { document.getElementById('folha-impressao').className = v; }
+    function mudarLayout(v) { 
+        document.getElementById('folha-impressao').className = v;
+        render(); // Re-renderiza para aplicar as novas dimensões de cada cartaz-area
+    }
+    
     function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; document.getElementById('edPanel').style.display='none'; render(); } }
 
     document.onmousemove = (e) => {
