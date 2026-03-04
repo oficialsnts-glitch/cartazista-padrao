@@ -84,7 +84,7 @@
             to { opacity: 1; }
         }
 
-        /* ESTILOS ORIGINAIS PRESERVADOS COM CORREÇÃO DE LAYOUT */
+        /* ESTILOS ORIGINAIS PRESERVADOS */
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
@@ -97,19 +97,19 @@
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; }
         
-        /* CORREÇÃO DO CONTAINER DE FOLHAS */
-        #folha-impressao { width: 210mm; background: transparent; display: grid; position: relative; gap: 0; }
+        #folha-impressao { width: 210mm; background: white; display: grid; position: relative; }
         
+        /* DEFINIÇÕES DE GRID NA TELA */
         .grid-1 { grid-template-columns: 1fr; }
-        .grid-1 .cartaz-area { width: 210mm; height: 297mm; page-break-after: always; margin-bottom: 20px; background: white; }
-
+        .grid-1 .cartaz-area { height: 297mm; border-bottom: 2px dashed #000; }
+        
         .grid-2 { grid-template-columns: 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-        .grid-2 .cartaz-area { height: 148.5mm; background: white; }
+        .grid-2 .cartaz-area { height: 148.5mm; border: 0.1mm dashed #ddd; }
 
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-        .grid-4 .cartaz-area { height: 148.5mm; background: white; }
+        .grid-4 .cartaz-area { height: 148.5mm; border: 0.1mm dashed #ddd; }
 
-        .cartaz-area { position: relative; overflow: hidden; border: 0.1mm dashed #ddd; }
+        .cartaz-area { position: relative; overflow: hidden; background: #fff; }
         .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; text-align: center; }
         .tarja-fundo { z-index: 5; border: none; }
         .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.05); }
@@ -125,18 +125,33 @@
         .color-box { width: 100%; height: 25px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; transition: 0.1s; }
         .color-box:hover { transform: scale(1.1); border-color: #000; }
 
+        /* REGRAS DE IMPRESSÃO CORRIGIDAS */
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
             #splash-screen, .toolbar, .editor-panel { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; }
-            #folha-impressao { display: block !important; width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
-            .cartaz-area { 
-                page-break-after: always !important; 
+            
+            #folha-impressao { 
+                display: grid !important; 
+                width: 210mm !important; 
+                box-shadow: none !important; 
                 border: none !important; 
-                margin-bottom: 0 !important;
-                box-shadow: none !important;
+                margin: 0 !important; 
             }
+
+            .cartaz-area { border: none !important; page-break-after: auto !important; }
+
+            /* LÓGICA DE QUEBRA DE PÁGINA POR LAYOUT */
+            /* 1 por folha: Quebra sempre */
+            .grid-1 .cartaz-area { page-break-after: always !important; height: 297mm !important; }
+            
+            /* 2 por folha: Quebra a cada 2 cartazes */
+            .grid-2 .cartaz-area:nth-child(2n) { page-break-after: always !important; }
+            
+            /* 4 por folha: Quebra a cada 4 cartazes */
+            .grid-4 .cartaz-area:nth-child(4n) { page-break-after: always !important; }
+
             .selecionado { outline: none !important; background: none !important; }
         }
     </style>
@@ -154,7 +169,7 @@
 
 <div class="toolbar">
     <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 19.0</span></div>
-    <select onchange="mudarLayout(this.value)" style="padding:5px;">
+    <select id="selectLayout" onchange="mudarLayout(this.value)" style="padding:5px;">
         <option value="grid-4">4 POR FOLHA</option>
         <option value="grid-2">2 POR FOLHA</option>
         <option value="grid-1">1 POR FOLHA (A4)</option>
@@ -308,7 +323,6 @@
         cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
-            
             c.itens.forEach(it => {
                 const el = document.createElement('div');
                 el.id = it.id;
@@ -408,11 +422,7 @@
         render();
     }
 
-    function mudarLayout(v) { 
-        document.getElementById('folha-impressao').className = v;
-        render(); // Re-renderiza para aplicar as novas dimensões de cada cartaz-area
-    }
-    
+    function mudarLayout(v) { document.getElementById('folha-impressao').className = v; render(); }
     function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; document.getElementById('edPanel').style.display='none'; render(); } }
 
     document.onmousemove = (e) => {
