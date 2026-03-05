@@ -125,33 +125,17 @@
         .color-box { width: 100%; height: 25px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; transition: 0.1s; }
         .color-box:hover { transform: scale(1.1); border-color: #000; }
 
-        /* REGRAS DE IMPRESSÃO CORRIGIDAS */
+        /* REGRAS DE IMPRESSÃO */
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
             #splash-screen, .toolbar, .editor-panel { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; }
-            
-            #folha-impressao { 
-                display: grid !important; 
-                width: 210mm !important; 
-                box-shadow: none !important; 
-                border: none !important; 
-                margin: 0 !important; 
-            }
-
+            #folha-impressao { display: grid !important; width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
             .cartaz-area { border: none !important; page-break-after: auto !important; }
-
-            /* LÓGICA DE QUEBRA DE PÁGINA POR LAYOUT */
-            /* 1 por folha: Quebra sempre */
             .grid-1 .cartaz-area { page-break-after: always !important; height: 297mm !important; }
-            
-            /* 2 por folha: Quebra a cada 2 cartazes */
             .grid-2 .cartaz-area:nth-child(2n) { page-break-after: always !important; }
-            
-            /* 4 por folha: Quebra a cada 4 cartazes */
             .grid-4 .cartaz-area:nth-child(4n) { page-break-after: always !important; }
-
             .selecionado { outline: none !important; background: none !important; }
         }
     </style>
@@ -243,23 +227,64 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    // --- IMPORTAÇÃO FIREBASE ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWbWeGNAfhwcmRm31oS58oo0wUKFS1wVo",
+      authDomain: "cartazista-web.firebaseapp.com",
+      projectId: "cartazista-web",
+      storageBucket: "cartazista-web.firebasestorage.app",
+      messagingSenderId: "838926325456",
+      appId: "1:838926325456:web:e7cc86c71410272878b0d5",
+      measurementId: "G-9CMQF1N0NL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const docRef = doc(db, "trabalho", "sessao_atual");
+
+    // --- VARIÁVEIS GLOBAIS ---
     let cartazes = [];
     let sel = null;
     let dragging = false;
     let offset = { x: 0, y: 0 };
 
+    // --- FUNÇÕES DE PERSISTÊNCIA ---
+    async function salvarNoFirebase() {
+        try {
+            await setDoc(docRef, { dados: cartazes, layout: document.getElementById('selectLayout').value });
+            console.log("Salvo no Banco de Dados.");
+        } catch (e) {
+            console.error("Erro ao salvar:", e);
+        }
+    }
+
+    async function carregarDoFirebase() {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            cartazes = docSnap.data().dados;
+            document.getElementById('selectLayout').value = docSnap.data().layout || 'grid-4';
+            mudarLayout(document.getElementById('selectLayout').value);
+        } else {
+            adicionarCartaz();
+        }
+    }
+
+    // --- INICIALIZAÇÃO ---
     window.onload = () => {
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
             splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.visibility = 'hidden';
-            }, 1500);
-        }, 6000);
+            setTimeout(() => { splash.style.visibility = 'hidden'; }, 1500);
+        }, 5000);
+        carregarDoFirebase();
     };
 
-    function adicionarCartaz() {
+    // --- FUNÇÕES DO CARTAZISTA ---
+    window.adicionarCartaz = function() {
         const id = Date.now();
         cartazes.push({
             id: id,
@@ -272,40 +297,32 @@
             ]
         });
         render();
-        const ultimo = cartazes[cartazes.length - 1];
-        setTimeout(() => {
-            ultimo.itens.forEach(it => {
-                const el = document.getElementById(it.id);
-                if(el && it.tipo !== 'bg') {
-                    it.x = (el.parentElement.offsetWidth / 2) - (el.offsetWidth / 2);
-                    el.style.left = it.x + 'px';
-                }
-            });
-        }, 50);
+        salvarNoFirebase();
     }
 
-    function desmarcarTudo() {
+    window.desmarcarTudo = function() {
         sel = null;
         document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
         document.getElementById('edPanel').style.display = 'none';
     }
 
-    function setCorRapida(cor) {
+    window.setCorRapida = function(cor) {
         if(!sel) return;
         document.getElementById('inColor').value = cor;
         atualizarEstilo();
     }
 
-    function duplicarCartaz() {
+    window.duplicarCartaz = function() {
         if(!sel) return alert("Selecione um cartaz primeiro.");
         const clone = JSON.parse(JSON.stringify(sel.cartaz));
         clone.id = Date.now();
         clone.itens.forEach(it => it.id = it.id.split('-')[0] + '-' + clone.id);
         cartazes.push(clone);
         render();
+        salvarNoFirebase();
     }
 
-    function focarItem(tipo) {
+    window.focarItem = function(tipo) {
         if(!sel) return;
         const item = sel.cartaz.itens.find(i => i.tipo === tipo);
         if(item) {
@@ -317,8 +334,10 @@
         }
     }
 
-    function render() {
+    window.render = function() {
         const folha = document.getElementById('folha-impressao');
+        const layout = document.getElementById('selectLayout').value;
+        folha.className = layout;
         folha.innerHTML = '';
         cartazes.forEach(c => {
             const area = document.createElement('div');
@@ -345,11 +364,7 @@
                     if(novoTexto !== null) {
                         it.val = novoTexto.toUpperCase();
                         render();
-                        setTimeout(() => {
-                            const reSel = document.getElementById(it.id);
-                            if(reSel) reSel.classList.add('selecionado');
-                            mostrarNoPainel(it, c);
-                        }, 50);
+                        salvarNoFirebase();
                     }
                 };
 
@@ -368,7 +383,7 @@
         });
     }
 
-    function mostrarNoPainel(it, c) {
+    window.mostrarNoPainel = function(it, c) {
         document.getElementById('edPanel').style.display = 'flex';
         document.getElementById('inHead').value = c.itens.find(i => i.tipo === 'head').val;
         document.getElementById('inDesc').value = c.itens.find(i => i.tipo === 'desc').val;
@@ -384,16 +399,15 @@
         document.getElementById('labelEdit').innerText = "EDITANDO: " + it.tipo.toUpperCase();
     }
 
-    function atualizarTextos(tipo) {
+    window.atualizarTextos = function(tipo) {
         if(!sel) return;
         const alvo = sel.cartaz.itens.find(i => i.tipo === tipo);
         alvo.val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
         render();
-        const el = document.getElementById(sel.data.id);
-        if(el) el.classList.add('selecionado');
+        salvarNoFirebase();
     }
 
-    function atualizarEstilo() {
+    window.atualizarEstilo = function() {
         if(!sel) return;
         sel.data.font = document.getElementById('inFont').value;
         sel.data.size = document.getElementById('inSize').value;
@@ -401,29 +415,46 @@
         sel.data.w = document.getElementById('inW').value;
         sel.data.h = document.getElementById('inH').value;
         render();
-        const el = document.getElementById(sel.data.id);
-        if(el) el.classList.add('selecionado');
+        salvarNoFirebase();
     }
 
-    function pararArrasto() { dragging = false; }
+    window.pararArrasto = function() { 
+        if(dragging) {
+            dragging = false; 
+            salvarNoFirebase();
+        }
+    }
 
-    function centralizar() {
+    window.centralizar = function() {
         if(!sel) return;
         sel.data.x = (sel.el.parentElement.offsetWidth / 2) - (sel.el.offsetWidth / 2);
         render();
-        const el = document.getElementById(sel.data.id);
-        if(el) el.classList.add('selecionado');
+        salvarNoFirebase();
     }
 
-    function adicionarTarja() {
+    window.adicionarTarja = function() {
         if(!sel) return;
         const id = 'bg-' + Date.now();
         sel.cartaz.itens.unshift({ id: id, tipo: 'bg', val: '', x: 10, y: 10, size: 0, font: '', col: '#d63031', w: 300, h: 60 });
         render();
+        salvarNoFirebase();
     }
 
-    function mudarLayout(v) { document.getElementById('folha-impressao').className = v; render(); }
-    function removerCartaz() { if(sel) { cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); sel = null; document.getElementById('edPanel').style.display='none'; render(); } }
+    window.mudarLayout = function(v) { 
+        document.getElementById('folha-impressao').className = v; 
+        render(); 
+        salvarNoFirebase();
+    }
+
+    window.removerCartaz = function() { 
+        if(sel) { 
+            cartazes = cartazes.filter(c => c.id !== sel.cartaz.id); 
+            sel = null; 
+            document.getElementById('edPanel').style.display='none'; 
+            render(); 
+            salvarNoFirebase();
+        } 
+    }
 
     document.onmousemove = (e) => {
         if(!dragging || !sel) return;
@@ -432,8 +463,6 @@
         sel.el.style.left = sel.data.x + 'px';
         sel.el.style.top = sel.data.y + 'px';
     };
-
-    adicionarCartaz();
 </script>
 </body>
 </html>
