@@ -1,13 +1,14 @@
 {
-  "name": "Cartazista Pro",
+  "name": "Cartazista Pro 19.0",
   "short_name": "Cartazista",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#e61e25",
+  "background_color": "#1e272e",
+  "theme_color": "#0984e3",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "logo_cartaz.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/1055/1055666.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
