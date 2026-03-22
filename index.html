@@ -207,7 +207,12 @@
         </div>
 
         <button class="btn" onclick="adicionarTarja()" style="background:#ffa502; color:white">⬛ ADICIONAR TARJA</button>
-        <button class="btn" onclick="removerCartaz()" style="background:none; border:1px solid red; color:red; margin-top:10px">EXCLUIR CARTAZ</button>
+        
+        <div id="extraTools" style="display:none; margin-top:10px; border-top:2px solid #ddd; padding-top:10px;">
+            <button class="btn" onclick="removerItemSelecionado()" style="background:var(--danger); color:white; width:100%">🗑️ EXCLUIR ITEM SELECIONADO</button>
+        </div>
+
+        <button class="btn" onclick="removerCartaz()" style="background:none; border:1px solid red; color:red; margin-top:20px">EXCLUIR CARTAZ COMPLETO</button>
     </div>
 </div>
 
@@ -327,6 +332,20 @@
         salvarNoFirebase();
     };
 
+    window.removerItemSelecionado = () => {
+        if (!sel || !sel.data || !sel.cartaz) return;
+        const tiposProtegidos = ['head', 'desc', 'marca', 'peso', 'preco'];
+        if (tiposProtegidos.includes(sel.data.tipo)) {
+            alert("Este item de texto é essencial. Você pode apenas mudar seu conteúdo ou ocultá-lo mudando a cor.");
+            return;
+        }
+        saveToHistory();
+        sel.cartaz.itens = sel.cartaz.itens.filter(i => i.id !== sel.data.id);
+        desmarcarTudo();
+        render();
+        salvarNoFirebase();
+    };
+
     window.mudarLayout = (v) => {
         document.getElementById('folha-impressao').className = v;
         render();
@@ -381,7 +400,7 @@
     };
 
     window.adicionarTarja = () => {
-        if (!sel) return;
+        if (!sel) return alert("Selecione um cartaz primeiro.");
         saveToHistory();
         const id = 'bg-' + Date.now();
         sel.cartaz.itens.unshift({ id: id, tipo: 'bg', val: '', x: 20, y: 20, size: 0, font: '', col: '#d63031', w: 320, h: 70, rot:0 });
@@ -393,6 +412,7 @@
         sel = null;
         document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
         document.getElementById('edPanel').style.display = 'none';
+        document.getElementById('extraTools').style.display = 'none';
     };
 
     window.focarItem = (tipo) => {
@@ -474,13 +494,11 @@
         salvarNoFirebase();
     };
 
-    /* ==================== FUNÇÃO EXPORTAR PNG ATUALIZADA ==================== */
     window.exportarPNG = () => {
         const layoutAtual = document.getElementById('selectLayout').value;
         const folhaCompleta = document.getElementById('folha-impressao');
 
         if (layoutAtual === "grid-1") {
-            // 1 POR FOLHA → cada cartaz vira um arquivo PNG separado
             const areas = folhaCompleta.querySelectorAll('.cartaz-area');
             let contador = 1;
             areas.forEach(area => {
@@ -493,7 +511,6 @@
                 });
             });
         } else {
-            // 2 POR FOLHA ou 4 POR FOLHA → exporta a folha inteira em UM ÚNICO PNG
             html2canvas(folhaCompleta, { scale: 3, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = 'folha_cartazes.png';
@@ -519,6 +536,11 @@
         const panel = document.getElementById('edPanel');
         if (!panel) return;
         panel.style.display = 'flex';
+        
+        // Mostrar botão de excluir se não for um texto fixo
+        const extraTools = document.getElementById('extraTools');
+        const tiposProtegidos = ['head', 'desc', 'marca', 'peso', 'preco'];
+        extraTools.style.display = tiposProtegidos.includes(it.tipo) ? 'none' : 'block';
 
         document.getElementById('inHead').value  = c.itens.find(i => i.tipo === 'head')?.val  || '';
         document.getElementById('inDesc').value  = c.itens.find(i => i.tipo === 'desc')?.val  || '';
@@ -562,13 +584,20 @@
                 }
 
                 el.id = it.id;
-                el.className = 'item-movel' + (it.tipo === 'bg' ? ' tarja-fundo' : '');
+                el.className = 'item-movel';
+                
+                // GARANTIA DE SOBREPOSIÇÃO: Texto no topo, Imagem/QR no meio, Tarja no fundo
+                if (it.tipo === 'bg') el.style.zIndex = "5";
+                else if (it.tipo === 'img' || it.tipo === 'qr') el.style.zIndex = "10";
+                else el.style.zIndex = "20";
+
                 el.style.left = (it.x || 50) + 'px';
                 el.style.top  = (it.y || 50) + 'px';
                 el.style.transform = `rotate(${(it.rot || 0)}deg)`;
                 el.style.color = it.col || '#000000';
 
                 if (it.tipo === 'bg') {
+                    el.classList.add('tarja-fundo');
                     el.style.backgroundColor = it.col || '#d63031';
                     el.style.width  = (it.w || 300) + 'px';
                     el.style.height = (it.h || 60) + 'px';
