@@ -6,91 +6,37 @@
     <title>Cartazista Pro 19.0 - THODY & GEMINI</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&display=swap" rel="stylesheet">
     
-    <!-- NOVAS BIBLIOTECAS ADICIONADAS (apenas para as novas funções) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 
     <style>
         :root { --azul: #0984e3; --danger: #d63031; --sucesso: #00b894; --dark: #1e272e; --warning: #f1c40f; }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         
-        /* ESTILO DA ANIMAÇÃO DE ENTRADA - PARCERIA THODY & GEMINI */
         #splash-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: var(--dark);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 9999; color: white;
             transition: opacity 1.5s ease, visibility 1.5s;
         }
 
-        .welcome-text {
-            font-family: 'Archivo Black', sans-serif;
-            font-size: 50px;
-            text-align: center;
-            animation: zoomIn 2.5s ease-out;
-        }
-
-        .welcome-subtext {
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 20px;
-            color: var(--warning);
-            margin-top: 20px;
-            letter-spacing: 4px;
-            opacity: 0;
-            animation: fadeIn 3s ease-in forwards;
-            animation-delay: 1.5s;
-        }
-
-        .partnership-signature {
-            margin-top: 50px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0;
-            animation: fadeIn 2s ease-in forwards;
-            animation-delay: 3s;
-        }
-
-        .dev-label {
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 5px;
-            color: rgba(255,255,255,0.5);
-        }
-
-        .names {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            color: #fff;
-            letter-spacing: 2px;
-            border-top: 1px solid var(--warning);
-            padding-top: 10px;
-        }
-
+        .welcome-text { font-family: 'Archivo Black', sans-serif; font-size: 50px; text-align: center; animation: zoomIn 2.5s ease-out; }
+        .welcome-subtext { font-family: 'Segoe UI', sans-serif; font-size: 20px; color: var(--warning); margin-top: 20px; letter-spacing: 4px; opacity: 0; animation: fadeIn 3s ease-in forwards; animation-delay: 1.5s; }
+        .partnership-signature { margin-top: 50px; display: flex; flex-direction: column; align-items: center; opacity: 0; animation: fadeIn 2s ease-in forwards; animation-delay: 3s; }
+        .dev-label { font-family: 'Segoe UI', sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 5px; color: rgba(255,255,255,0.5); }
+        .names { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #fff; letter-spacing: 2px; border-top: 1px solid var(--warning); padding-top: 10px; }
         .gemini-highlight { color: var(--azul); }
 
-        @keyframes zoomIn {
-            from { transform: scale(0.3); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
+        @keyframes zoomIn { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ESTILOS ORIGINAIS PRESERVADOS */
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
@@ -101,11 +47,10 @@
         .btn-fechar { background: #d63031; color: white; width: 100%; margin-bottom: 10px; font-size: 11px; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; }
+        .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; align-items: flex-start; }
         
-        #folha-impressao { width: 210mm; background: white; display: grid; position: relative; }
+        #folha-impressao { width: 210mm; background: white; display: grid; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.25); }
         
-        /* DEFINIÇÕES DE GRID NA TELA */
         .grid-1 { grid-template-columns: 1fr; }
         .grid-1 .cartaz-area { height: 297mm; border-bottom: 2px dashed #000; }
         
@@ -116,56 +61,49 @@
         .grid-4 .cartaz-area { height: 148.5mm; border: 0.1mm dashed #ddd; }
 
         .cartaz-area { position: relative; overflow: hidden; background: #fff; }
-        .item-movel { position: absolute; cursor: move; user-select: none; line-height: 0.95; z-index: 10; white-space: pre-wrap; text-align: center; }
-        .tarja-fundo { z-index: 5; border: none; }
-        .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.05); }
-
-        /* NOVOS ESTILOS PARA IMAGENS E QR */
-        .item-movel img {
-            max-width: none;
-            object-fit: contain;
+        .item-movel { 
+            position: absolute; 
+            cursor: move; 
+            user-select: none; 
+            line-height: 1.05; 
+            z-index: 10; 
+            white-space: pre-wrap; 
+            text-align: center; 
+            min-width: 80px;
+            min-height: 24px;
         }
+        .tarja-fundo { z-index: 5; border: none; }
+        .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.08); }
 
-        /* EDITOR */
+        .item-movel img { max-width: none; object-fit: contain; }
+
         .editor-panel { width: 420px; background: #f1f2f6; padding: 15px; border-left: 1px solid #ccc; display: none; flex-direction: column; gap: 10px; overflow-y: auto; }
         .secao { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 6px; }
         .campo { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
         label { font-size: 9px; font-weight: 800; color: #57606f; text-transform: uppercase; }
-        textarea { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; resize: none; font-family: inherit; }
-        input[type="number"], select, input[type="range"], input[type="color"] { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; }
+        textarea, input, select { padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 12px; font-family: inherit; }
+        textarea { resize: none; }
 
         .color-palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
         .color-box { width: 100%; height: 25px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; transition: 0.1s; }
         .color-box:hover { transform: scale(1.1); border-color: #000; }
 
-        /* REGRAS DE IMPRESSÃO CORRIGIDAS (mantidas exatamente iguais) */
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
             #splash-screen, .toolbar, .editor-panel { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; }
-            
-            #folha-impressao { 
-                display: grid !important; 
-                width: 210mm !important; 
-                box-shadow: none !important; 
-                border: none !important; 
-                margin: 0 !important; 
-            }
-
+            #folha-impressao { width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
             .cartaz-area { border: none !important; page-break-after: auto !important; }
-
             .grid-1 .cartaz-area { page-break-after: always !important; height: 297mm !important; }
             .grid-2 .cartaz-area:nth-child(2n) { page-break-after: always !important; }
             .grid-4 .cartaz-area:nth-child(4n) { page-break-after: always !important; }
-
             .selecionado { outline: none !important; background: none !important; }
         }
     </style>
 </head>
 <body onmouseup="pararArrasto()">
 
-<!-- SPLASH SCREEN ORIGINAL (inalterado) -->
 <div id="splash-screen">
     <div class="welcome-text">CARTAZISTA <span style="color:var(--warning)">PRO</span></div>
     <div class="welcome-subtext">QUALIDADE EM CADA DETALHE</div>
@@ -175,7 +113,6 @@
     </div>
 </div>
 
-<!-- TOOLBAR COM NOVAS FUNÇÕES ADICIONADAS -->
 <div class="toolbar">
     <div style="font-weight: 900;">CARTAZISTA <span style="color:var(--warning)">PRO 19.0</span></div>
     <select id="selectLayout" onchange="mudarLayout(this.value)" style="padding:5px;">
@@ -185,8 +122,6 @@
     </select>
     <button class="btn btn-add" onclick="adicionarCartaz()">✚ NOVO</button>
     <button class="btn btn-duplica" onclick="duplicarCartaz()">📋 DUPLICAR</button>
-    
-    <!-- NOVAS FUNÇÕES NA TOOLBAR -->
     <button class="btn" style="background:#e67e22;color:white" onclick="adicionarImagem()">📸 IMAGEM</button>
     <button class="btn" style="background:#8e44ad;color:white" onclick="adicionarQR()">🔲 QR CODE</button>
     <button class="btn" onclick="undoAction()">↩ DESFAZER</button>
@@ -201,7 +136,6 @@
     
     <button class="btn btn-print" onclick="exportarPNG()">📥 PNG</button>
     <button class="btn btn-print" onclick="exportarPDF()">📄 PDF</button>
-    
     <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR</button>
     <div style="flex:1; text-align:right; font-size:9px; opacity:0.7; font-weight:bold; color: white;">
         THODY & <span style="color:var(--azul)">GEMINI</span>
@@ -213,11 +147,9 @@
         <div id="folha-impressao" class="grid-4"></div>
     </div>
 
-    <!-- EDITOR PANEL ORIGINAL + NOVA SEÇÃO DE EFEITOS -->
     <div class="editor-panel" id="edPanel" onmouseenter="pararArrasto()">
         <button class="btn btn-fechar" onclick="desmarcarTudo()">✖ CONCLUIR E LIMPAR SELEÇÃO</button>
         
-        <!-- SEÇÃO CONTEÚDO ORIGINAL (inalterada) -->
         <div class="secao">
             <h4>CONTEÚDO</h4>
             <div class="campo"><label>Chamada</label><textarea id="inHead" onfocus="focarItem('head')" oninput="atualizarTextos('head')"></textarea></div>
@@ -227,24 +159,23 @@
             <div class="campo"><label>Preço</label><textarea id="inPreco" onfocus="focarItem('preco')" oninput="atualizarTextos('preco')"></textarea></div>
         </div>
 
-        <!-- SEÇÃO ESTILO ORIGINAL (inalterada) -->
         <div class="secao" style="background:#eef2f7">
             <h4 id="labelEdit" style="font-size:11px; color:var(--azul)">ESTILO E CORES</h4>
             
             <label>Cores Rápidas</label>
             <div class="color-palette">
-                <div class="color-box" style="background: #000000" onclick="setCorRapida('#000000')"></div>
-                <div class="color-box" style="background: #ffffff" onclick="setCorRapida('#ffffff')"></div>
-                <div class="color-box" style="background: #d63031" onclick="setCorRapida('#d63031')"></div>
-                <div class="color-box" style="background: #f1c40f" onclick="setCorRapida('#f1c40f')"></div>
-                <div class="color-box" style="background: #0984e3" onclick="setCorRapida('#0984e3')"></div>
-                <div class="color-box" style="background: #00b894" onclick="setCorRapida('#00b894')"></div>
-                <div class="color-box" style="background: #e67e22" onclick="setCorRapida('#e67e22')"></div>
-                <div class="color-box" style="background: #8e44ad" onclick="setCorRapida('#8e44ad')"></div>
-                <div class="color-box" style="background: #2d3436" onclick="setCorRapida('#2d3436')"></div>
-                <div class="color-box" style="background: #ffeaa7" onclick="setCorRapida('#ffeaa7')"></div>
-                <div class="color-box" style="background: #ff7675" onclick="setCorRapida('#ff7675')"></div>
-                <div class="color-box" style="background: #74b9ff" onclick="setCorRapida('#74b9ff')"></div>
+                <div class="color-box" style="background:#000000" onclick="setCorRapida('#000000')"></div>
+                <div class="color-box" style="background:#ffffff" onclick="setCorRapida('#ffffff')"></div>
+                <div class="color-box" style="background:#d63031" onclick="setCorRapida('#d63031')"></div>
+                <div class="color-box" style="background:#f1c40f" onclick="setCorRapida('#f1c40f')"></div>
+                <div class="color-box" style="background:#0984e3" onclick="setCorRapida('#0984e3')"></div>
+                <div class="color-box" style="background:#00b894" onclick="setCorRapida('#00b894')"></div>
+                <div class="color-box" style="background:#e67e22" onclick="setCorRapida('#e67e22')"></div>
+                <div class="color-box" style="background:#8e44ad" onclick="setCorRapida('#8e44ad')"></div>
+                <div class="color-box" style="background:#2d3436" onclick="setCorRapida('#2d3436')"></div>
+                <div class="color-box" style="background:#ffeaa7" onclick="setCorRapida('#ffeaa7')"></div>
+                <div class="color-box" style="background:#ff7675" onclick="setCorRapida('#ff7675')"></div>
+                <div class="color-box" style="background:#74b9ff" onclick="setCorRapida('#74b9ff')"></div>
             </div>
 
             <div class="campo"><label>Fonte</label>
@@ -268,7 +199,6 @@
             <button class="btn" onclick="centralizar()" style="background:var(--azul); color:white; width:100%; margin-top:5px">↔ CENTRALIZAR MANUALMENTE</button>
         </div>
 
-        <!-- NOVA SEÇÃO DE EFEITOS AVANÇADOS (adicionada) -->
         <div class="secao" style="background:#eef2f7">
             <h4>EFETOS E TRANSFORMAÇÕES</h4>
             <div class="campo"><label>Ativar Sombra no Texto</label><input type="checkbox" id="inShadow" onchange="atualizarEstilo()"></div>
@@ -282,7 +212,6 @@
 </div>
 
 <script type="module">
-    // Importações do Firebase (mantidas exatamente iguais)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
@@ -304,8 +233,6 @@
     let sel = null;
     let dragging = false;
     let offset = { x: 0, y: 0 };
-
-    // NOVO: HISTÓRICO UNDO/REDO
     let historyStack = [];
     let redoStack = [];
 
@@ -316,7 +243,7 @@
     }
 
     window.undoAction = () => {
-        if (historyStack.length === 0) return;
+        if (historyStack.length < 1) return;
         redoStack.push(JSON.stringify(cartazes));
         cartazes = JSON.parse(historyStack.pop());
         render();
@@ -324,24 +251,22 @@
     };
 
     window.redoAction = () => {
-        if (redoStack.length === 0) return;
+        if (redoStack.length < 1) return;
         historyStack.push(JSON.stringify(cartazes));
         cartazes = JSON.parse(redoStack.pop());
         render();
         salvarNoFirebase();
     };
 
-    // FUNÇÕES DE PERSISTÊNCIA (mantidas exatamente iguais)
     async function salvarNoFirebase() {
         try {
             await setDoc(docRef, { 
                 dados: cartazes, 
-                layout: document.getElementById('selectLayout').value,
+                layout: document.getElementById('selectLayout')?.value || "grid-4",
                 timestamp: new Date()
             });
-            console.log("💾 Salvo automaticamente.");
         } catch (e) {
-            console.error("❌ Erro ao salvar no Firestore:", e);
+            console.error("Erro ao salvar:", e);
         }
     }
 
@@ -349,32 +274,32 @@
         try {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                cartazes = docSnap.data().dados;
+                cartazes = docSnap.data().dados || [];
                 const savedLayout = docSnap.data().layout || "grid-4";
                 document.getElementById('selectLayout').value = savedLayout;
                 mudarLayout(savedLayout);
-                console.log("✅ Dados recuperados com sucesso.");
-            } else {
+            }
+            if (cartazes.length === 0) {
                 adicionarCartaz();
             }
+            render();
         } catch (e) {
             console.error("Erro ao carregar:", e);
             adicionarCartaz();
         }
     }
 
-    // ==================== FUNÇÕES EXISTENTES (todas mantidas) ====================
     window.adicionarCartaz = () => {
         saveToHistory();
         const id = Date.now();
         cartazes.push({
             id: id,
             itens: [
-                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 100, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
-                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 80, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
-                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 120, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
-                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 150, y: 150, size: 20, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
-                { id: 'p-'+id, tipo: 'preco', val: '0,99', x: 50, y: 180, size: 150, font: "'Anton'", col: '#000', w:0, h:0, rot:0 }
+                { id: 'h-'+id, tipo: 'head',  val: 'OFERTA IMPERDÍVEL', x: 60,  y: 25,  size: 48, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
+                { id: 'd-'+id, tipo: 'desc',  val: 'PRODUTO EM DESTAQUE', x: 40,  y: 95,  size: 58, font: "'Bebas Neue'", col: '#000000', w:0, h:0, rot:0 },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA PREMIUM',     x: 60,  y: 165, size: 34, font: "'Bebas Neue'", col: '#1e272e', w:0, h:0, rot:0 },
+                { id: 'w-'+id, tipo: 'peso',  val: '1 kg',              x: 60,  y: 210, size: 30, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
+                { id: 'p-'+id, tipo: 'preco', val: '9,99',              x: 40,  y: 250, size: 145, font: "'Anton'",      col: '#000000', w:0, h:0, rot:0 }
             ]
         });
         render();
@@ -382,7 +307,7 @@
     };
 
     window.duplicarCartaz = () => {
-        if(!sel) return alert("Selecione um cartaz primeiro.");
+        if (!sel) return alert("Selecione um cartaz primeiro.");
         saveToHistory();
         const clone = JSON.parse(JSON.stringify(sel.cartaz));
         clone.id = Date.now();
@@ -393,44 +318,43 @@
     };
 
     window.removerCartaz = () => {
-        if(sel) {
-            saveToHistory();
-            cartazes = cartazes.filter(c => c.id !== sel.cartaz.id);
-            sel = null;
-            document.getElementById('edPanel').style.display = 'none';
-            render();
-            salvarNoFirebase();
-        }
+        if (!sel) return;
+        saveToHistory();
+        cartazes = cartazes.filter(c => c.id !== sel.cartaz.id);
+        sel = null;
+        document.getElementById('edPanel').style.display = 'none';
+        render();
+        salvarNoFirebase();
     };
 
     window.mudarLayout = (v) => {
-        saveToHistory();
         document.getElementById('folha-impressao').className = v;
         render();
         salvarNoFirebase();
     };
 
     window.atualizarTextos = (tipo) => {
-        if(!sel) return;
+        if (!sel) return;
         saveToHistory();
         const alvo = sel.cartaz.itens.find(i => i.tipo === tipo);
-        alvo.val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
-        render();
-        salvarNoFirebase();
+        if (alvo) {
+            alvo.val = document.getElementById('in' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).value;
+            render();
+            salvarNoFirebase();
+        }
     };
 
     window.atualizarEstilo = () => {
-        if(!sel) return;
+        if (!sel) return;
         saveToHistory();
         const data = sel.data;
         data.font = document.getElementById('inFont').value;
-        data.size = document.getElementById('inSize').value;
+        data.size = parseInt(document.getElementById('inSize').value) || 50;
         data.col = document.getElementById('inColor').value;
-        data.w = document.getElementById('inW').value;
-        data.h = document.getElementById('inH').value;
+        data.w = parseInt(document.getElementById('inW').value) || 0;
+        data.h = parseInt(document.getElementById('inH').value) || 0;
         data.rot = parseFloat(document.getElementById('inRot').value) || 0;
 
-        // NOVO: sombra apenas para textos
         if (['head','desc','marca','peso','preco'].includes(data.tipo)) {
             data.shadow = document.getElementById('inShadow').checked;
             data.shadowCol = document.getElementById('inShadowColor').value;
@@ -441,25 +365,26 @@
     };
 
     window.setCorRapida = (cor) => {
-        if(!sel) return;
-        saveToHistory();
+        if (!sel) return;
         document.getElementById('inColor').value = cor;
         atualizarEstilo();
     };
 
     window.centralizar = () => {
-        if(!sel) return;
+        if (!sel) return;
         saveToHistory();
-        sel.data.x = (sel.el.parentElement.offsetWidth / 2) - (sel.el.offsetWidth / 2);
-        render();
-        salvarNoFirebase();
+        if (sel.el && sel.el.parentElement) {
+            sel.data.x = (sel.el.parentElement.offsetWidth / 2) - (sel.el.offsetWidth / 2);
+            render();
+            salvarNoFirebase();
+        }
     };
 
     window.adicionarTarja = () => {
-        if(!sel) return;
+        if (!sel) return;
         saveToHistory();
         const id = 'bg-' + Date.now();
-        sel.cartaz.itens.unshift({ id: id, tipo: 'bg', val: '', x: 10, y: 10, size: 0, font: '', col: '#d63031', w: 300, h: 60, rot:0 });
+        sel.cartaz.itens.unshift({ id: id, tipo: 'bg', val: '', x: 20, y: 20, size: 0, font: '', col: '#d63031', w: 320, h: 70, rot:0 });
         render();
         salvarNoFirebase();
     };
@@ -471,45 +396,40 @@
     };
 
     window.focarItem = (tipo) => {
-        if(!sel) return;
+        if (!sel) return;
         const item = sel.cartaz.itens.find(i => i.tipo === tipo);
-        if(item) {
+        if (item) {
             sel.data = item;
             sel.el = document.getElementById(item.id);
             document.querySelectorAll('.item-movel').forEach(i => i.classList.remove('selecionado'));
-            sel.el.classList.add('selecionado');
+            if (sel.el) sel.el.classList.add('selecionado');
             mostrarNoPainel(item, sel.cartaz);
         }
     };
 
     window.pararArrasto = () => { 
-        if(dragging) {
+        if (dragging) {
             dragging = false; 
             saveToHistory();
             salvarNoFirebase();
         }
     };
 
-    // ==================== NOVAS FUNÇÕES (adicionadas) ====================
     window.adicionarImagem = () => {
-        if(!sel) return alert("Selecione um cartaz primeiro.");
+        if (!sel) return alert("Selecione um cartaz primeiro.");
         saveToHistory();
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
-        input.onchange = function(e) {
-            const file = e.target.files[0];
+        input.onchange = e => {
+            const file = e.target.files?.[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(ev) {
+            reader.onload = ev => {
                 const id = 'img-' + Date.now();
                 sel.cartaz.itens.push({
-                    id: id,
-                    tipo: 'img',
-                    val: ev.target.result,
-                    x: 50, y: 50,
-                    w: 250, h: 180,
-                    rot: 0
+                    id, tipo: 'img', val: ev.target.result,
+                    x: 50, y: 50, w: 220, h: 180, rot: 0
                 });
                 render();
                 salvarNoFirebase();
@@ -520,112 +440,232 @@
     };
 
     window.adicionarQR = () => {
-        if(!sel) return alert("Selecione um cartaz.");
+        if (!sel) return alert("Selecione um cartaz.");
         saveToHistory();
-        const textoQR = prompt("Digite o texto ou URL para o QR Code (ex: Pix ou link do produto):", "https://exemplo.com");
-        if (!textoQR) return;
+        const texto = prompt("Texto ou URL para o QR Code:", "https://exemplo.com");
+        if (!texto) return;
         const id = 'qr-' + Date.now();
         sel.cartaz.itens.push({
-            id: id,
-            tipo: 'qr',
-            val: textoQR,
-            x: 200, y: 200,
-            w: 150, h: 150,
-            rot: 0
+            id, tipo: 'qr', val: texto,
+            x: 180, y: 180, w: 140, h: 140, rot: 0
         });
         render();
         salvarNoFirebase();
     };
 
-    // Templates (exemplos rápidos)
     window.carregarTemplate = (tipo) => {
         if (!tipo) return;
         saveToHistory();
         const id = Date.now();
-        let template = {
+        let t = {
             id: id,
             itens: [
-                { id: 'h-'+id, tipo: 'head', val: 'SUPER OFERTA', x: 80, y: 20, size: 45, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0, shadow:true, shadowCol:'#000' },
-                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO EM DESTAQUE', x: 60, y: 80, size: 38, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
-                { id: 'p-'+id, tipo: 'preco', val: '9,99', x: 70, y: 140, size: 120, font: "'Anton'", col: '#000', w:0, h:0, rot:0 }
+                { id: 'h-'+id, tipo: 'head', val: 'OFERTA ESPECIAL', x: 60, y: 30, size: 50, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0, shadow:true, shadowCol:'#000' },
+                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO SELECIONADO', x: 40, y: 100, size: 42, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA DE QUALIDADE', x: 60, y: 165, size: 34, font: "'Bebas Neue'", col: '#1e272e', w:0, h:0, rot:0 },
+                { id: 'w-'+id, tipo: 'peso', val: '800 g', x: 60, y: 210, size: 30, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
+                { id: 'p-'+id, tipo: 'preco', val: '7,49', x: 40, y: 255, size: 135, font: "'Anton'", col: '#000', w:0, h:0, rot:0 }
             ]
         };
-        if (tipo === "preco") template.itens[2].size = 180;
-        if (tipo === "marca") template.itens[0].val = "MARCA EXCLUSIVA";
-        cartazes.push(template);
+        if (tipo === 'preco') t.itens[4].size = 170;
+        if (tipo === 'marca') t.itens[2].size = 42;
+        cartazes.push(t);
         render();
         salvarNoFirebase();
     };
 
-    // Exportações
     window.exportarPNG = () => {
-        html2canvas(document.getElementById('folha-impressao'), { scale: 2 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'cartazista_pro.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+        html2canvas(document.getElementById('folha-impressao'), {scale: 2, useCORS: true}).then(canvas => {
+            const a = document.createElement('a');
+            a.download = 'cartaz.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
         });
     };
 
     window.exportarPDF = () => {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        html2canvas(document.getElementById('folha-impressao'), { scale: 2 }).then(canvas => {
+        const doc = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
+        html2canvas(document.getElementById('folha-impressao'), {scale: 2}).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = doc.internal.pageSize.getHeight();
-            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            doc.save('cartazista_pro.pdf');
+            const w = doc.internal.pageSize.getWidth();
+            const h = doc.internal.pageSize.getHeight();
+            doc.addImage(imgData, 'PNG', 0, 0, w, h);
+            doc.save('cartaz.pdf');
         });
     };
 
     function mostrarNoPainel(it, c) {
-        document.getElementById('edPanel').style.display = 'flex';
-        document.getElementById('inHead').value = c.itens.find(i => i.tipo === 'head').val;
-        document.getElementById('inDesc').value = c.itens.find(i => i.tipo === 'desc').val;
-        document.getElementById('inMarca').value = c.itens.find(i => i.tipo === 'marca').val;
-        document.getElementById('inPeso').value = c.itens.find(i => i.tipo === 'peso').val;
-        document.getElementById('inPreco').value = c.itens.find(i => i.tipo === 'preco').val;
+        const panel = document.getElementById('edPanel');
+        if (!panel) return;
+        panel.style.display = 'flex';
+
+        document.getElementById('inHead').value  = c.itens.find(i => i.tipo === 'head')?.val  || '';
+        document.getElementById('inDesc').value  = c.itens.find(i => i.tipo === 'desc')?.val  || '';
+        document.getElementById('inMarca').value = c.itens.find(i => i.tipo === 'marca')?.val || '';
+        document.getElementById('inPeso').value  = c.itens.find(i => i.tipo === 'peso')?.val  || '';
+        document.getElementById('inPreco').value = c.itens.find(i => i.tipo === 'preco')?.val || '';
+
         document.getElementById('inFont').value = it.font || "'Bebas Neue'";
-        document.getElementById('inSize').value = it.size || 50;
+        document.getElementById('inSize').value = it.size || 40;
         document.getElementById('inColor').value = it.col || '#000000';
         document.getElementById('inW').value = it.w || 0;
         document.getElementById('inH').value = it.h || 0;
         document.getElementById('inRot').value = it.rot || 0;
         document.getElementById('inShadow').checked = !!it.shadow;
         document.getElementById('inShadowColor').value = it.shadowCol || '#000000';
-        document.getElementById('controlesFundo').style.display = (it.tipo === 'bg' || it.tipo === 'img' || it.tipo === 'qr') ? 'block' : 'none';
+
+        document.getElementById('controlesFundo').style.display = 
+            (it.tipo === 'bg' || it.tipo === 'img' || it.tipo === 'qr') ? 'block' : 'none';
+
         document.getElementById('labelEdit').innerText = "EDITANDO: " + (it.tipo || "ITEM").toUpperCase();
     }
 
     function render() {
         const folha = document.getElementById('folha-impressao');
+        if (!folha) return;
         folha.innerHTML = '';
+
         cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
+
             c.itens.forEach(it => {
                 let el;
                 if (it.tipo === 'img') {
                     el = document.createElement('img');
-                    el.src = it.val;
+                    el.src = it.val || '';
                 } else if (it.tipo === 'qr') {
                     el = document.createElement('div');
                 } else {
                     el = document.createElement('div');
                 }
+
                 el.id = it.id;
                 el.className = 'item-movel' + (it.tipo === 'bg' ? ' tarja-fundo' : '');
-                el.style.left = it.x + 'px'; 
-                el.style.top = it.y + 'px';
-                el.style.transform = `rotate(${it.rot || 0}deg)`;
-                el.style.color = it.col || '#000';
+                el.style.left = (it.x || 50) + 'px';
+                el.style.top  = (it.y || 50) + 'px';
+                el.style.transform = `rotate(${(it.rot || 0)}deg)`;
+                el.style.color = it.col || '#000000';
 
                 if (it.tipo === 'bg') {
-                    el.style.backgroundColor = it.col; 
-                    el.style.width = it.w + 'px'; 
-                    el.style.height = it.h + 'px';
-                } else if (it.tipo === 'img') {
-                    el.style.width = it.w + 'px'; 
-                    el.style.height = it.h + 'px';
-                } else if (it.tipo
+                    el.style.backgroundColor = it.col || '#d63031';
+                    el.style.width  = (it.w || 300) + 'px';
+                    el.style.height = (it.h || 60) + 'px';
+                } else if (it.tipo === 'img' || it.tipo === 'qr') {
+                    el.style.width  = (it.w || 200) + 'px';
+                    el.style.height = (it.h || 200) + 'px';
+                } else {
+                    el.style.fontSize   = (it.size || 40) + 'px';
+                    el.style.fontFamily = it.font || "'Bebas Neue'";
+                    el.style.textShadow = it.shadow ? `3px 3px 8px ${it.shadowCol || '#000'}` : 'none';
+                    el.style.minWidth   = '120px';
+                    el.style.minHeight  = '30px';
+
+                    if (it.tipo === 'preco') {
+                        const v = (it.val || '0,00').replace(',', '.').split('.');
+                        el.innerHTML = `<small style="font-size:0.38em">R$</small>${v[0]}<small style="font-size:0.58em; border-bottom:7px solid currentColor">,${v[1]||'00'}</small>`;
+                    } else {
+                        el.textContent = it.val || it.tipo.toUpperCase();
+                    }
+                }
+
+                // duplo clique para editar
+                el.ondblclick = () => {
+                    if (it.tipo === 'bg') return;
+                    if (it.tipo === 'qr') {
+                        const txt = prompt("Novo conteúdo do QR Code:", it.val);
+                        if (txt) { it.val = txt; render(); salvarNoFirebase(); saveToHistory(); }
+                        return;
+                    }
+                    if (it.tipo === 'img') {
+                        const inp = document.createElement('input');
+                        inp.type = 'file';
+                        inp.accept = 'image/*';
+                        inp.onchange = e => {
+                            const f = e.target.files?.[0];
+                            if (!f) return;
+                            const r = new FileReader();
+                            r.onload = ev => { it.val = ev.target.result; render(); salvarNoFirebase(); saveToHistory(); };
+                            r.readAsDataURL(f);
+                        };
+                        inp.click();
+                        return;
+                    }
+                    // textos normais
+                    const novo = prompt("Novo texto:", it.val);
+                    if (novo !== null) {
+                        it.val = novo.toUpperCase();
+                        render();
+                        salvarNoFirebase();
+                        saveToHistory();
+                    }
+                };
+
+                el.onmousedown = e => {
+                    e.stopPropagation();
+                    sel = { data: it, el, cartaz: c };
+                    dragging = true;
+                    document.querySelectorAll('.item-movel').forEach(el => el.classList.remove('selecionado'));
+                    el.classList.add('selecionado');
+                    offset.x = e.clientX - el.offsetLeft;
+                    offset.y = e.clientY - el.offsetTop;
+                    mostrarNoPainel(it, c);
+                };
+
+                area.appendChild(el);
+
+                // QR Code
+                if (it.tipo === 'qr') {
+                    setTimeout(() => {
+                        const container = document.getElementById(it.id);
+                        if (container && !container.hasChildNodes()) {
+                            try {
+                                new QRCode(container, {
+                                    text: it.val || 'https://example.com',
+                                    width: it.w || 140,
+                                    height: it.h || 140,
+                                    colorDark: "#000000",
+                                    colorLight: "#ffffff"
+                                });
+                            } catch(e) {
+                                console.warn("Erro ao gerar QR", e);
+                            }
+                        }
+                    }, 80);
+                }
+            });
+
+            folha.appendChild(area);
+        });
+    }
+
+    document.onmousemove = e => {
+        if (!dragging || !sel) return;
+        sel.data.x = e.clientX - offset.x;
+        sel.data.y = e.clientY - offset.y;
+        sel.el.style.left = sel.data.x + 'px';
+        sel.el.style.top  = sel.data.y + 'px';
+    };
+
+    window.onload = () => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                setTimeout(() => { splash.style.display = 'none'; }, 1600);
+            }, 3800);
+
+            // segurança – força desaparecimento
+            setTimeout(() => {
+                if (splash.style.opacity !== '0') {
+                    splash.style.display = 'none';
+                }
+            }, 12000);
+        }
+
+        carregarDoFirebase();
+    };
+</script>
+</body>
+</html>
