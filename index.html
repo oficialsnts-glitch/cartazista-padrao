@@ -66,7 +66,6 @@
             cursor: move; 
             user-select: none; 
             line-height: 1.05; 
-            z-index: 10; 
             white-space: pre-wrap; 
             text-align: center; 
             min-width: 80px;
@@ -75,7 +74,7 @@
         .tarja-fundo { z-index: 5; border: none; }
         .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.08); }
 
-        /* ADIÇÃO: imagem sempre atrás dos textos */
+        /* Imagem sempre atrás dos textos */
         .item-movel[data-tipo="img"] { 
             z-index: 1 !important; 
         }
@@ -214,7 +213,7 @@
             <div class="campo"><label>Rotação (°)</label><input type="range" id="inRot" min="-180" max="180" value="0" oninput="atualizarEstilo()"></div>
         </div>
 
-        <!-- ADIÇÃO: botão para remover a imagem selecionada -->
+        <!-- Botão remover imagem -->
         <div id="removerImagemContainer" style="display:none; margin-top:12px;">
             <button class="btn" onclick="removerImagemSelecionada()" style="background:#e74c3c; color:white; width:100%;">
                 🗑️ REMOVER IMAGEM SELECIONADA
@@ -310,11 +309,11 @@
         cartazes.push({
             id: id,
             itens: [
-                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 100, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
-                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 80, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
-                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 120, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0 },
-                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 150, y: 150, size: 20, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0 },
-                { id: 'p-'+id, tipo: 'preco', val: '0,99', x: 50, y: 180, size: 150, font: "'Anton'", col: '#000', w:0, h:0, rot:0 }
+                { id: 'h-'+id, tipo: 'head', val: 'OFERTA', x: 100, y: 15, size: 35, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0, shadow: false, shadowCol: '#000000' },
+                { id: 'd-'+id, tipo: 'desc', val: 'PRODUTO', x: 80, y: 60, size: 50, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0, shadow: false, shadowCol: '#000000' },
+                { id: 'm-'+id, tipo: 'marca', val: 'MARCA', x: 120, y: 120, size: 25, font: "'Bebas Neue'", col: '#000', w:0, h:0, rot:0, shadow: false, shadowCol: '#000000' },
+                { id: 'w-'+id, tipo: 'peso', val: 'UNID', x: 150, y: 150, size: 20, font: "'Bebas Neue'", col: '#d63031', w:0, h:0, rot:0, shadow: false, shadowCol: '#000000' },
+                { id: 'p-'+id, tipo: 'preco', val: '0,99', x: 50, y: 180, size: 150, font: "'Anton'", col: '#000', w:0, h:0, rot:0, shadow: false, shadowCol: '#000000' }
             ]
         });
         render();
@@ -370,9 +369,10 @@
         data.h = document.getElementById('inH').value;
         data.rot = parseFloat(document.getElementById('inRot').value) || 0;
 
+        // Correção principal da sombra: sempre salva o estado atual (true/false)
         if (['head','desc','marca','peso','preco'].includes(data.tipo)) {
-            data.shadow = document.getElementById('inShadow').checked;
-            data.shadowCol = document.getElementById('inShadowColor').value;
+            data.shadow = document.getElementById('inShadow').checked === true;           // força boolean
+            data.shadowCol = document.getElementById('inShadowColor').value || '#000000';
         }
 
         render();
@@ -516,7 +516,6 @@
         });
     };
 
-    // ADIÇÃO: função para remover a imagem selecionada
     window.removerImagemSelecionada = () => {
         if (!sel || sel.data.tipo !== 'img') {
             alert("Selecione uma imagem primeiro.");
@@ -546,12 +545,15 @@
         document.getElementById('inW').value = it.w || 0;
         document.getElementById('inH').value = it.h || 0;
         document.getElementById('inRot').value = it.rot || 0;
-        document.getElementById('inShadow').checked = !!it.shadow;
+
+        // Correção da sombra: reflete o valor real do item (true/false)
+        const shadowChecked = it.shadow === true;
+        document.getElementById('inShadow').checked = shadowChecked;
         document.getElementById('inShadowColor').value = it.shadowCol || '#000000';
+
         document.getElementById('controlesFundo').style.display = (it.tipo === 'bg' || it.tipo === 'img' || it.tipo === 'qr') ? 'block' : 'none';
         document.getElementById('labelEdit').innerText = "EDITANDO: " + (it.tipo || "ITEM").toUpperCase();
 
-        // ADIÇÃO: mostra/esconde o container do botão remover imagem
         document.getElementById('removerImagemContainer').style.display = 
             (it.tipo === 'img') ? 'block' : 'none';
     }
@@ -578,8 +580,6 @@
 
                 el.id = it.id;
                 el.className = 'item-movel' + (it.tipo === 'bg' ? ' tarja-fundo' : '');
-
-                // ADIÇÃO: atributo para controle de z-index via CSS
                 el.setAttribute('data-tipo', it.tipo);
 
                 el.style.left = it.x + 'px'; 
@@ -600,6 +600,14 @@
                 } else {
                     el.style.fontSize = it.size + 'px'; 
                     el.style.fontFamily = it.font;
+
+                    // Correção da sombra: aplica sempre que shadow for true
+                    if (it.shadow === true) {
+                        el.style.textShadow = `3px 3px 8px ${it.shadowCol || '#000000'}`;
+                    } else {
+                        el.style.textShadow = 'none';
+                    }
+
                     if (it.tipo === 'preco') {
                         const p = it.val.replace(',', '.').split('.');
                         el.innerHTML = `<small style="font-size:0.35em">R$</small>${p[0]}<small style="font-size:0.5em; border-bottom:6px solid">,${p[1]||'00'}</small>`;
