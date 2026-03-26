@@ -100,6 +100,16 @@
             .grid-4 .cartaz-area:nth-child(4n) { page-break-after: always !important; }
             .selecionado { outline: none !important; background: none !important; }
         }
+
+        /* Linhas pontilhadas na divisão pra facilitar o corte */
+        .grid-2 .cartaz-area, .grid-4 .cartaz-area {
+            border: 2px dotted #2c3e50 !important;
+        }
+        @media print {
+            .grid-2 .cartaz-area, .grid-4 .cartaz-area {
+                border: 2px dotted #2c3e50 !important;
+            }
+        }
     </style>
 </head>
 <body onmouseup="pararArrasto()">
@@ -133,6 +143,11 @@
         <option value="preco">Preço Gigante</option>
         <option value="marca">Foco na Marca</option>
     </select>
+    
+    <select id="selectModelosSalvos" onchange="carregarModeloSalvo(this.value)" style="padding:5px;">
+        <option value="">📂 MODELOS SALVOS</option>
+    </select>
+    <button class="btn" style="background:#27ae60;color:white" onclick="salvarModeloAtual()">💾 SALVAR MODELO</button>
     
     <button class="btn btn-print" onclick="exportarPNG()">📥 PNG</button>
     <button class="btn btn-print" onclick="exportarPDF()">📄 PDF</button>
@@ -233,6 +248,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const docRef = doc(db, "projeto", "sessao_atual");
+    const modelosRef = doc(db, "projeto", "modelos_salvos");
+    let modelosSalvos = [];
 
     let cartazes = [];
     let sel = null;
@@ -694,22 +711,87 @@
         sel.el.style.top  = sel.data.y + 'px';
     };
 
+    async function carregarModelosDoFirebase() {
+        try {
+            const docSnap = await getDoc(modelosRef);
+            if (docSnap.exists()) {
+                modelosSalvos = docSnap.data().modelos || [];
+                atualizarSelectModelos();
+            }
+        } catch (e) {
+            console.error("Erro ao carregar modelos:", e);
+        }
+    }
+
+    function atualizarSelectModelos() {
+        const select = document.getElementById('selectModelosSalvos');
+        if (!select) return;
+        select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
+        modelosSalvos.forEach((m, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
+            select.appendChild(opt);
+        });
+    }
+
+    window.salvarModeloAtual = async () => {
+        const nome = prompt("Digite o nome do modelo/rascunho para salvar:", "Rascunho " + new Date().toLocaleDateString('pt-BR'));
+        if (!nome || nome.trim() === '') return;
+        const layoutAtual = document.getElementById('selectLayout').value || "grid-4";
+        const novoModelo = {
+            nome: nome.trim(),
+            layout: layoutAtual,
+            dados: JSON.parse(JSON.stringify(cartazes)),
+            timestamp: Date.now()
+        };
+        modelosSalvos.unshift(novoModelo);
+        if (modelosSalvos.length > 30) modelosSalvos.pop();
+        try {
+            await setDoc(modelosRef, { modelos: modelosSalvos });
+            atualizarSelectModelos();
+            alert("✅ Modelo salvo com sucesso como rascunho!");
+        } catch (e) {
+            console.error("Erro ao salvar modelo no Firebase:", e);
+            alert("Erro ao salvar. Verifique sua conexão.");
+        }
+    };
+
+    window.carregarModeloSalvo = (valor) => {
+        if (valor === "" || valor === null) return;
+        const index = parseInt(valor);
+        const modelo = modelosSalvos[index];
+        if (!modelo) return alert("Modelo não encontrado.");
+        if (confirm(`Carregar o modelo "${modelo.nome}"? Isso substituirá o cartaz atual.`)) {
+            saveToHistory();
+            cartazes = JSON.parse(JSON.stringify(modelo.dados));
+            const selLayout = document.getElementById('selectLayout');
+            if (selLayout) selLayout.value = modelo.layout || "grid-4";
+            mudarLayout(modelo.layout || "grid-4");
+            render();
+            salvarNoFirebase();
+            atualizarSelectModelos();
+            alert(`Modelo "${modelo.nome}" carregado com sucesso! (exatamente como salvo)`);
+        }
+    };
+
     window.onload = () => {
         const splash = document.getElementById('splash-screen');
         if (splash) {
             setTimeout(() => {
                 splash.style.opacity = '0';
                 setTimeout(() => { splash.style.display = 'none'; }, 1600);
-            }, 3800);
+            }, 6500);
 
             setTimeout(() => {
                 if (splash.style.opacity !== '0') {
                     splash.style.display = 'none';
                 }
-            }, 12000);
+            }, 15000);
         }
 
         carregarDoFirebase();
+        carregarModelosDoFirebase();
     };
 </script>
 </body>
