@@ -433,13 +433,70 @@
         }
     };
 
+    // ==================== FUNÇÃO MELHORADA - ADICIONAR TARJA ====================
     window.adicionarTarja = () => {
         if (!sel) return alert("Selecione um cartaz primeiro.");
         saveToHistory();
-        const id = 'bg-' + Date.now();
-        sel.cartaz.itens.unshift({ id: id, tipo: 'bg', val: '', x: 20, y: 20, size: 0, font: '', col: '#d63031', w: 320, h: 70, rot:0 });
+
+        const tarjaId = 'bg-' + Date.now();
+        const textoId = 'txt-' + Date.now();
+
+        // Tarja (fundo amarelo)
+        const tarja = {
+            id: tarjaId,
+            tipo: 'bg',
+            val: '',
+            x: 35,
+            y: 170,
+            size: 0,
+            font: '',
+            col: '#f1c40f',
+            w: 470,
+            h: 92,
+            rot: 0
+        };
+
+        // Texto em cima da tarja
+        const textoTarja = {
+            id: textoId,
+            tipo: 'custom',
+            val: 'SUPERMERCADO PADRÃO',
+            x: 45,
+            y: 185,
+            size: 45,
+            font: "'Bebas Neue'",
+            col: '#1e272e',
+            w: 0,
+            h: 0,
+            rot: 0,
+            shadow: true,
+            shadowCol: '#ffffff'
+        };
+
+        // Adiciona tarja primeiro (fica atrás)
+        sel.cartaz.itens.unshift(tarja);
+        // Adiciona texto depois (fica por cima)
+        sel.cartaz.itens.unshift(textoTarja);
+
         render();
         salvarNoFirebase();
+
+        // Seleciona automaticamente o texto para edição
+        setTimeout(() => {
+            const textoEl = document.getElementById(textoId);
+            if (textoEl) {
+                sel = { 
+                    data: textoTarja, 
+                    el: textoEl, 
+                    cartaz: sel.cartaz 
+                };
+                
+                document.querySelectorAll('.item-movel').forEach(el => el.classList.remove('selecionado'));
+                textoEl.classList.add('selecionado');
+                
+                mostrarNoPainel(textoTarja, sel.cartaz);
+            }
+        }, 120);
     };
 
     window.desmarcarTudo = () => {
@@ -757,13 +814,11 @@
         select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
 
         modelosSalvos.forEach((m, index) => {
-            // Opção para carregar o modelo (clicar no nome)
             const loadOpt = document.createElement('option');
             loadOpt.value = `load_${index}`;
             loadOpt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
             select.appendChild(loadOpt);
 
-            // Opção para excluir (lixeira)
             const deleteOpt = document.createElement('option');
             deleteOpt.value = `delete_${index}`;
             deleteOpt.textContent = `   🗑️ Excluir`;
