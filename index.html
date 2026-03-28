@@ -101,7 +101,6 @@
             .selecionado { outline: none !important; background: none !important; }
         }
 
-        /* Linhas pontilhadas na divisão pra facilitar o corte */
         .grid-2 .cartaz-area, .grid-4 .cartaz-area {
             border: 2px dotted #2c3e50 !important;
         }
@@ -144,7 +143,7 @@
         <option value="marca">Foco na Marca</option>
     </select>
     
-    <select id="selectModelosSalvos" onchange="carregarModeloSalvo(this.value)" style="padding:5px;">
+    <select id="selectModelosSalvos" onchange="handleModeloSelect(this)" style="padding:5px;">
         <option value="">📂 MODELOS SALVOS</option>
     </select>
     <button class="btn" style="background:#27ae60;color:white" onclick="salvarModeloAtual()">💾 SALVAR MODELO</button>
@@ -511,6 +510,103 @@
         salvarNoFirebase();
     };
 
+    // ==================== NOVAS FUNÇÕES PARA EXCLUIR MODELO ====================
+
+    window.handleModeloSelect = (selectElement) => {
+        const valor = selectElement.value;
+
+        if (valor === "excluir") {
+            if (modelosSalvos.length === 0) return;
+
+            let lista = "Qual modelo deseja excluir?\n\n";
+            modelosSalvos.forEach((m, i) => {
+                lista += `${i+1}. ${m.nome}\n`;
+            });
+
+            const escolha = prompt(lista + "\nDigite o número do modelo que deseja excluir:");
+            if (!escolha) {
+                selectElement.value = "";
+                return;
+            }
+
+            const idx = parseInt(escolha) - 1;
+            if (idx >= 0 && idx < modelosSalvos.length) {
+                excluirModeloSalvo(idx);
+            }
+            selectElement.value = "";
+            return;
+        }
+
+        if (valor !== "" && valor !== null) {
+            carregarModeloSalvo(valor);
+        }
+    };
+
+    window.excluirModeloSalvo = async (index) => {
+        if (index < 0 || index >= modelosSalvos.length) return;
+
+        if (!confirm(`Tem certeza que deseja excluir o modelo "${modelosSalvos[index].nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+            return;
+        }
+
+        saveToHistory();
+
+        const nomeExcluido = modelosSalvos[index].nome;
+        modelosSalvos.splice(index, 1);
+
+        try {
+            await setDoc(modelosRef, { modelos: modelosSalvos });
+            atualizarSelectModelos();
+            alert(`✅ Modelo "${nomeExcluido}" excluído com sucesso!`);
+        } catch (e) {
+            console.error("Erro ao excluir modelo:", e);
+            alert("Erro ao excluir o modelo. Verifique sua conexão.");
+        }
+    };
+
+    // =====================================================================
+
+    window.carregarModeloSalvo = (valor) => {
+        if (valor === "" || valor === null) return;
+        const index = parseInt(valor);
+        const modelo = modelosSalvos[index];
+        if (!modelo) return alert("Modelo não encontrado.");
+        if (confirm(`Carregar o modelo "${modelo.nome}"? Isso substituirá o cartaz atual.`)) {
+            saveToHistory();
+            cartazes = JSON.parse(JSON.stringify(modelo.dados));
+            const selLayout = document.getElementById('selectLayout');
+            if (selLayout) selLayout.value = modelo.layout || "grid-4";
+            mudarLayout(modelo.layout || "grid-4");
+            render();
+            salvarNoFirebase();
+            atualizarSelectModelos();
+            alert(`Modelo "${modelo.nome}" carregado com sucesso!`);
+        }
+    };
+
+    function atualizarSelectModelos() {
+        const select = document.getElementById('selectModelosSalvos');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
+
+        modelosSalvos.forEach((m, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
+            select.appendChild(opt);
+        });
+
+        if (modelosSalvos.length > 0) {
+            const deleteOpt = document.createElement('option');
+            deleteOpt.value = "excluir";
+            deleteOpt.textContent = "���️ EXCLUIR UM MODELO...";
+            deleteOpt.style.color = "#d63031";
+            deleteOpt.style.fontWeight = "bold";
+            select.appendChild(deleteOpt);
+        }
+    }
+
     window.exportarPNG = () => {
         const layoutAtual = document.getElementById('selectLayout').value;
         const folhaCompleta = document.getElementById('folha-impressao');
@@ -554,7 +650,6 @@
         if (!panel) return;
         panel.style.display = 'flex';
         
-        // Mostrar botão de excluir se não for um texto fixo
         const extraTools = document.getElementById('extraTools');
         const tiposProtegidos = ['head', 'desc', 'marca', 'peso', 'preco'];
         extraTools.style.display = tiposProtegidos.includes(it.tipo) ? 'none' : 'block';
@@ -603,7 +698,6 @@
                 el.id = it.id;
                 el.className = 'item-movel';
                 
-                // GARANTIA DE SOBREPOSIÇÃO: Texto no topo, Imagem/QR no meio, Tarja no fundo
                 if (it.tipo === 'bg') el.style.zIndex = "5";
                 else if (it.tipo === 'img' || it.tipo === 'qr') el.style.zIndex = "10";
                 else el.style.zIndex = "20";
@@ -703,14 +797,6 @@
         });
     }
 
-    document.onmousemove = e => {
-        if (!dragging || !sel) return;
-        sel.data.x = e.clientX - offset.x;
-        sel.data.y = e.clientY - offset.y;
-        sel.el.style.left = sel.data.x + 'px';
-        sel.el.style.top  = sel.data.y + 'px';
-    };
-
     async function carregarModelosDoFirebase() {
         try {
             const docSnap = await getDoc(modelosRef);
@@ -721,18 +807,6 @@
         } catch (e) {
             console.error("Erro ao carregar modelos:", e);
         }
-    }
-
-    function atualizarSelectModelos() {
-        const select = document.getElementById('selectModelosSalvos');
-        if (!select) return;
-        select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
-        modelosSalvos.forEach((m, index) => {
-            const opt = document.createElement('option');
-            opt.value = index;
-            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
-            select.appendChild(opt);
-        });
     }
 
     window.salvarModeloAtual = async () => {
@@ -754,24 +828,6 @@
         } catch (e) {
             console.error("Erro ao salvar modelo no Firebase:", e);
             alert("Erro ao salvar. Verifique sua conexão.");
-        }
-    };
-
-    window.carregarModeloSalvo = (valor) => {
-        if (valor === "" || valor === null) return;
-        const index = parseInt(valor);
-        const modelo = modelosSalvos[index];
-        if (!modelo) return alert("Modelo não encontrado.");
-        if (confirm(`Carregar o modelo "${modelo.nome}"? Isso substituirá o cartaz atual.`)) {
-            saveToHistory();
-            cartazes = JSON.parse(JSON.stringify(modelo.dados));
-            const selLayout = document.getElementById('selectLayout');
-            if (selLayout) selLayout.value = modelo.layout || "grid-4";
-            mudarLayout(modelo.layout || "grid-4");
-            render();
-            salvarNoFirebase();
-            atualizarSelectModelos();
-            alert(`Modelo "${modelo.nome}" carregado com sucesso! (exatamente como salvo)`);
         }
     };
 
