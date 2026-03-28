@@ -39,12 +39,35 @@
 
         body { font-family: 'Segoe UI', sans-serif; background: #4b6584; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; }
+        .toolbar { background: var(--dark); padding: 10px 20px; display: flex; gap: 10px; align-items: center; color: white; z-index: 2000; flex-wrap: wrap; }
         .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 900; font-size: 10px; text-transform: uppercase; }
         .btn-add { background: var(--sucesso); color: white; }
         .btn-duplica { background: var(--azul); color: white; }
         .btn-print { background: var(--danger); color: white; }
         .btn-fechar { background: #d63031; color: white; width: 100%; margin-bottom: 10px; font-size: 11px; }
+
+        .cartaz-header {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 100;
+            background: #d63031;
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .cartaz-header:hover {
+            background: #b71c1c;
+            transform: scale(1.1);
+        }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; align-items: flex-start; }
@@ -91,7 +114,7 @@
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white !important; overflow: visible !important; }
-            #splash-screen, .toolbar, .editor-panel { display: none !important; }
+            #splash-screen, .toolbar, .editor-panel, .cartaz-header { display: none !important; }
             .main-container, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; }
             #folha-impressao { width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
             .cartaz-area { border: none !important; page-break-after: auto !important; }
@@ -143,7 +166,7 @@
         <option value="marca">Foco na Marca</option>
     </select>
     
-    <select id="selectModelosSalvos" onchange="handleModeloSelect(this)" style="padding:5px;">
+    <select id="selectModelosSalvos" onchange="carregarModeloSalvo(this.value)" style="padding:5px;">
         <option value="">📂 MODELOS SALVOS</option>
     </select>
     <button class="btn" style="background:#27ae60;color:white" onclick="salvarModeloAtual()">💾 SALVAR MODELO</button>
@@ -348,6 +371,17 @@
         salvarNoFirebase();
     };
 
+    // Nova função: Excluir cartaz diretamente pela lixeira visual
+    window.excluirCartazPorId = (cartazId) => {
+        if (!confirm("Tem certeza que deseja excluir este cartaz?")) return;
+        saveToHistory();
+        cartazes = cartazes.filter(c => c.id !== cartazId);
+        sel = null;
+        document.getElementById('edPanel').style.display = 'none';
+        render();
+        salvarNoFirebase();
+    };
+
     window.removerItemSelecionado = () => {
         if (!sel || !sel.data || !sel.cartaz) return;
         const tiposProtegidos = ['head', 'desc', 'marca', 'peso', 'preco'];
@@ -510,103 +544,6 @@
         salvarNoFirebase();
     };
 
-    // ==================== NOVAS FUNÇÕES PARA EXCLUIR MODELO ====================
-
-    window.handleModeloSelect = (selectElement) => {
-        const valor = selectElement.value;
-
-        if (valor === "excluir") {
-            if (modelosSalvos.length === 0) return;
-
-            let lista = "Qual modelo deseja excluir?\n\n";
-            modelosSalvos.forEach((m, i) => {
-                lista += `${i+1}. ${m.nome}\n`;
-            });
-
-            const escolha = prompt(lista + "\nDigite o número do modelo que deseja excluir:");
-            if (!escolha) {
-                selectElement.value = "";
-                return;
-            }
-
-            const idx = parseInt(escolha) - 1;
-            if (idx >= 0 && idx < modelosSalvos.length) {
-                excluirModeloSalvo(idx);
-            }
-            selectElement.value = "";
-            return;
-        }
-
-        if (valor !== "" && valor !== null) {
-            carregarModeloSalvo(valor);
-        }
-    };
-
-    window.excluirModeloSalvo = async (index) => {
-        if (index < 0 || index >= modelosSalvos.length) return;
-
-        if (!confirm(`Tem certeza que deseja excluir o modelo "${modelosSalvos[index].nome}"?\n\nEsta ação não pode ser desfeita.`)) {
-            return;
-        }
-
-        saveToHistory();
-
-        const nomeExcluido = modelosSalvos[index].nome;
-        modelosSalvos.splice(index, 1);
-
-        try {
-            await setDoc(modelosRef, { modelos: modelosSalvos });
-            atualizarSelectModelos();
-            alert(`✅ Modelo "${nomeExcluido}" excluído com sucesso!`);
-        } catch (e) {
-            console.error("Erro ao excluir modelo:", e);
-            alert("Erro ao excluir o modelo. Verifique sua conexão.");
-        }
-    };
-
-    // =====================================================================
-
-    window.carregarModeloSalvo = (valor) => {
-        if (valor === "" || valor === null) return;
-        const index = parseInt(valor);
-        const modelo = modelosSalvos[index];
-        if (!modelo) return alert("Modelo não encontrado.");
-        if (confirm(`Carregar o modelo "${modelo.nome}"? Isso substituirá o cartaz atual.`)) {
-            saveToHistory();
-            cartazes = JSON.parse(JSON.stringify(modelo.dados));
-            const selLayout = document.getElementById('selectLayout');
-            if (selLayout) selLayout.value = modelo.layout || "grid-4";
-            mudarLayout(modelo.layout || "grid-4");
-            render();
-            salvarNoFirebase();
-            atualizarSelectModelos();
-            alert(`Modelo "${modelo.nome}" carregado com sucesso!`);
-        }
-    };
-
-    function atualizarSelectModelos() {
-        const select = document.getElementById('selectModelosSalvos');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
-
-        modelosSalvos.forEach((m, index) => {
-            const opt = document.createElement('option');
-            opt.value = index;
-            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
-            select.appendChild(opt);
-        });
-
-        if (modelosSalvos.length > 0) {
-            const deleteOpt = document.createElement('option');
-            deleteOpt.value = "excluir";
-            deleteOpt.textContent = "���️ EXCLUIR UM MODELO...";
-            deleteOpt.style.color = "#d63031";
-            deleteOpt.style.fontWeight = "bold";
-            select.appendChild(deleteOpt);
-        }
-    }
-
     window.exportarPNG = () => {
         const layoutAtual = document.getElementById('selectLayout').value;
         const folhaCompleta = document.getElementById('folha-impressao');
@@ -683,6 +620,17 @@
         cartazes.forEach(c => {
             const area = document.createElement('div');
             area.className = 'cartaz-area';
+
+            // Botão de lixeira para excluir o cartaz diretamente
+            const btnExcluir = document.createElement('button');
+            btnExcluir.className = 'cartaz-header';
+            btnExcluir.innerHTML = '🗑️';
+            btnExcluir.title = 'Excluir este cartaz';
+            btnExcluir.onclick = (e) => {
+                e.stopPropagation();
+                excluirCartazPorId(c.id);
+            };
+            area.appendChild(btnExcluir);
 
             c.itens.forEach(it => {
                 let el;
@@ -797,6 +745,16 @@
         });
     }
 
+    document.onmousemove = e => {
+        if (!dragging || !sel) return;
+        sel.data.x = e.clientX - offset.x;
+        sel.data.y = e.clientY - offset.y;
+        sel.el.style.left = sel.data.x + 'px';
+        sel.el.style.top  = sel.data.y + 'px';
+    };
+
+    // ==================== FUNÇÕES DE MODELOS SALVOS ====================
+
     async function carregarModelosDoFirebase() {
         try {
             const docSnap = await getDoc(modelosRef);
@@ -807,6 +765,18 @@
         } catch (e) {
             console.error("Erro ao carregar modelos:", e);
         }
+    }
+
+    function atualizarSelectModelos() {
+        const select = document.getElementById('selectModelosSalvos');
+        if (!select) return;
+        select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
+        modelosSalvos.forEach((m, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
+            select.appendChild(opt);
+        });
     }
 
     window.salvarModeloAtual = async () => {
@@ -828,6 +798,43 @@
         } catch (e) {
             console.error("Erro ao salvar modelo no Firebase:", e);
             alert("Erro ao salvar. Verifique sua conexão.");
+        }
+    };
+
+    window.carregarModeloSalvo = (valor) => {
+        if (valor === "" || valor === null) return;
+        const index = parseInt(valor);
+        const modelo = modelosSalvos[index];
+        if (!modelo) return alert("Modelo não encontrado.");
+        if (confirm(`Carregar o modelo "${modelo.nome}"? Isso substituirá o cartaz atual.`)) {
+            saveToHistory();
+            cartazes = JSON.parse(JSON.stringify(modelo.dados));
+            const selLayout = document.getElementById('selectLayout');
+            if (selLayout) selLayout.value = modelo.layout || "grid-4";
+            mudarLayout(modelo.layout || "grid-4");
+            render();
+            salvarNoFirebase();
+            atualizarSelectModelos();
+            alert(`Modelo "${modelo.nome}" carregado com sucesso! (exatamente como salvo)`);
+        }
+    };
+
+    // Nova função para excluir modelo salvo
+    window.excluirModeloSalvo = async (index) => {
+        if (index < 0 || index >= modelosSalvos.length) return;
+        const nome = modelosSalvos[index].nome;
+        if (!confirm(`Tem certeza que deseja excluir o modelo "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+            return;
+        }
+        saveToHistory();
+        modelosSalvos.splice(index, 1);
+        try {
+            await setDoc(modelosRef, { modelos: modelosSalvos });
+            atualizarSelectModelos();
+            alert(`✅ Modelo "${nome}" excluído com sucesso!`);
+        } catch (e) {
+            console.error("Erro ao excluir modelo:", e);
+            alert("Erro ao excluir o modelo. Verifique sua conexão.");
         }
     };
 
