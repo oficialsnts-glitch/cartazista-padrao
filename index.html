@@ -47,27 +47,12 @@
         .btn-fechar { background: #d63031; color: white; width: 100%; margin-bottom: 10px; font-size: 11px; }
 
         .cartaz-header {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 100;
-            background: #d63031;
-            color: white;
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            position: absolute; top: 8px; right: 8px; z-index: 100;
+            background: #d63031; color: white; border: none; width: 28px; height: 28px;
+            border-radius: 50%; font-size: 16px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .cartaz-header:hover {
-            background: #b71c1c;
-            transform: scale(1.1);
-        }
+        .cartaz-header:hover { background: #b71c1c; transform: scale(1.1); }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; align-items: flex-start; }
@@ -124,7 +109,6 @@
             .selecionado { outline: none !important; background: none !important; }
         }
 
-        /* Linhas pontilhadas na divisão pra facilitar o corte */
         .grid-2 .cartaz-area, .grid-4 .cartaz-area {
             border: 2px dotted #2c3e50 !important;
         }
@@ -621,7 +605,6 @@
             const area = document.createElement('div');
             area.className = 'cartaz-area';
 
-            // Lixeira para cada cartaz
             const btnExcluir = document.createElement('button');
             btnExcluir.className = 'cartaz-header';
             btnExcluir.innerHTML = '🗑️';
@@ -753,7 +736,7 @@
         sel.el.style.top  = sel.data.y + 'px';
     };
 
-    // ==================== MODELOS SALVOS COM LIXEIRA AO LADO ====================
+    // ==================== MODELOS SALVOS - LIXEIRA SEPARADA ====================
 
     async function carregarModelosDoFirebase() {
         try {
@@ -770,30 +753,45 @@
     function atualizarSelectModelos() {
         const select = document.getElementById('selectModelosSalvos');
         if (!select) return;
-        
+
         select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
 
         modelosSalvos.forEach((m, index) => {
-            const opt = document.createElement('option');
-            opt.value = index;
-            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')}) 🗑️`;
-            select.appendChild(opt);
+            // Opção para carregar o modelo (clicar no nome)
+            const loadOpt = document.createElement('option');
+            loadOpt.value = `load_${index}`;
+            loadOpt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
+            select.appendChild(loadOpt);
+
+            // Opção para excluir (lixeira)
+            const deleteOpt = document.createElement('option');
+            deleteOpt.value = `delete_${index}`;
+            deleteOpt.textContent = `   🗑️ Excluir`;
+            deleteOpt.style.color = "#d63031";
+            select.appendChild(deleteOpt);
         });
     }
 
     window.handleModeloSelect = (selectElement) => {
         const valor = selectElement.value;
-        if (valor === "") return;
+        if (!valor) return;
 
-        const index = parseInt(valor);
-        const modelo = modelosSalvos[index];
-        if (!modelo) return;
+        if (valor.startsWith("load_")) {
+            const index = parseInt(valor.replace("load_", ""));
+            carregarModeloSalvo(index.toString());
+            selectElement.value = "";
+            return;
+        }
 
-        if (confirm(`Tem certeza que deseja excluir o modelo "${modelo.nome}"?\n\nEsta ação não pode ser desfeita.`)) {
-            excluirModeloSalvo(index);
-        } else {
-            // Recarrega para limpar seleção se cancelar
-            atualizarSelectModelos();
+        if (valor.startsWith("delete_")) {
+            const index = parseInt(valor.replace("delete_", ""));
+            const nome = modelosSalvos[index].nome;
+
+            if (confirm(`Tem certeza que deseja excluir o modelo "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                excluirModeloSalvo(index);
+            }
+            selectElement.value = "";
+            return;
         }
     };
 
