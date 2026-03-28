@@ -17,13 +17,9 @@
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: var(--dark);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 9999; color: white;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; color: white;
             transition: opacity 1.5s ease, visibility 1.5s;
         }
 
@@ -47,27 +43,12 @@
         .btn-fechar { background: #d63031; color: white; width: 100%; margin-bottom: 10px; font-size: 11px; }
 
         .cartaz-header {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 100;
-            background: #d63031;
-            color: white;
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            position: absolute; top: 8px; right: 8px; z-index: 100;
+            background: #d63031; color: white; border: none; width: 28px; height: 28px;
+            border-radius: 50%; font-size: 16px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .cartaz-header:hover {
-            background: #b71c1c;
-            transform: scale(1.1);
-        }
+        .cartaz-header:hover { background: #b71c1c; transform: scale(1.1); }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .workspace { flex: 1; overflow: auto; padding: 40px; background: #2f3542; display: flex; justify-content: center; align-items: flex-start; }
@@ -76,24 +57,13 @@
         
         .grid-1 { grid-template-columns: 1fr; }
         .grid-1 .cartaz-area { height: 297mm; border-bottom: 2px dashed #000; }
-        
         .grid-2 { grid-template-columns: 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-        .grid-2 .cartaz-area { height: 148.5mm; border: 0.1mm dashed #ddd; }
-
         .grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-        .grid-4 .cartaz-area { height: 148.5mm; border: 0.1mm dashed #ddd; }
 
         .cartaz-area { position: relative; overflow: hidden; background: #fff; }
         .item-movel { 
-            position: absolute; 
-            cursor: move; 
-            user-select: none; 
-            line-height: 1.05; 
-            z-index: 10; 
-            white-space: pre-wrap; 
-            text-align: center; 
-            min-width: 80px;
-            min-height: 24px;
+            position: absolute; cursor: move; user-select: none; line-height: 1.05; 
+            z-index: 10; white-space: pre-wrap; text-align: center; min-width: 80px; min-height: 24px;
         }
         .tarja-fundo { z-index: 5; border: none; }
         .selecionado { outline: 3px solid var(--azul) !important; z-index: 999 !important; background: rgba(9, 132, 227, 0.08); }
@@ -126,11 +96,6 @@
 
         .grid-2 .cartaz-area, .grid-4 .cartaz-area {
             border: 2px dotted #2c3e50 !important;
-        }
-        @media print {
-            .grid-2 .cartaz-area, .grid-4 .cartaz-area {
-                border: 2px dotted #2c3e50 !important;
-            }
         }
     </style>
 </head>
@@ -166,7 +131,8 @@
         <option value="marca">Foco na Marca</option>
     </select>
     
-    <select id="selectModelosSalvos" onchange="carregarModeloSalvo(this.value)" style="padding:5px;">
+    <!-- Select de Modelos com Lixeira -->
+    <select id="selectModelosSalvos" onchange="handleModeloSelect(this)" style="padding:5px; min-width: 280px;">
         <option value="">📂 MODELOS SALVOS</option>
     </select>
     <button class="btn" style="background:#27ae60;color:white" onclick="salvarModeloAtual()">💾 SALVAR MODELO</button>
@@ -198,7 +164,6 @@
 
         <div class="secao" style="background:#eef2f7">
             <h4 id="labelEdit" style="font-size:11px; color:var(--azul)">ESTILO E CORES</h4>
-            
             <label>Cores Rápidas</label>
             <div class="color-palette">
                 <div class="color-box" style="background:#000000" onclick="setCorRapida('#000000')"></div>
@@ -323,15 +288,15 @@
                 document.getElementById('selectLayout').value = savedLayout;
                 mudarLayout(savedLayout);
             }
-            if (cartazes.length === 0) {
-                adicionarCartaz();
-            }
+            if (cartazes.length === 0) adicionarCartaz();
             render();
         } catch (e) {
             console.error("Erro ao carregar:", e);
             adicionarCartaz();
         }
     }
+
+    // ==================== FUNÇÕES DOS CARTAZES ====================
 
     window.adicionarCartaz = () => {
         saveToHistory();
@@ -371,7 +336,6 @@
         salvarNoFirebase();
     };
 
-    // Nova função: Excluir cartaz diretamente pela lixeira visual
     window.excluirCartazPorId = (cartazId) => {
         if (!confirm("Tem certeza que deseja excluir este cartaz?")) return;
         saveToHistory();
@@ -497,10 +461,7 @@
             const reader = new FileReader();
             reader.onload = ev => {
                 const id = 'img-' + Date.now();
-                sel.cartaz.itens.push({
-                    id, tipo: 'img', val: ev.target.result,
-                    x: 50, y: 50, w: 220, h: 180, rot: 0
-                });
+                sel.cartaz.itens.push({ id, tipo: 'img', val: ev.target.result, x: 50, y: 50, w: 220, h: 180, rot: 0 });
                 render();
                 salvarNoFirebase();
             };
@@ -515,10 +476,7 @@
         const texto = prompt("Texto ou URL para o QR Code:", "https://exemplo.com");
         if (!texto) return;
         const id = 'qr-' + Date.now();
-        sel.cartaz.itens.push({
-            id, tipo: 'qr', val: texto,
-            x: 180, y: 180, w: 140, h: 140, rot: 0
-        });
+        sel.cartaz.itens.push({ id, tipo: 'qr', val: texto, x: 180, y: 180, w: 140, h: 140, rot: 0 });
         render();
         salvarNoFirebase();
     };
@@ -621,7 +579,6 @@
             const area = document.createElement('div');
             area.className = 'cartaz-area';
 
-            // Botão de lixeira para excluir o cartaz diretamente
             const btnExcluir = document.createElement('button');
             btnExcluir.className = 'cartaz-header';
             btnExcluir.innerHTML = '🗑️';
@@ -725,17 +682,13 @@
                     setTimeout(() => {
                         const container = document.getElementById(it.id);
                         if (container && !container.hasChildNodes()) {
-                            try {
-                                new QRCode(container, {
-                                    text: it.val || 'https://example.com',
-                                    width: it.w || 140,
-                                    height: it.h || 140,
-                                    colorDark: "#000000",
-                                    colorLight: "#ffffff"
-                                });
-                            } catch(e) {
-                                console.warn("Erro ao gerar QR", e);
-                            }
+                            new QRCode(container, {
+                                text: it.val || 'https://example.com',
+                                width: it.w || 140,
+                                height: it.h || 140,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff"
+                            });
                         }
                     }, 80);
                 }
@@ -753,7 +706,7 @@
         sel.el.style.top  = sel.data.y + 'px';
     };
 
-    // ==================== FUNÇÕES DE MODELOS SALVOS ====================
+    // ==================== MODELOS SALVOS COM LIXEIRA POR ITEM ====================
 
     async function carregarModelosDoFirebase() {
         try {
@@ -770,14 +723,69 @@
     function atualizarSelectModelos() {
         const select = document.getElementById('selectModelosSalvos');
         if (!select) return;
+
         select.innerHTML = '<option value="">📂 MODELOS SALVOS</option>';
+
         modelosSalvos.forEach((m, index) => {
             const opt = document.createElement('option');
             opt.value = index;
-            opt.textContent = `${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
+            opt.textContent = `📄 ${m.nome} (${new Date(m.timestamp).toLocaleDateString('pt-BR')})`;
             select.appendChild(opt);
         });
+
+        // Adiciona opções com lixeira
+        if (modelosSalvos.length > 0) {
+            const separator = document.createElement('option');
+            separator.value = "";
+            separator.textContent = "───────────────";
+            separator.disabled = true;
+            select.appendChild(separator);
+
+            modelosSalvos.forEach((m, index) => {
+                const deleteOpt = document.createElement('option');
+                deleteOpt.value = `delete_${index}`;
+                deleteOpt.textContent = `🗑️ Excluir: ${m.nome}`;
+                deleteOpt.style.color = "#d63031";
+                select.appendChild(deleteOpt);
+            });
+        }
     }
+
+    window.handleModeloSelect = (selectElement) => {
+        const valor = selectElement.value;
+
+        if (valor.startsWith("delete_")) {
+            const index = parseInt(valor.split("_")[1]);
+            const nome = modelosSalvos[index].nome;
+
+            if (confirm(`Tem certeza que deseja excluir o modelo "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                excluirModeloSalvo(index);
+            }
+            selectElement.value = ""; // limpa seleção
+            return;
+        }
+
+        if (valor !== "" && !valor.startsWith("delete_")) {
+            carregarModeloSalvo(valor);
+        }
+    };
+
+    window.excluirModeloSalvo = async (index) => {
+        if (index < 0 || index >= modelosSalvos.length) return;
+
+        saveToHistory();
+        const nomeExcluido = modelosSalvos[index].nome;
+        modelosSalvos.splice(index, 1);
+
+        try {
+            await setDoc(modelosRef, { modelos: modelosSalvos });
+            atualizarSelectModelos();
+            alert(`✅ Modelo "${nomeExcluido}" excluído com sucesso!`);
+        } catch (e) {
+            console.error("Erro ao excluir modelo:", e);
+            alert("Erro ao excluir o modelo. Verifique sua conexão.");
+        }
+    };
 
     window.salvarModeloAtual = async () => {
         const nome = prompt("Digite o nome do modelo/rascunho para salvar:", "Rascunho " + new Date().toLocaleDateString('pt-BR'));
@@ -815,26 +823,7 @@
             render();
             salvarNoFirebase();
             atualizarSelectModelos();
-            alert(`Modelo "${modelo.nome}" carregado com sucesso! (exatamente como salvo)`);
-        }
-    };
-
-    // Nova função para excluir modelo salvo
-    window.excluirModeloSalvo = async (index) => {
-        if (index < 0 || index >= modelosSalvos.length) return;
-        const nome = modelosSalvos[index].nome;
-        if (!confirm(`Tem certeza que deseja excluir o modelo "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
-            return;
-        }
-        saveToHistory();
-        modelosSalvos.splice(index, 1);
-        try {
-            await setDoc(modelosRef, { modelos: modelosSalvos });
-            atualizarSelectModelos();
-            alert(`✅ Modelo "${nome}" excluído com sucesso!`);
-        } catch (e) {
-            console.error("Erro ao excluir modelo:", e);
-            alert("Erro ao excluir o modelo. Verifique sua conexão.");
+            alert(`Modelo "${modelo.nome}" carregado com sucesso!`);
         }
     };
 
@@ -845,12 +834,6 @@
                 splash.style.opacity = '0';
                 setTimeout(() => { splash.style.display = 'none'; }, 1600);
             }, 6500);
-
-            setTimeout(() => {
-                if (splash.style.opacity !== '0') {
-                    splash.style.display = 'none';
-                }
-            }, 15000);
         }
 
         carregarDoFirebase();
