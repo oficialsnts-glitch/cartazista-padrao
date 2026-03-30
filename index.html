@@ -408,7 +408,8 @@
         data.h = parseInt(document.getElementById('inH').value) || 0;
         data.rot = parseFloat(document.getElementById('inRot').value) || 0;
 
-        if (['head','desc','marca','peso','preco'].includes(data.tipo)) {
+        // Aplica sombra para textos normais e também para itens custom (tarja)
+        if (['head','desc','marca','peso','preco','custom'].includes(data.tipo)) {
             data.shadow = document.getElementById('inShadow').checked;
             data.shadowCol = document.getElementById('inShadowColor').value;
         }
@@ -433,7 +434,6 @@
         }
     };
 
-    // ==================== FUNÇÃO MELHORADA - ADICIONAR TARJA ====================
     window.adicionarTarja = () => {
         if (!sel) return alert("Selecione um cartaz primeiro.");
         saveToHistory();
@@ -441,7 +441,6 @@
         const tarjaId = 'bg-' + Date.now();
         const textoId = 'txt-' + Date.now();
 
-        // Tarja (fundo amarelo)
         const tarja = {
             id: tarjaId,
             tipo: 'bg',
@@ -456,7 +455,6 @@
             rot: 0
         };
 
-        // Texto em cima da tarja
         const textoTarja = {
             id: textoId,
             tipo: 'custom',
@@ -469,19 +467,16 @@
             w: 0,
             h: 0,
             rot: 0,
-            shadow: true,
+            shadow: true,           // inicia com sombra ativada
             shadowCol: '#ffffff'
         };
 
-        // Adiciona tarja primeiro (fica atrás)
         sel.cartaz.itens.unshift(tarja);
-        // Adiciona texto depois (fica por cima)
         sel.cartaz.itens.unshift(textoTarja);
 
         render();
         salvarNoFirebase();
 
-        // Seleciona automaticamente o texto para edição
         setTimeout(() => {
             const textoEl = document.getElementById(textoId);
             if (textoEl) {
@@ -706,7 +701,15 @@
                 } else {
                     el.style.fontSize   = (it.size || 40) + 'px';
                     el.style.fontFamily = it.font || "'Bebas Neue'";
-                    el.style.textShadow = it.shadow ? `3px 3px 8px ${it.shadowCol || '#000'}` : 'none';
+                    
+                    // === CORREÇÃO DA SOMBRA ===
+                    if (it.shadow) {
+                        el.style.textShadow = `3px 3px 8px ${it.shadowCol || '#000000'}`;
+                    } else {
+                        el.style.textShadow = 'none';
+                    }
+                    // ========================
+
                     el.style.minWidth   = '120px';
                     el.style.minHeight  = '30px';
 
@@ -792,8 +795,6 @@
         sel.el.style.left = sel.data.x + 'px';
         sel.el.style.top  = sel.data.y + 'px';
     };
-
-    // ==================== MODELOS SALVOS - LIXEIRA SEPARADA ====================
 
     async function carregarModelosDoFirebase() {
         try {
