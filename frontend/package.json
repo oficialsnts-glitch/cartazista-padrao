@@ -1,0 +1,12 @@
+{
+  "name": "cartazista-frontend",
+  "version": "20.0.0",
+  "private": true,
+  "scripts": {
+    "start": "serve -s public -l tcp://0.0.0.0:3000 --no-clipboard",
+    "build": "echo 'static site, nothing to build'"
+  },
+  "dependencies": {
+    "serve": "14.2.4"
+  }
+}
