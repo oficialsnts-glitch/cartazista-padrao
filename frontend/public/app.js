@@ -350,6 +350,7 @@ function buildCartazArea(c, idx) {
     if (it.tipo === "qr") enqueueQR(el, it);
   });
 
+  bindCartazDragHandlers(area, c.id);
   return area;
 }
 
@@ -922,7 +923,103 @@ function aplicarEAN() {
   toast("Cartaz criado a partir do EAN", "success");
 }
 
-// ---------- Nova página ----------
+// ---------- Remoção de fundo (@imgly/background-removal via CDN) ----------
+let imglyModule = null;
+async function loadImgly() {
+  if (imglyModule) return imglyModule;
+  toast("Carregando modelo de remoção de fundo...", "info", 4000);
+  imglyModule = await import("https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.6.0/+esm");
+  return imglyModule;
+}
+
+async function removerFundoItem() {
+  if (!state.sel || state.sel.data.tipo !== "img") {
+    return toast("Selecione uma imagem primeiro", "error");
+  }
+  const it = state.sel.data;
+  const btn = $("btnRemoverBg");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Processando...';
+  try {
+    const imgly = await loadImgly();
+    const removeBg = imgly.default || imgly.removeBackground;
+    btn.innerHTML = '<span class="loader"></span> Removendo fundo...';
+    const blob = await removeBg(it.val, {
+      output: { format: "image/png", quality: 0.9 },
+    });
+    const dataUrl = await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.readAsDataURL(blob);
+    });
+    snapshot();
+    it.val = dataUrl;
+    render(); save();
+    toast("Fundo removido!", "success");
+  } catch (e) {
+    console.error(e);
+    toast("Erro: " + (e.message || "falha ao remover fundo"), "error", 4000);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+// ---------- Drag & drop de cartazes entre páginas ----------
+let dragCartazId = null;
+
+function bindCartazDragHandlers(area, cartazId) {
+  const handle = document.createElement("div");
+  handle.className = "cartaz-drag-handle";
+  handle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
+  handle.title = "Arraste para reordenar";
+  handle.draggable = true;
+  area.appendChild(handle);
+
+  handle.addEventListener("dragstart", (e) => {
+    dragCartazId = cartazId;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", cartazId);
+    area.classList.add("dragging");
+    // preview translúcido
+    const preview = area.cloneNode(true);
+    preview.style.width = area.offsetWidth + "px";
+    preview.style.height = area.offsetHeight + "px";
+    preview.style.transform = "scale(0.5)";
+    preview.style.position = "absolute";
+    preview.style.top = "-9999px";
+    document.body.appendChild(preview);
+    e.dataTransfer.setDragImage(preview, 20, 20);
+    setTimeout(() => preview.remove(), 0);
+  });
+
+  handle.addEventListener("dragend", () => {
+    dragCartazId = null;
+    qsa(".cartaz-area").forEach(a => a.classList.remove("dragging", "drop-target"));
+  });
+
+  area.addEventListener("dragover", (e) => {
+    if (!dragCartazId || dragCartazId === cartazId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    area.classList.add("drop-target");
+  });
+  area.addEventListener("dragleave", () => area.classList.remove("drop-target"));
+  area.addEventListener("drop", (e) => {
+    e.preventDefault();
+    area.classList.remove("drop-target");
+    if (!dragCartazId || dragCartazId === cartazId) return;
+    const fromIdx = state.cartazes.findIndex(c => c.id === dragCartazId);
+    const toIdx = state.cartazes.findIndex(c => c.id === cartazId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    snapshot();
+    const [moved] = state.cartazes.splice(fromIdx, 1);
+    state.cartazes.splice(toIdx, 0, moved);
+    render(); save();
+    toast("Cartaz reordenado", "success");
+  });
+}
 function novaPagina() {
   snapshot();
   const perPage = PER_PAGE[state.layout] || 4;
@@ -1407,6 +1504,7 @@ function wire() {
   $("btnNovo").onclick = () => adicionarCartaz();
   $("btnDuplicar").onclick = duplicarCartaz;
   $("btnImagem").onclick = adicionarImagem;
+  $("btnRemoverBg").onclick = removerFundoItem;
   $("btnIcones").onclick = () => { openModal("modalIcones"); renderIconCategorias(); renderIconGrid(); };
   $("btnEAN").onclick = () => openModal("modalEAN");
   $("btnNovaPagina").onclick = novaPagina;

@@ -483,10 +483,32 @@ body {
 .ean-card img { width: 90px; height: 90px; object-fit: contain; border-radius: var(--radius-sm); background:white; border:1px solid var(--border-panel); }
 .ean-card .info { flex:1; font-size:12px; }
 .ean-card .info b { color: var(--success); display:block; font-size:14px; margin-bottom:4px; }
+
+/* ---------- DRAG HANDLE CARTAZ ---------- */
+.cartaz-drag-handle {
+  position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+  background: rgba(0,0,0,0.35); color: white;
+  width: 44px; height: 22px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; z-index: 101; opacity: 0;
+  transition: opacity .15s, background .15s;
+  font-size: 10px; backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.cartaz-area:hover .cartaz-drag-handle { opacity: 1; }
+.cartaz-drag-handle:hover { background: var(--accent); }
+.cartaz-drag-handle:active { cursor: grabbing; }
+.cartaz-area.dragging { opacity: 0.5; }
+.cartaz-area.drop-target {
+  outline: 3px dashed var(--accent) !important;
+  outline-offset: -3px;
+  background: rgba(76,139,255,0.08);
+}
+
 @media print {
   @page { size: A4; margin: 0; }
   body { background: white !important; overflow: visible !important; }
-  #splash, .toolbar, .editor, .cartaz-header, .cartaz-num, .zoom-indicator,
+  #splash, .toolbar, .editor, .cartaz-header, .cartaz-num, .cartaz-drag-handle, .zoom-indicator,
   .toast-container, .modal-backdrop, .preview-overlay, .context-menu { display: none !important; }
   .main, .workspace-wrap, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; position: static !important; }
   #folha, .pagina { width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; transform: none !important; }
