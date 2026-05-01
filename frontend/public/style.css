@@ -217,7 +217,6 @@ body {
 .item.selected {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px;
-  z-index: 999 !important;
   background: rgba(76,139,255,0.05);
 }
 .item.multi-selected {

@@ -744,6 +744,10 @@ function mostrarNoPainel(it, c) {
   $("inH").value = it.h || 0;
   $("inRot").value = it.rot || 0;
   $("secaoFundo").style.display = (it.tipo === "bg" || it.tipo === "img" || it.tipo === "qr") ? "block" : "none";
+  // Atualiza proporção base quando troca de item
+  if ((it.tipo === "img" || it.tipo === "qr") && it.w && it.h) {
+    aspectRatio = it.w / it.h;
+  }
   $("labelEdit").textContent = `Editando: ${(it.tipo || "ITEM").toUpperCase()}`;
 
   // Efeitos
@@ -782,6 +786,31 @@ function atualizarCampoTexto(tipo) {
   saveDebounced();
 }
 
+// ---------- State auxiliar ----------
+let aspectLocked = false;
+let aspectRatio = 1; // w/h ratio quando travado
+
+function toggleAspectLock() {
+  if (!state.sel) return;
+  aspectLocked = !aspectLocked;
+  const btn = $("btnLockAspect");
+  const hint = $("lockAspectHint");
+  if (aspectLocked) {
+    const w = state.sel.data.w || parseInt($("inW").value) || 1;
+    const h = state.sel.data.h || parseInt($("inH").value) || 1;
+    aspectRatio = w / h;
+    btn.innerHTML = '<i class="fa-solid fa-link"></i>';
+    btn.style.background = "var(--accent)";
+    btn.style.color = "#fff";
+    if (hint) hint.textContent = `Proporção travada (W/H = ${aspectRatio.toFixed(2)})`;
+  } else {
+    btn.innerHTML = '<i class="fa-solid fa-link-slash"></i>';
+    btn.style.background = "";
+    btn.style.color = "";
+    if (hint) hint.textContent = "W e H independentes";
+  }
+}
+
 function atualizarEstilo() {
   if (!state.sel) return;
   const d = state.sel.data;
@@ -789,8 +818,24 @@ function atualizarEstilo() {
   d.font = $("inFont").value;
   d.size = parseInt($("inSize").value) || 40;
   d.col = $("inColor").value;
-  d.w = parseInt($("inW").value) || 0;
-  d.h = parseInt($("inH").value) || 0;
+  // Width / Height com aspect-ratio opcional
+  const newW = parseInt($("inW").value);
+  const newH = parseInt($("inH").value);
+  if (aspectLocked && (d.tipo === "img" || d.tipo === "qr")) {
+    // se W mudou, atualiza H proporcional, e vice-versa
+    if (!isNaN(newW) && newW !== d.w) {
+      d.w = newW;
+      d.h = Math.max(10, Math.round(newW / aspectRatio));
+      $("inH").value = d.h;
+    } else if (!isNaN(newH) && newH !== d.h) {
+      d.h = newH;
+      d.w = Math.max(10, Math.round(newH * aspectRatio));
+      $("inW").value = d.w;
+    }
+  } else {
+    if (!isNaN(newW)) d.w = newW;
+    if (!isNaN(newH)) d.h = newH;
+  }
   d.rot = parseFloat($("inRot").value) || 0;
   d.shadow = $("inShadow").checked;
   d.shadowCol = $("inShadowColor").value;
@@ -1577,6 +1622,13 @@ function showCtxMenu(x, y) {
   const m = $("ctxMenu");
   m.classList.add("open");
   m.style.left = x + "px"; m.style.top = y + "px";
+  // "Remover fundo (IA)" só aparece em imagens
+  const isImg = state.sel?.data?.tipo === "img";
+  const removeBtn = $("ctxRemoverFundo");
+  if (removeBtn) {
+    if (isImg) removeBtn.classList.remove("hidden");
+    else removeBtn.classList.add("hidden");
+  }
 }
 function hideCtxMenu() { $("ctxMenu").classList.remove("open"); }
 
@@ -1719,6 +1771,8 @@ function wire() {
   $("alignB").onclick = () => alignar("B");
   $("alignCV").onclick = () => alignar("CV");
 
+  $("btnLockAspect")?.addEventListener("click", toggleAspectLock);
+
   $("btnExcluirItem").onclick = excluirItemSelecionado;
   $("btnFecharEditor").onclick = closeEditor;
 
@@ -1765,8 +1819,38 @@ function wire() {
     state.sel.cartaz.itens.push(n);
     render(); save(); hideCtxMenu();
   };
-  $("ctxFront").onclick = () => { if (!state.sel) return; snapshot(); state.sel.data.zOverride = 999; render(); save(); hideCtxMenu(); };
-  $("ctxBack").onclick = () => { if (!state.sel) return; snapshot(); state.sel.data.zOverride = 1; render(); save(); hideCtxMenu(); };
+  $("ctxFront").onclick = () => {
+    if (!state.sel) return;
+    snapshot();
+    state.sel.data.zOverride = 999;
+    // Reorder: move to end of items array (renderiza por último -> fica em cima)
+    const c = state.sel.cartaz;
+    const idx = c.itens.findIndex(i => i.id === state.sel.data.id);
+    if (idx >= 0) {
+      const [it] = c.itens.splice(idx, 1);
+      c.itens.push(it);
+    }
+    render(); save(); hideCtxMenu();
+    toast("Trazido para frente", "success");
+  };
+  $("ctxBack").onclick = () => {
+    if (!state.sel) return;
+    snapshot();
+    state.sel.data.zOverride = 1;
+    // Reorder: move to start of items array (renderiza primeiro -> fica atrás)
+    const c = state.sel.cartaz;
+    const idx = c.itens.findIndex(i => i.id === state.sel.data.id);
+    if (idx >= 0) {
+      const [it] = c.itens.splice(idx, 1);
+      c.itens.unshift(it);
+    }
+    render(); save(); hideCtxMenu();
+    toast("Enviado para trás", "success");
+  };
+  $("ctxRemoverFundo").onclick = () => {
+    hideCtxMenu();
+    removerFundoItem();
+  };
   $("ctxDelete").onclick = () => { excluirItemSelecionado(); hideCtxMenu(); };
 }
 
