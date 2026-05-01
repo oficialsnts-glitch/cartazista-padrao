@@ -1634,17 +1634,22 @@ function wire() {
 }
 
 // ---------- Boot ----------
-async function boot() {
-  wire();
-  renderColorPalette();
-  renderPalettePresets();
+function dismissSplash() {
+  const s = $("splash");
+  if (!s) return;
+  s.style.opacity = "0";
+  setTimeout(() => { s.style.display = "none"; }, 600);
+}
 
-  // splash dismiss 1.2s
-  setTimeout(() => {
-    const s = $("splash");
-    s.style.opacity = "0";
-    setTimeout(() => s.style.display = "none", 600);
-  }, 1200);
+async function boot() {
+  // Splash sempre desaparece, mesmo que algo abaixo falhe
+  setTimeout(dismissSplash, 1200);
+  // Segurança extra: se algo trava, força em 5s
+  setTimeout(dismissSplash, 5000);
+
+  try { wire(); } catch (e) { console.error("wire() erro:", e); }
+  try { renderColorPalette(); } catch (e) { console.error("palette erro:", e); }
+  try { renderPalettePresets(); } catch (e) { console.error("presets erro:", e); }
 
   // Firebase anonymous auth
   try {
