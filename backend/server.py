@@ -1,36 +1,46 @@
 """Cartazista Pro — Backend API (FastAPI)
-Fornece endpoints de IA para gerar textos de cartazes de preço de supermercado.
+Usa o SDK oficial `google-genai` com a chave Gemini própria do usuário.
+Pronto para rodar em:
+  - Local:  uvicorn server:app --port 8001
+  - Render: Web Service (Python) — comando: uvicorn server:app --host 0.0.0.0 --port $PORT
 """
 import base64
 import json
 import os
 import re
-import uuid
 from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
-EMERGENT_LLM_KEY = os.environ["EMERGENT_LLM_KEY"]
+# ---------- Config ----------
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# CORS: aceita lista separada por vírgula OU "*"
+CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
 
-app = FastAPI(title="Cartazista Pro API")
+# Cliente Gemini oficial (thread-safe, async via client.aio)
+gemini = genai.Client(api_key=GEMINI_API_KEY)
+
+app = FastAPI(title="Cartazista Pro API", version="21.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,  # com "*" precisa ser False
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-api = FastAPI()  # sub-app for /api routes
+api = FastAPI()  # sub-app montado em /api
 
 
 # ---------- Schemas ----------
@@ -74,28 +84,47 @@ class ParseCsvResponse(BaseModel):
     linhas: list[CsvLinha]
 
 
+class EanResponse(BaseModel):
+    found: bool
+    ean: str
+    produto: str = ""
+    marca: str = ""
+    peso: str = ""
+    imagem_data_url: str = ""
+    categoria: str = ""
+    fonte: str = ""
+
+
 # ---------- Helpers ----------
 def _extract_json(text: str) -> dict:
-    """Extrai o primeiro JSON válido de um texto retornado pela LLM."""
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError(f"Nenhum JSON encontrado em: {text[:200]}")
-    return json.loads(match.group(0))
+    """Extrai o primeiro JSON válido (objeto ou array) de um texto."""
+    # Remove cercas ```json ... ```
+    text = re.sub(r"```(?:json)?\s*", "", text).replace("```", "").strip()
+    # Tenta objeto {...} primeiro
+    m = re.search(r"\{.*\}", text, re.DOTALL)
+    if m:
+        return json.loads(m.group(0))
+    raise ValueError(f"Nenhum JSON encontrado em: {text[:200]}")
 
 
 async def _ask_gemini(system: str, user: str) -> str:
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=str(uuid.uuid4()),
-        system_message=system,
-    ).with_model("gemini", "gemini-2.5-flash")
-    return await chat.send_message(UserMessage(text=user))
+    """Chama Gemini via SDK oficial e retorna o texto da resposta."""
+    response = await gemini.aio.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=user,
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            response_mime_type="application/json",
+            temperature=0.7,
+        ),
+    )
+    return response.text or ""
 
 
 # ---------- Endpoints ----------
 @api.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "model": GEMINI_MODEL}
 
 
 @api.post("/ai/generate-poster", response_model=GeneratePosterResponse)
@@ -133,7 +162,7 @@ async def generate_poster(req: GeneratePosterRequest):
 async def suggest_headlines(req: SuggestHeadlinesRequest):
     system = (
         "Voce cria chamadas curtas para cartazes de supermercado (2-4 palavras, MAIUSCULAS). "
-        "Retorne APENAS um JSON valido: {\"chamadas\": [\"...\", \"...\"]}. Sem markdown."
+        'Retorne APENAS um JSON valido: {"chamadas": ["...", "..."]}. Sem markdown.'
     )
     user = f"Produto: {req.produto}\nQuantidade: {req.quantidade} chamadas diferentes e criativas."
     try:
@@ -150,8 +179,8 @@ async def parse_csv(req: ParseCsvRequest):
     """Converte texto colado (CSV, planilha, lista livre) em linhas estruturadas."""
     system = (
         "Voce converte texto livre ou CSV de produtos de supermercado em JSON estruturado. "
-        "Retorne APENAS: {\"linhas\": [{\"produto\": \"...\", \"marca\": \"...\", \"peso\": \"...\", "
-        "\"preco\": \"9,99\", \"preco_de\": \"\"}]} em MAIUSCULAS para produto e marca. "
+        'Retorne APENAS: {"linhas": [{"produto": "...", "marca": "...", "peso": "...", '
+        '"preco": "9,99", "preco_de": ""}]} em MAIUSCULAS para produto e marca. '
         "preco sempre com virgula como decimal. preco_de opcional. Sem markdown."
     )
     user = f"Texto:\n{req.texto[:4000]}"
@@ -174,18 +203,7 @@ async def parse_csv(req: ParseCsvRequest):
         raise HTTPException(status_code=500, detail=f"Falha ao parsear CSV: {e}")
 
 
-# ---------- EAN / Barcode lookup (Open Food Facts - free) ----------
-class EanResponse(BaseModel):
-    found: bool
-    ean: str
-    produto: str = ""
-    marca: str = ""
-    peso: str = ""
-    imagem_data_url: str = ""
-    categoria: str = ""
-    fonte: str = ""
-
-
+# ---------- EAN / Barcode lookup (Open Food Facts - gratuito) ----------
 @api.get("/ean/{ean}", response_model=EanResponse)
 async def lookup_ean(ean: str):
     ean = re.sub(r"\D", "", ean)
@@ -194,10 +212,7 @@ async def lookup_ean(ean: str):
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            # 1) Open Food Facts (cobertura internacional + Brasil)
-            r = await client.get(
-                f"https://world.openfoodfacts.org/api/v0/product/{ean}.json"
-            )
+            r = await client.get(f"https://world.openfoodfacts.org/api/v0/product/{ean}.json")
             data = r.json()
             if data.get("status") == 1:
                 p = data.get("product", {})
@@ -243,7 +258,6 @@ async def lookup_ean(ean: str):
     except Exception as e:
         print(f"EAN lookup error: {e}")
 
-    # Fallback: tenta LLM inferir pela estrutura do EAN
     return EanResponse(found=False, ean=ean, fonte="não encontrado")
 
 
@@ -252,4 +266,4 @@ app.mount("/api", api)
 
 @app.get("/")
 async def root():
-    return {"service": "Cartazista Pro API", "status": "ok"}
+    return {"service": "Cartazista Pro API", "status": "ok", "version": "21.0"}

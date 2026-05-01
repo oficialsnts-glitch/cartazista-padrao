@@ -33,7 +33,7 @@ let sessionRef = null;
 let modelosRef = null;
 
 // ---------- API ----------
-const API = "/api";
+const API = ((window.CARTAZISTA_CONFIG && window.CARTAZISTA_CONFIG.API_BASE) || "").replace(/\/$/, "") + "/api";
 
 // ---------- Constants ----------
 const SCHEMA_VERSION = 2;
