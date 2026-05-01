@@ -183,6 +183,21 @@ body {
   border: 2px dashed #cfd6e0; outline-offset: -2px;
 }
 .cartaz-area.ativo { outline: 3px solid var(--accent); }
+
+/* Wrapper de design fixo (397×561) — escala via CSS para preencher a célula da grade */
+.cartaz-content {
+  position: absolute;
+  top: 0; left: 0;
+  width: 397px;
+  height: 561px;
+  transform-origin: top left;
+}
+/* grid-4 (4/folha): cada célula = 397×561 → escala 1× (perfeito) */
+.grid-4 .cartaz-content { transform: scale(1, 1); }
+/* grid-2 (2/folha): cada célula = 794×561 → preenche metade do papel (top + bottom) */
+.grid-2 .cartaz-content { transform: scale(2, 1); }
+/* grid-1 (1/folha A4): cada célula = 794×1123 → preenche a folha inteira */
+.grid-1 .cartaz-content { transform: scale(2, 2); }
 .cartaz-header {
   position: absolute; top: 8px; right: 8px; z-index: 100;
   background: rgba(255,82,82,0.95); color: white; border: none; width: 26px; height: 26px;

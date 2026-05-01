@@ -479,6 +479,11 @@ function buildCartazArea(c, idx) {
   }
 
   const hasImage = c.itens.some(i => i.tipo === "img");
+  // Wrapper de design (397×561) — escala via CSS para preencher a célula da grade
+  const content = document.createElement("div");
+  content.className = "cartaz-content";
+  area.appendChild(content);
+
   c.itens.forEach(it => {
     // Esconde placeholder cinza se não houver imagem real no cartaz
     if (it._isImagePlaceholder && !hasImage) return;
@@ -488,7 +493,7 @@ function buildCartazArea(c, idx) {
       el.style.left = (it._altX ?? 0) + "px";
       if (it._altW) el.style.width = it._altW + "px";
     }
-    area.appendChild(el);
+    content.appendChild(el);
     if (it.tipo === "qr") enqueueQR(el, it);
   });
 
@@ -618,6 +623,13 @@ function enqueueQR(container, it) {
 }
 
 // ---------- Drag + Snap ----------
+// Escala visual aplicada ao .cartaz-content por layout (preenche a célula).
+function getLayoutScale() {
+  if (state.layout === "grid-1") return { x: 2, y: 2 };
+  if (state.layout === "grid-2") return { x: 2, y: 1 };
+  return { x: 1, y: 1 };
+}
+
 function bindItemEvents(el, it, c) {
   el.addEventListener("mousedown", (e) => {
     e.stopPropagation();
@@ -643,8 +655,9 @@ function bindItemEvents(el, it, c) {
     state.dragStart = { x: it.x, y: it.y };
     qsa(".item").forEach(e2 => e2.classList.remove("selected"));
     el.classList.add("selected");
-    state.offset.x = e.clientX - el.offsetLeft * state.zoom;
-    state.offset.y = e.clientY - el.offsetTop * state.zoom;
+    const sc = getLayoutScale();
+    state.offset.x = e.clientX - el.offsetLeft * state.zoom * sc.x;
+    state.offset.y = e.clientY - el.offsetTop * state.zoom * sc.y;
     mostrarNoPainel(it, c);
     qsa(".cartaz-area").forEach(a => a.classList.remove("ativo"));
     el.closest(".cartaz-area")?.classList.add("ativo");
@@ -674,12 +687,13 @@ function bindItemEvents(el, it, c) {
 
 document.addEventListener("mousemove", (e) => {
   if (!state.dragging || !state.sel) return;
-  const rawX = (e.clientX - state.offset.x) / state.zoom;
-  const rawY = (e.clientY - state.offset.y) / state.zoom;
+  const sc = getLayoutScale();
+  const rawX = (e.clientX - state.offset.x) / (state.zoom * sc.x);
+  const rawY = (e.clientY - state.offset.y) / (state.zoom * sc.y);
 
-  // snap
-  const area = state.sel.el.closest(".cartaz-area");
-  const snap = computeSnap(rawX, rawY, state.sel, area);
+  // snap (bounds = cartaz-content design canvas)
+  const content = state.sel.el.closest(".cartaz-content") || state.sel.el.closest(".cartaz-area");
+  const snap = computeSnap(rawX, rawY, state.sel, content);
   state.sel.data.x = snap.x;
   state.sel.data.y = snap.y;
   state.sel.el.style.left = snap.x + "px";
@@ -874,9 +888,9 @@ function setCorRapida(cor) {
 function alignar(tipo) {
   if (!state.sel) return toast("Selecione um item.", "info");
   snapshot();
-  const area = state.sel.el.closest(".cartaz-area");
+  const bounds = state.sel.el.closest(".cartaz-content") || state.sel.el.closest(".cartaz-area");
   const w = state.sel.el.offsetWidth, h = state.sel.el.offsetHeight;
-  const W = area.offsetWidth, H = area.offsetHeight;
+  const W = bounds.offsetWidth, H = bounds.offsetHeight;
   if (tipo === "L") state.sel.data.x = 0;
   if (tipo === "R") state.sel.data.x = W - w;
   if (tipo === "CH") state.sel.data.x = (W - w) / 2;

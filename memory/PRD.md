@@ -27,7 +27,13 @@
 - Placeholder cinza condicional: `_isImagePlaceholder` flag + filtro em `buildCartazArea` (esconde quando `cartaz.itens` não tem `tipo:"img"`)
 - Recentralização: `_centerWhenNoImg` + `_altX/_altW` reposiciona desc/marca/peso para centro quando não há imagem
 - `buildItem` agora respeita `it.w/it.h` em itens de texto (necessário para centralização full-width)
-- 14 templates re-escritos como BUILDERS auto-contidos (sem chamar `cartazFromAI`/`cartazBase`):
+- 14 templates re-escritos como BUILDERS auto-contidos (sem chamar `cartazFromAI`/`cartazBase`)
+- **Layout 1/folha e 2/folha agora preenchem o papel**:
+  - Wrapper `.cartaz-content` (397×561) com `transform: scale` por layout
+  - 4/folha: `scale(1, 1)` (perfeito)
+  - 2/folha: `scale(2, 1)` → metade superior + metade inferior da A4
+  - 1/folha: `scale(2, 2)` → ocupa A4 inteira
+  - `getLayoutScale()` ajusta drag/snap/alignar para coordenadas de design
   1. promo — Mercado clássico vermelho/amarelo
   2. preco — Preço gigante 210pt em fundo amarelo absoluto
   3. marca — Premium dourado/preto Abril Fatface
