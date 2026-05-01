@@ -105,7 +105,6 @@ function undo() {
   state.cartazes = prev.cartazes;
   state.layout = prev.layout;
   $("selectLayout").value = state.layout;
-  $("folha").className = state.layout;
   state.sel = null; state.multiSel = [];
   closeEditor();
   render();
@@ -118,7 +117,6 @@ function redoAction() {
   state.cartazes = next.cartazes;
   state.layout = next.layout;
   $("selectLayout").value = state.layout;
-  $("folha").className = state.layout;
   render();
   save();
 }
@@ -148,7 +146,6 @@ async function load() {
       state.cartazes = migrateCartazes(d.cartazes || [], d.schemaVersion || 1);
       state.layout = d.layout || "grid-4";
       $("selectLayout").value = state.layout;
-      $("folha").className = state.layout;
     }
     if (state.cartazes.length === 0) adicionarCartaz(true);
     render();
@@ -260,54 +257,38 @@ function excluirItemSelecionado() {
   save();
 }
 
-// ---------- Render ----------
+// ---------- Render (multi-página) ----------
+const PER_PAGE = { "grid-1": 1, "grid-2": 2, "grid-4": 4 };
+
 function render() {
-  const folha = $("folha");
-  folha.className = state.layout;
-  folha.innerHTML = "";
+  const host = $("paginas");
+  host.innerHTML = "";
 
-  state.cartazes.forEach((c, idx) => {
-    const area = document.createElement("div");
-    area.className = "cartaz-area";
-    area.dataset.cartazId = c.id;
-    if (state.sel && state.sel.cartaz.id === c.id) area.classList.add("ativo");
+  const perPage = PER_PAGE[state.layout] || 4;
+  const totalPages = Math.max(1, Math.ceil(state.cartazes.length / perPage));
 
-    const num = document.createElement("div");
-    num.className = "cartaz-num";
-    num.textContent = `#${idx + 1}`;
-    area.appendChild(num);
+  for (let p = 0; p < totalPages; p++) {
+    const pagina = document.createElement("div");
+    pagina.className = "pagina " + state.layout;
+    pagina.dataset.page = p;
 
-    const del = document.createElement("button");
-    del.className = "cartaz-header";
-    del.innerHTML = '<i class="fa-solid fa-trash"></i>';
-    del.title = "Excluir cartaz";
-    del.onclick = (e) => { e.stopPropagation(); excluirCartaz(c.id); };
-    area.appendChild(del);
+    const label = document.createElement("div");
+    label.className = "pagina-label";
+    label.textContent = `Página ${p + 1} de ${totalPages}`;
+    pagina.appendChild(label);
 
-    // Pre-compute economia label if precoDe & preco set
-    const precoIt = c.itens.find(i => i.tipo === "preco");
-    const precoDeIt = c.itens.find(i => i.tipo === "precoDe");
-    const economiaIt = c.itens.find(i => i.tipo === "economia");
-    if (precoDeIt && precoIt && economiaIt) {
-      const d = parseFloat((precoDeIt.val || "").replace(",", "."));
-      const p = parseFloat((precoIt.val || "").replace(",", "."));
-      if (!isNaN(d) && !isNaN(p) && d > p) {
-        const diff = (d - p).toFixed(2).replace(".", ",");
-        const perc = Math.round(((d - p) / d) * 100);
-        economiaIt.val = `ECONOMIZE R$ ${diff} (-${perc}%)`;
-      } else {
-        economiaIt.val = "";
-      }
-    }
-
-    c.itens.forEach(it => {
-      const el = buildItem(it, c);
-      area.appendChild(el);
-      if (it.tipo === "qr") enqueueQR(el, it);
+    const slice = state.cartazes.slice(p * perPage, (p + 1) * perPage);
+    slice.forEach((c, idxLocal) => {
+      const globalIdx = p * perPage + idxLocal;
+      const area = buildCartazArea(c, globalIdx);
+      pagina.appendChild(area);
     });
 
-    folha.appendChild(area);
-  });
+    host.appendChild(pagina);
+  }
+
+  // apply current zoom
+  qsa(".pagina", host).forEach(pg => pg.style.transform = `scale(${state.zoom})`);
 
   // Refresh editor inputs if selected
   if (state.sel) {
@@ -321,13 +302,55 @@ function render() {
     }
   }
 
-  // Economia input
   const ecoInput = $("inEconomia");
   if (ecoInput) {
     const c = state.sel?.cartaz;
     const eco = c?.itens.find(i => i.tipo === "economia");
     ecoInput.value = eco?.val || "";
   }
+}
+
+function buildCartazArea(c, idx) {
+  const area = document.createElement("div");
+  area.className = "cartaz-area";
+  area.dataset.cartazId = c.id;
+  if (state.sel && state.sel.cartaz.id === c.id) area.classList.add("ativo");
+
+  const num = document.createElement("div");
+  num.className = "cartaz-num";
+  num.textContent = `#${idx + 1}`;
+  area.appendChild(num);
+
+  const del = document.createElement("button");
+  del.className = "cartaz-header";
+  del.innerHTML = '<i class="fa-solid fa-trash"></i>';
+  del.title = "Excluir cartaz";
+  del.onclick = (e) => { e.stopPropagation(); excluirCartaz(c.id); };
+  area.appendChild(del);
+
+  // Pre-compute economia label
+  const precoIt = c.itens.find(i => i.tipo === "preco");
+  const precoDeIt = c.itens.find(i => i.tipo === "precoDe");
+  const economiaIt = c.itens.find(i => i.tipo === "economia");
+  if (precoDeIt && precoIt && economiaIt) {
+    const d = parseFloat((precoDeIt.val || "").replace(",", "."));
+    const p = parseFloat((precoIt.val || "").replace(",", "."));
+    if (!isNaN(d) && !isNaN(p) && d > p) {
+      const diff = (d - p).toFixed(2).replace(".", ",");
+      const perc = Math.round(((d - p) / d) * 100);
+      economiaIt.val = `ECONOMIZE R$ ${diff} (-${perc}%)`;
+    } else {
+      economiaIt.val = "";
+    }
+  }
+
+  c.itens.forEach(it => {
+    const el = buildItem(it, c);
+    area.appendChild(el);
+    if (it.tipo === "qr") enqueueQR(el, it);
+  });
+
+  return area;
 }
 
 function buildItem(it, c) {
@@ -505,7 +528,6 @@ function bindItemEvents(el, it, c) {
 
 document.addEventListener("mousemove", (e) => {
   if (!state.dragging || !state.sel) return;
-  const sheet = $("folha").getBoundingClientRect();
   const rawX = (e.clientX - state.offset.x) / state.zoom;
   const rawY = (e.clientY - state.offset.y) / state.zoom;
 
@@ -745,6 +767,179 @@ function adicionarBadge() {
   render(); save();
 }
 
+// ---------- Galeria de ícones (Iconify) ----------
+const ICON_CATEGORIAS = [
+  { id: "tudo", nome: "Tudo", icons: null },
+  { id: "hortifruti", nome: "Hortifruti", icons: ["mdi:apple","mdi:food-apple-outline","noto:banana","noto:grapes","noto:watermelon","noto:strawberry","noto:avocado","noto:carrot","noto:tomato","noto:broccoli","noto:onion","noto:potato","noto:leafy-green","noto:pineapple","noto:mango","noto:lemon","noto:cherries","noto:corn","noto:hot-pepper","noto:eggplant"] },
+  { id: "acougue", nome: "Açougue", icons: ["noto:cut-of-meat","noto:poultry-leg","noto:bacon","noto:cooked-rice","mdi:cow","mdi:pig","game-icons:chicken-leg","game-icons:steak","mdi:food-steak","emojione:poultry-leg"] },
+  { id: "padaria", nome: "Padaria", icons: ["noto:baguette-bread","noto:bread","noto:croissant","noto:bagel","noto:pretzel","noto:pancakes","noto:birthday-cake","noto:cupcake","noto:cookie","noto:doughnut","noto:pie","noto:shortcake"] },
+  { id: "bebidas", nome: "Bebidas", icons: ["noto:tropical-drink","noto:beer-mug","noto:beverage-box","noto:bottle-with-popping-cork","noto:wine-glass","noto:cup-with-straw","noto:hot-beverage","noto:teacup-without-handle","noto:clinking-beer-mugs","noto:glass-of-milk","noto:cup","fa6-solid:bottle-water"] },
+  { id: "laticinios", nome: "Laticínios", icons: ["noto:glass-of-milk","noto:cheese-wedge","noto:butter","noto:egg","noto:ice-cream","mdi:cheese"] },
+  { id: "limpeza", nome: "Limpeza", icons: ["mdi:spray-bottle","mdi:broom","mdi:bottle-tonic","mdi:washing-machine","mdi:soap","mdi:bucket","mdi:bottle-wine","fa6-solid:bottle-droplet","mdi:toilet-paper"] },
+  { id: "higiene", nome: "Higiene", icons: ["mdi:toothbrush","mdi:shampoo","mdi:hair-dryer","mdi:soap","mdi:mirror","mdi:diaper-outline","mdi:baby-bottle","mdi:tooth"] },
+  { id: "mercearia", nome: "Mercearia", icons: ["noto:canned-food","mdi:rice","mdi:pasta","mdi:noodles","mdi:popcorn","noto:honey-pot","noto:salt","noto:jar","mdi:coffee-bean","mdi:corn"] },
+  { id: "promo", nome: "Promo", icons: ["mdi:sale","mdi:tag","mdi:tag-outline","mdi:percent","mdi:cart","mdi:star","mdi:fire","mdi:clock-fast","mdi:gift","mdi:medal","mdi:crown","mdi:lightning-bolt","mdi:thumb-up"] },
+];
+let iconCatAtual = "tudo";
+let iconSearch = "";
+
+function renderIconGrid() {
+  const grid = $("iconGrid");
+  grid.innerHTML = "";
+  const cor = encodeURIComponent($("iconColor").value || "#000");
+
+  let toShow = [];
+  if (iconCatAtual === "tudo") {
+    ICON_CATEGORIAS.forEach(c => { if (c.icons) c.icons.forEach(i => toShow.push({ id: i, cat: c.nome })); });
+  } else {
+    const cat = ICON_CATEGORIAS.find(c => c.id === iconCatAtual);
+    if (cat?.icons) cat.icons.forEach(i => toShow.push({ id: i, cat: cat.nome }));
+  }
+
+  if (iconSearch) {
+    const q = iconSearch.toLowerCase();
+    toShow = toShow.filter(x => x.id.toLowerCase().includes(q) || x.cat.toLowerCase().includes(q));
+  }
+
+  toShow.slice(0, 200).forEach(x => {
+    const cell = document.createElement("div");
+    cell.className = "icon-cell";
+    cell.title = x.id;
+    const iconName = x.id;
+    const url = `https://api.iconify.design/${iconName}.svg?color=%23${cor.replace(/^%23/, "")}`;
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = x.id;
+    img.loading = "lazy";
+    cell.appendChild(img);
+    const nome = document.createElement("div");
+    nome.className = "nome";
+    nome.textContent = iconName.split(":").pop().replace(/-/g, " ");
+    cell.appendChild(nome);
+    cell.onclick = () => adicionarIcone(iconName, $("iconColor").value);
+    grid.appendChild(cell);
+  });
+  if (toShow.length === 0) grid.innerHTML = '<div class="small" style="padding:20px">Nenhum ícone encontrado.</div>';
+}
+
+function renderIconCategorias() {
+  const host = $("iconCategorias");
+  host.innerHTML = "";
+  ICON_CATEGORIAS.forEach(cat => {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (cat.id === iconCatAtual ? " active" : "");
+    chip.textContent = cat.nome;
+    chip.onclick = () => { iconCatAtual = cat.id; renderIconCategorias(); renderIconGrid(); };
+    host.appendChild(chip);
+  });
+}
+
+async function adicionarIcone(iconName, cor) {
+  const c = ensureCartaz();
+  if (!c) return toast("Crie um cartaz primeiro.", "error");
+  const corEnc = encodeURIComponent(cor || "#000").replace("#", "%23");
+  const url = `https://api.iconify.design/${iconName}.svg?color=${corEnc}`;
+  try {
+    const r = await fetch(url);
+    const svg = await r.text();
+    const b64 = btoa(unescape(encodeURIComponent(svg)));
+    const dataUrl = `data:image/svg+xml;base64,${b64}`;
+    snapshot();
+    c.itens.push({ ...makeItem("img", dataUrl, 80, 80, 0, "", ""), w: 180, h: 180 });
+    render(); save();
+    toast("Ícone adicionado", "success");
+    closeModal("modalIcones");
+  } catch (e) {
+    toast("Erro ao carregar ícone", "error");
+  }
+}
+
+// ---------- EAN lookup ----------
+let eanResultado = null;
+async function buscarEAN() {
+  const ean = ($("eanInput").value || "").replace(/\D/g, "");
+  if (ean.length < 8) return toast("Digite um EAN válido (8-14 dígitos)", "error");
+  const btn = $("btnEANBuscar");
+  btn.disabled = true; btn.innerHTML = '<span class="loader"></span> Buscando...';
+  try {
+    const r = await fetch(`${API}/ean/${ean}`);
+    const data = await r.json();
+    eanResultado = data;
+    if (data.found) {
+      $("eanResultado").innerHTML = `
+        <div class="ean-card">
+          ${data.imagem_data_url ? `<img src="${data.imagem_data_url}" alt="${escapeHtml(data.produto)}" />` : ""}
+          <div class="info">
+            <b>${escapeHtml(data.produto)}</b>
+            Marca: ${escapeHtml(data.marca) || "—"}<br>
+            Peso/Volume: ${escapeHtml(data.peso) || "—"}<br>
+            ${data.categoria ? `Categoria: ${escapeHtml(data.categoria)}<br>` : ""}
+            <small style="opacity:.6">Fonte: ${escapeHtml(data.fonte)}</small>
+          </div>
+        </div>
+        <div class="campo mt-10">
+          <label>Preço a anunciar</label>
+          <input type="text" id="eanPreco" placeholder="ex: 9,99" />
+        </div>
+        <div class="campo">
+          <label>Preço anterior (opcional, riscado)</label>
+          <input type="text" id="eanPrecoDe" placeholder="ex: 12,90" />
+        </div>`;
+      $("btnEANAplicar").classList.remove("hidden");
+      toast("Produto encontrado!", "success");
+    } else {
+      $("eanResultado").innerHTML = `<div class="ai-result-card"><b>Produto não encontrado.</b><br>Tente cadastrá-lo manualmente via IA Gerar ou preencher os campos.</div>`;
+      $("btnEANAplicar").classList.add("hidden");
+    }
+  } catch (e) {
+    toast("Erro: " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Buscar';
+  }
+}
+
+function aplicarEAN() {
+  if (!eanResultado?.found) return;
+  const preco = ($("eanPreco")?.value || "0,00").replace(".", ",");
+  const precoDe = ($("eanPrecoDe")?.value || "").replace(".", ",");
+  snapshot();
+  const c = cartazBase();
+  c.itens.find(i => i.tipo === "head").val = "OFERTA";
+  c.itens.find(i => i.tipo === "desc").val = eanResultado.produto;
+  c.itens.find(i => i.tipo === "marca").val = eanResultado.marca || "";
+  c.itens.find(i => i.tipo === "peso").val = eanResultado.peso || "";
+  c.itens.find(i => i.tipo === "preco").val = preco;
+  c.itens.find(i => i.tipo === "precoDe").val = precoDe;
+  if (eanResultado.imagem_data_url) {
+    c.itens.push({ ...makeItem("img", eanResultado.imagem_data_url, 280, 80, 0, "", ""), w: 180, h: 180 });
+  }
+  state.cartazes.push(c);
+  render(); save();
+  closeModal("modalEAN");
+  $("eanInput").value = ""; $("eanResultado").innerHTML = "";
+  $("btnEANAplicar").classList.add("hidden");
+  eanResultado = null;
+  toast("Cartaz criado a partir do EAN", "success");
+}
+
+// ---------- Nova página ----------
+function novaPagina() {
+  snapshot();
+  const perPage = PER_PAGE[state.layout] || 4;
+  // completa a página atual até múltiplo de perPage
+  const faltam = (perPage - (state.cartazes.length % perPage)) % perPage;
+  for (let i = 0; i < faltam; i++) state.cartazes.push(cartazBase());
+  // adiciona perPage cartazes para a nova página
+  for (let i = 0; i < perPage; i++) state.cartazes.push(cartazBase());
+  render(); save();
+  toast(`Nova página adicionada (+${perPage} cartazes)`, "success");
+  // scroll para a última página
+  setTimeout(() => {
+    const ultima = qsa(".pagina").slice(-1)[0];
+    ultima?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 100);
+}
+
 // ---------- Templates ----------
 const TEMPLATES = {
   promo: { chamada: "OFERTA ESPECIAL", desc: "PRODUTO SELECIONADO", marca: "MARCA", peso: "1 kg", preco: "7,49", corChamada: "#d63031", corPreco: "#000", precoSize: 135 },
@@ -846,23 +1041,28 @@ function renderColorPalette() {
 
 // ---------- Export PNG / PDF ----------
 async function exportarPNG() {
-  const folha = $("folha");
   const prevZoom = state.zoom;
   setZoom(1);
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 80));
 
-  const areas = qsa(".cartaz-area", folha);
+  const paginas = qsa(".pagina");
   if (state.layout === "grid-1") {
-    for (let i = 0; i < areas.length; i++) {
-      const canvas = await html2canvas(areas[i], { scale: 3, useCORS: true, backgroundColor: "#fff" });
+    // 1 cartaz por página → cada cartaz seu próprio arquivo
+    for (let i = 0; i < paginas.length; i++) {
+      const area = qs(".cartaz-area", paginas[i]);
+      if (!area) continue;
+      const canvas = await html2canvas(area, { scale: 3, useCORS: true, backgroundColor: "#fff" });
       triggerDownload(canvas.toDataURL("image/png"), `cartaz_${i + 1}.png`);
     }
   } else {
-    const canvas = await html2canvas(folha, { scale: 3, useCORS: true, backgroundColor: "#fff" });
-    triggerDownload(canvas.toDataURL("image/png"), `folha_cartazes.png`);
+    // Uma imagem por página (folha inteira)
+    for (let i = 0; i < paginas.length; i++) {
+      const canvas = await html2canvas(paginas[i], { scale: 3, useCORS: true, backgroundColor: "#fff" });
+      triggerDownload(canvas.toDataURL("image/png"), `folha_${i + 1}.png`);
+    }
   }
   setZoom(prevZoom);
-  toast("PNG exportado", "success");
+  toast(`PNG exportado (${paginas.length} arquivo(s))`, "success");
 }
 
 async function exportarPDF() {
@@ -870,34 +1070,18 @@ async function exportarPDF() {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const prevZoom = state.zoom;
   setZoom(1);
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 80));
 
-  const folha = $("folha");
-  if (state.layout === "grid-1") {
-    const areas = qsa(".cartaz-area", folha);
-    for (let i = 0; i < areas.length; i++) {
-      const canvas = await html2canvas(areas[i], { scale: 2, useCORS: true, backgroundColor: "#fff" });
-      const img = canvas.toDataURL("image/png");
-      if (i > 0) doc.addPage();
-      doc.addImage(img, "PNG", 0, 0, 210, 297);
-    }
-  } else {
-    // multiple cartazes per sheet; render full sheet per page (dividing into chunks)
-    const perPage = state.layout === "grid-2" ? 2 : 4;
-    const total = state.cartazes.length;
-    const pages = Math.ceil(total / perPage);
-    // simpler approach: render the whole sheet once (user put all in current sheet)
-    const canvas = await html2canvas(folha, { scale: 2, useCORS: true, backgroundColor: "#fff" });
+  const paginas = qsa(".pagina");
+  for (let i = 0; i < paginas.length; i++) {
+    const canvas = await html2canvas(paginas[i], { scale: 2, useCORS: true, backgroundColor: "#fff" });
     const img = canvas.toDataURL("image/png");
+    if (i > 0) doc.addPage();
     doc.addImage(img, "PNG", 0, 0, 210, 297);
-    // If more than perPage cartazes, warn
-    if (total > perPage) {
-      toast(`Aviso: ${total} cartazes neste layout. PDF mostra a folha atual.`, "info", 4000);
-    }
   }
   doc.save("cartazes.pdf");
   setZoom(prevZoom);
-  toast("PDF exportado", "success");
+  toast(`PDF exportado (${paginas.length} página(s))`, "success");
 }
 
 function triggerDownload(url, filename) {
@@ -908,8 +1092,7 @@ function triggerDownload(url, filename) {
 // ---------- WhatsApp share ----------
 let whatsFormat = "square";
 async function gerarImagemWhats() {
-  const folha = $("folha");
-  const area = qs(".cartaz-area.ativo", folha) || qs(".cartaz-area", folha);
+  const area = qs(".cartaz-area.ativo") || qs(".cartaz-area");
   if (!area) return toast("Nenhum cartaz disponível", "error");
 
   const prevZoom = state.zoom;
@@ -1144,13 +1327,14 @@ async function handleModeloSelect(v) {
 // ---------- Zoom ----------
 function setZoom(z) {
   state.zoom = Math.max(0.25, Math.min(2, z));
-  $("folha").style.transform = `scale(${state.zoom})`;
+  qsa(".pagina").forEach(pg => pg.style.transform = `scale(${state.zoom})`);
   $("zoomVal").textContent = Math.round(state.zoom * 100) + "%";
 }
 function zoomFit() {
   const ws = $("workspace");
-  const folha = $("folha");
-  const ratio = Math.min((ws.clientWidth - 80) / folha.offsetWidth, (ws.clientHeight - 80) / folha.offsetHeight);
+  const pagina = qs(".pagina");
+  if (!pagina) return;
+  const ratio = Math.min((ws.clientWidth - 80) / pagina.offsetWidth, (ws.clientHeight - 80) / pagina.offsetHeight);
   setZoom(Math.max(0.25, Math.min(1, ratio)));
 }
 
@@ -1164,10 +1348,10 @@ function hideCtxMenu() { $("ctxMenu").classList.remove("open"); }
 
 // ---------- Preview ----------
 async function abrirPreview() {
-  const folha = $("folha");
-  const clone = folha.cloneNode(true);
-  clone.style.transform = "scale(1)"; clone.style.boxShadow = "none";
-  qsa(".cartaz-header, .cartaz-num, .snap-guide", clone).forEach(e => e.remove());
+  const host = $("paginas");
+  const clone = host.cloneNode(true);
+  qsa(".pagina", clone).forEach(pg => pg.style.transform = "scale(1)");
+  qsa(".cartaz-header, .cartaz-num, .snap-guide, .pagina-label", clone).forEach(e => e.remove());
   qsa(".item.selected, .item.multi-selected", clone).forEach(e => e.classList.remove("selected", "multi-selected"));
   const content = $("previewContent");
   content.innerHTML = "";
@@ -1223,6 +1407,9 @@ function wire() {
   $("btnNovo").onclick = () => adicionarCartaz();
   $("btnDuplicar").onclick = duplicarCartaz;
   $("btnImagem").onclick = adicionarImagem;
+  $("btnIcones").onclick = () => { openModal("modalIcones"); renderIconCategorias(); renderIconGrid(); };
+  $("btnEAN").onclick = () => openModal("modalEAN");
+  $("btnNovaPagina").onclick = novaPagina;
   $("btnQR").onclick = adicionarQR;
   $("btnTarja").onclick = adicionarTarja;
   $("btnBadge").onclick = adicionarBadge;
@@ -1237,7 +1424,7 @@ function wire() {
   $("selectModelos").onchange = (e) => handleModeloSelect(e.target.value);
 
   $("selectLayout").onchange = (e) => {
-    snapshot(); state.layout = e.target.value; $("folha").className = state.layout; render(); save();
+    snapshot(); state.layout = e.target.value; render(); save();
   };
   $("selectTemplate").onchange = (e) => { if (e.target.value) { carregarTemplate(e.target.value); e.target.value = ""; } };
 
@@ -1252,6 +1439,11 @@ function wire() {
   $("btnSugerirChamadas").onclick = iaSugerirChamadas;
 
   $("btnWhatsBaixar").onclick = gerarImagemWhats;
+  $("btnEANBuscar").onclick = buscarEAN;
+  $("btnEANAplicar").onclick = aplicarEAN;
+  $("eanInput")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); buscarEAN(); } });
+  $("iconSearch")?.addEventListener("input", (e) => { iconSearch = e.target.value; renderIconGrid(); });
+  $("iconColor")?.addEventListener("change", () => renderIconGrid());
   qsa("#modalWhats .chip").forEach(c => c.onclick = () => {
     qsa("#modalWhats .chip").forEach(x => x.classList.remove("active"));
     c.classList.add("active"); whatsFormat = c.dataset.share;

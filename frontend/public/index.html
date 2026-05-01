@@ -59,9 +59,12 @@
 
   <div class="tbar-group">
     <button class="btn" id="btnImagem" data-testid="btn-imagem" title="Adicionar imagem"><i class="fa-solid fa-image"></i></button>
+    <button class="btn" id="btnIcones" data-testid="btn-icones" title="Galeria de ícones"><i class="fa-solid fa-icons"></i></button>
+    <button class="btn" id="btnEAN" data-testid="btn-ean" title="Buscar por código de barras"><i class="fa-solid fa-barcode"></i></button>
     <button class="btn" id="btnQR" data-testid="btn-qr" title="QR Code"><i class="fa-solid fa-qrcode"></i></button>
     <button class="btn" id="btnTarja" data-testid="btn-tarja" title="Tarja / faixa"><i class="fa-solid fa-tag"></i></button>
     <button class="btn" id="btnBadge" data-testid="btn-badge" title="Selo diagonal"><i class="fa-solid fa-certificate"></i></button>
+    <button class="btn btn-success" id="btnNovaPagina" data-testid="btn-nova-pagina" title="Nova página (preenche com cartazes vazios)"><i class="fa-solid fa-file-circle-plus"></i> Página</button>
   </div>
 
   <div class="tbar-group">
@@ -121,7 +124,7 @@
       <button id="zoomFit" data-testid="zoom-fit" title="Ajustar">⊡</button>
     </div>
     <div class="workspace" id="workspace" data-testid="workspace">
-      <div id="folha" class="grid-4" data-testid="folha"></div>
+      <div id="paginas" class="paginas-wrap" data-testid="paginas"></div>
     </div>
   </div>
 
@@ -347,6 +350,48 @@ Coca-Cola 2L 9,99"></textarea>
     <div class="modal-footer">
       <button class="btn" data-close>Cancelar</button>
       <button class="btn btn-success" id="btnWhatsBaixar" data-testid="btn-whats-baixar"><i class="fa-solid fa-download"></i> Gerar imagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MODAL: Galeria de ícones ============== -->
+<div class="modal-backdrop" id="modalIcones" data-testid="modal-icones">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-icons"></i> Galeria de ícones</h2>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="chip-row" id="iconCategorias"></div>
+      <div class="row-2 mt-10" style="grid-template-columns: 1fr 120px">
+        <input type="text" id="iconSearch" data-testid="icon-search" placeholder="Buscar ícone (ex: banana, carne, pão, cerveja)..." />
+        <input type="color" id="iconColor" value="#d63031" title="Cor do ícone" />
+      </div>
+      <div id="iconGrid" class="icon-grid mt-10"></div>
+      <div class="small mt-6">Clique em um ícone para adicioná-lo ao cartaz. Use a cor escolhida.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MODAL: EAN / Código de barras ============== -->
+<div class="modal-backdrop" id="modalEAN" data-testid="modal-ean">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-barcode"></i> Buscar produto por código de barras</h2>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>Código EAN / UPC (8 a 14 dígitos)</label>
+        <input type="text" id="eanInput" data-testid="ean-input" placeholder="Ex: 7891000100103" inputmode="numeric" />
+      </div>
+      <div class="small">Busca em base aberta (Open Food Facts). Alguns produtos podem não estar cadastrados.</div>
+      <div id="eanResultado"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btnEANBuscar" data-testid="btn-ean-buscar"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+      <button class="btn btn-success hidden" id="btnEANAplicar" data-testid="btn-ean-aplicar"><i class="fa-solid fa-check"></i> Criar cartaz</button>
     </div>
   </div>
 </div>

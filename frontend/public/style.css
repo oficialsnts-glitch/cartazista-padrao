@@ -156,20 +156,27 @@ body {
 }
 .zoom-indicator button:hover { background: rgba(255,255,255,0.2); }
 
-/* ---------- FOLHA ---------- */
-#folha {
-  width: 210mm; background: white;
+/* ---------- FOLHAS (multi-página) ---------- */
+.paginas-wrap {
+  display: flex; flex-direction: column; gap: 30px; align-items: center;
+  padding-bottom: 40px;
+}
+.pagina {
+  width: 210mm; height: 297mm; background: white;
   display: grid; position: relative;
   box-shadow: 0 10px 40px rgba(0,0,0,0.4);
   transform-origin: top center;
   transition: transform .15s ease;
+  page-break-after: always;
 }
-.grid-1 { grid-template-columns: 1fr; }
-.grid-1 .cartaz-area { height: 297mm; }
-.grid-2 { grid-template-columns: 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-.grid-2 .cartaz-area { height: 148.5mm; }
-.grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(auto-fill, 148.5mm); }
-.grid-4 .cartaz-area { height: 148.5mm; }
+.pagina .pagina-label {
+  position: absolute; top: -26px; left: 0;
+  font-size: 11px; color: var(--text-dim); letter-spacing:1px; font-weight:700;
+  text-transform: uppercase;
+}
+.grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.grid-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+.grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
 .cartaz-area {
   position: relative; overflow: hidden; background: #fff;
@@ -449,19 +456,45 @@ body {
 .context-menu button i { width:14px; color: var(--accent); }
 .context-menu .sep { height:1px; background: var(--border); margin:4px 0; }
 
-/* ---------- PRINT ---------- */
+/* ---------- ICON GALLERY ---------- */
+.icon-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 8px; max-height: 420px; overflow-y: auto; padding: 4px;
+}
+.icon-cell {
+  aspect-ratio: 1; border: 1px solid var(--border-panel); border-radius: var(--radius-md);
+  background: white; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 8px; transition: all .15s;
+}
+.icon-cell:hover {
+  border-color: var(--accent); background: #f5f9ff; transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76,139,255,0.15);
+}
+.icon-cell img { width: 36px; height: 36px; pointer-events: none; }
+.icon-cell .nome { font-size: 9px; color: #7a8494; text-align:center; line-height:1.1; }
+
+.ean-card {
+  display:flex; gap: 14px; align-items:center;
+  background: linear-gradient(135deg, rgba(46,204,113,0.08), rgba(76,139,255,0.08));
+  border: 1px solid rgba(46,204,113,0.25); border-radius: var(--radius-md);
+  padding: 14px; margin-top: 14px;
+}
+.ean-card img { width: 90px; height: 90px; object-fit: contain; border-radius: var(--radius-sm); background:white; border:1px solid var(--border-panel); }
+.ean-card .info { flex:1; font-size:12px; }
+.ean-card .info b { color: var(--success); display:block; font-size:14px; margin-bottom:4px; }
 @media print {
   @page { size: A4; margin: 0; }
   body { background: white !important; overflow: visible !important; }
   #splash, .toolbar, .editor, .cartaz-header, .cartaz-num, .zoom-indicator,
   .toast-container, .modal-backdrop, .preview-overlay, .context-menu { display: none !important; }
   .main, .workspace-wrap, .workspace { padding: 0 !important; background: white !important; overflow: visible !important; display: block !important; position: static !important; }
-  #folha { width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; transform: none !important; }
-  .cartaz-area { border: none !important; page-break-after: auto !important; }
+  #folha, .pagina { width: 210mm !important; box-shadow: none !important; border: none !important; margin: 0 !important; transform: none !important; }
+  .paginas-wrap { gap: 0 !important; padding: 0 !important; }
+  .pagina { page-break-after: always !important; page-break-inside: avoid !important; height: 297mm !important; }
+  .pagina-label { display: none !important; }
+  .cartaz-area { border: none !important; }
   .cartaz-area.ativo { outline: none !important; }
-  .grid-1 .cartaz-area { page-break-after: always !important; height: 297mm !important; }
-  .grid-2 .cartaz-area:nth-child(2n) { page-break-after: always !important; }
-  .grid-4 .cartaz-area:nth-child(4n) { page-break-after: always !important; }
   .item.selected, .item.multi-selected { outline: none !important; background: none !important; }
   .snap-guide { display: none !important; }
 }

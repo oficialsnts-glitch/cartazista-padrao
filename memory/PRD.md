@@ -94,3 +94,20 @@ match /users/{userId}/{doc=**} {
 }
 ```
 
+
+---
+
+## Iteração 2 (Jan/2026)
+
+### ✅ Novas funcionalidades
+- **Galeria de ícones** (`GET https://api.iconify.design/{icon}.svg`): modal com ~100 ícones de produtos, 9 categorias (Tudo, Hortifruti, Açougue, Padaria, Bebidas, Laticínios, Limpeza, Higiene, Mercearia, Promo), busca por texto, seletor de cor. Click adiciona como imagem no cartaz selecionado.
+- **Busca por EAN** (`GET /api/ean/{ean}` → Open Food Facts): digita código de barras → backend consulta API aberta → retorna produto, marca, peso, categoria e **imagem do produto** em base64. Frontend cria cartaz automático com preço anunciado + opcional preço "de" riscado.
+- **Multi-página**: cartazes agora se organizam em páginas A4 separadas (grid-1=1/pg, grid-2=2/pg, grid-4=4/pg). Cada página tem label `Página X de Y` e é exportada como página distinta no PDF/PNG. Botão `Página` preenche automaticamente para criar nova folha.
+- **Print e export atualizados** para multi-página (cada `.pagina` vira page-break no print, PDF com `addPage()` por página real).
+
+### 📦 Endpoints novos
+- `GET /api/ean/{ean}` → {found, produto, marca, peso, imagem_data_url, categoria, fonte}
+
+### 📦 Dependências
+- Backend: `httpx>=0.27.0` (para chamar Open Food Facts)
+
