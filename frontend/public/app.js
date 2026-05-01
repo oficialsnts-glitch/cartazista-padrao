@@ -255,26 +255,28 @@ function cartazFromAI(s) {
   ));
 
   // ===== AREA PRODUTO (esquerda: slot imagem 140x140 / direita: texto) =====
-  // Card placeholder atrás da imagem (cinza muito leve)
-  itens.push({ ...makeItem("bg", "", 15, 90, 0, "", "#f0f1f4"), w: 140, h: 140 });
+  // Card placeholder atrás da imagem (somente aparece quando há imagem real)
+  itens.push({ ...makeItem("bg", "", 15, 90, 0, "", "#f0f1f4"), w: 140, h: 140, _isImagePlaceholder: true });
 
-  // Texto produto à direita do slot imagem
+  // Texto produto à direita do slot imagem (recentraliza se não tiver imagem)
   itens.push(makeItem(
     "desc", s.produto || "PRODUTO",
     170, 100, 32, "'Anton'", cText,
-    { stroke: false, shadow: false }
+    { stroke: false, shadow: false, _centerWhenNoImg: true, _altX: 20, _altW: 357 }
   ));
 
   // Marca pequena
   itens.push(makeItem(
     "marca", s.marca || "",
-    170, 175, 18, "'Bebas Neue'", "#666666"
+    170, 175, 18, "'Bebas Neue'", "#666666",
+    { _centerWhenNoImg: true, _altX: 20, _altW: 357 }
   ));
 
   // Peso/volume colorido (acento primário)
   itens.push(makeItem(
     "peso", s.peso || "",
-    170, 200, 22, "'Bebas Neue'", cPrim
+    170, 200, 22, "'Bebas Neue'", cPrim,
+    { _centerWhenNoImg: true, _altX: 20, _altW: 357 }
   ));
 
   // ===== BLOCO PREÇO inferior =====
@@ -476,8 +478,16 @@ function buildCartazArea(c, idx) {
     }
   }
 
+  const hasImage = c.itens.some(i => i.tipo === "img");
   c.itens.forEach(it => {
+    // Esconde placeholder cinza se não houver imagem real no cartaz
+    if (it._isImagePlaceholder && !hasImage) return;
     const el = buildItem(it, c);
+    // Recentraliza textos que normalmente ficam ao lado da imagem
+    if (!hasImage && it._centerWhenNoImg) {
+      el.style.left = (it._altX ?? 0) + "px";
+      if (it._altW) el.style.width = it._altW + "px";
+    }
     area.appendChild(el);
     if (it.tipo === "qr") enqueueQR(el, it);
   });
@@ -556,6 +566,9 @@ function buildItem(it, c) {
     } else {
       el.textContent = it.val || "";
     }
+    // Permite largura/altura explícita em itens de texto (usado em templates)
+    if (it.w) el.style.width = it.w + "px";
+    if (it.h) el.style.height = it.h + "px";
   }
 
   bindItemEvents(el, it, c);
@@ -1218,43 +1231,293 @@ function novaPagina() {
 }
 
 // ---------- Templates ----------
+// Cada template é um BUILDER que monta seu próprio cartaz com identidade visual
+// ÚNICA, INDEPENDENTE do cartazFromAI (não é uma "cópia" do layout da IA).
+// Canvas alvo: 397×561 px (grid-4). Funciona escalado em grid-2 e grid-1.
+//
+// IMPORTANTE: todo template DEVE conter os 7 tipos protegidos
+// (head, desc, marca, peso, preco, precoDe, economia) para o editor funcionar.
 const TEMPLATES = {
-  promo: { chamada: "OFERTA ESPECIAL", desc: "PRODUTO SELECIONADO", marca: "MARCA", peso: "1 kg", preco: "7,49", corChamada: "#d63031", corPreco: "#000", precoSize: 135 },
-  preco: { chamada: "PREÇO BAIXO", desc: "APROVEITE", marca: "", peso: "", preco: "4,99", corChamada: "#f1c40f", corPreco: "#d63031", precoSize: 180 },
-  marca: { chamada: "CHEGOU", desc: "QUALIDADE", marca: "MARCA TOP", peso: "500 g", preco: "12,90", corChamada: "#0984e3", corPreco: "#000", precoSize: 120, marcaSize: 42 },
-  acougue: { chamada: "AÇOUGUE DO MÊS", desc: "PICANHA PREMIUM", marca: "", peso: "1 kg", preco: "69,90", corChamada: "#d63031", corPreco: "#000", fundo: "#b71c1c", textoFundo: "FRESQUINHO" },
-  hortifruti: { chamada: "DIRETO DO SÍTIO", desc: "BANANA PRATA", marca: "", peso: "kg", preco: "4,99", corChamada: "#00b894", corPreco: "#2d3436" },
-  padaria: { chamada: "QUENTINHO!", desc: "PÃO FRANCÊS", marca: "", peso: "kg", preco: "14,90", corChamada: "#a0522d", corPreco: "#5d2e12" },
-  bebidas: { chamada: "GELADA", desc: "REFRIGERANTE", marca: "COCA-COLA", peso: "2 L", preco: "9,99", corChamada: "#0984e3", corPreco: "#d63031" },
-  relampago: { chamada: "OFERTA RELÂMPAGO", desc: "SÓ HOJE", marca: "CORRE!", peso: "", preco: "9,99", corChamada: "#f7b733", corPreco: "#d63031", precoSize: 160 },
-  leve3: { chamada: "LEVE 3", desc: "PAGUE 2", marca: "", peso: "", preco: "19,99", corChamada: "#8e44ad", corPreco: "#000" },
-  blackfriday: { chamada: "BLACK FRIDAY", desc: "MEGA OFERTA", marca: "", peso: "", preco: "99,00", corChamada: "#000", corPreco: "#f1c40f", fundo: "#000", textoFundo: "BLACK FRIDAY" },
-  natal: { chamada: "FELIZ NATAL", desc: "OFERTA ESPECIAL", marca: "", peso: "", preco: "24,90", corChamada: "#2ecc71", corPreco: "#c0392b" },
-  pascoa: { chamada: "PÁSCOA FELIZ", desc: "OVO DE CHOCOLATE", marca: "", peso: "250 g", preco: "39,90", corChamada: "#e67e22", corPreco: "#8e44ad" },
-  novo: { chamada: "NOVIDADE!", desc: "PRODUTO NOVO", marca: "", peso: "", preco: "19,99", corChamada: "#00b894", corPreco: "#000" },
-  ultimas: { chamada: "ÚLTIMAS UNIDADES", desc: "GARANTA JÁ", marca: "", peso: "", preco: "29,99", corChamada: "#d63031", corPreco: "#000" },
+  // ---------- 1. PROMO — Mercado de Bairro (vermelho/amarelo clássico) ----------
+  promo: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFFFFF"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#E63946"), w:397, h:90 });
+    i.push({ ...makeItem("bg","",0,90,0,"","#FFD000"), w:397, h:8 });
+    i.push(makeItem("head","OFERTA ESPECIAL",0,22,46,"'Archivo Black'","#FFFFFF",{ w:397, shadow:true, shadowCol:"rgba(0,0,0,.35)", shadowBlur:6 }));
+    i.push(makeItem("desc","PRODUTO SELECIONADO",0,128,30,"'Anton'","#1e272e",{ w:397 }));
+    i.push(makeItem("marca","MARCA",0,172,22,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("peso","1 KG",0,202,24,"'Bebas Neue'","#E63946",{ w:397 }));
+    i.push({ ...makeItem("bg","",0,260,0,"","#FFD000"), w:397, h:301 });
+    i.push({ ...makeItem("bg","",0,260,0,"","#1e272e"), w:397, h:6 });
+    i.push(makeItem("precoDe","",0,278,24,"'Bebas Neue'","#1e272e",{ w:397 }));
+    i.push(makeItem("preco","9,99",0,310,160,"'Anton'","#1e272e",{ w:397, stroke:true, strokeCol:"#FFFFFF", strokeWidth:3 }));
+    i.push(makeItem("economia","",0,520,22,"'Bebas Neue'","#E63946",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 2. PREÇO GIGANTE (amarelo absoluto, preço enorme) ----------
+  preco: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFD60A"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#000000"), w:397, h:50 });
+    i.push({ ...makeItem("bg","",0,511,0,"","#000000"), w:397, h:50 });
+    i.push(makeItem("head","SÓ HOJE",0,10,30,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    i.push(makeItem("desc","APROVEITE!",0,72,42,"'Archivo Black'","#000000",{ w:397 }));
+    i.push(makeItem("marca","",0,128,22,"'Bebas Neue'","#000000",{ w:397 }));
+    i.push(makeItem("peso","",0,158,24,"'Bebas Neue'","#000000",{ w:397 }));
+    i.push(makeItem("precoDe","",0,190,28,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("preco","4,99",0,225,210,"'Anton'","#E63946",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:5, shadow:true, shadowCol:"rgba(0,0,0,.3)", shadowBlur:6 }));
+    i.push(makeItem("economia","",0,470,22,"'Bebas Neue'","#000000",{ w:397 }));
+    i.push(makeItem("custom","BAIXOU O PREÇO!",0,521,30,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 3. MARCA — Premium dourado (preto + dourado) ----------
+  marca: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#0A0A0A"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#D4AF37"), w:397, h:4 });
+    i.push({ ...makeItem("bg","",0,557,0,"","#D4AF37"), w:397, h:4 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#D4AF37"), w:4, h:561 });
+    i.push({ ...makeItem("bg","",393,0,0,"","#D4AF37"), w:4, h:561 });
+    i.push(makeItem("head","CHEGOU NA LOJA",0,40,22,"'Bebas Neue'","#D4AF37",{ w:397 }));
+    i.push(makeItem("marca","MARCA TOP",0,80,68,"'Abril Fatface'","#D4AF37",{ w:397, shadow:true, shadowCol:"rgba(212,175,55,0.45)", shadowBlur:18 }));
+    i.push({ ...makeItem("bg","",173,178,0,"","#D4AF37"), w:50, h:2 });
+    i.push(makeItem("desc","Qualidade Premium",0,205,26,"'Abril Fatface'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("peso","500 G",0,250,20,"'Bebas Neue'","#D4AF37",{ w:397 }));
+    i.push(makeItem("precoDe","",0,300,22,"'Bebas Neue'","#888888",{ w:397 }));
+    i.push(makeItem("preco","12,90",0,335,130,"'Bebas Neue'","#FFFFFF",{ w:397, shadow:true, shadowCol:"rgba(212,175,55,0.3)", shadowBlur:18 }));
+    i.push(makeItem("economia","",0,485,18,"'Bebas Neue'","#D4AF37",{ w:397 }));
+    i.push(makeItem("custom","E X C L U S I V O",0,528,16,"'Inter'","#D4AF37",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 4. AÇOUGUE — Frescor (vermelho sangue + preto + branco) ----------
+  acougue: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#8B0000"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#0A0A0A"), w:397, h:62 });
+    i.push(makeItem("custom","AÇOUGUE",0,12,40,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push({ ...makeItem("bg","",20,80,0,"","#FFFFFF"), w:357, h:55 });
+    i.push(makeItem("head","CORTE NOBRE",0,90,38,"'Archivo Black'","#8B0000",{ w:397 }));
+    i.push(makeItem("desc","PICANHA PREMIUM",0,158,40,"'Anton'","#FFFFFF",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:1 }));
+    i.push(makeItem("marca","",0,210,18,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("peso","1 KG",0,235,30,"'Bebas Neue'","#FFD000",{ w:397 }));
+    i.push(makeItem("tagBadge","FRESCO\nHOJE",290,250,18,"'Anton'","#FFFFFF",{ bgCol:"#000000", rot:-12, w:0, h:0 }));
+    i.push({ ...makeItem("bg","",0,310,0,"","#FFFFFF"), w:397, h:251 });
+    i.push({ ...makeItem("bg","",0,310,0,"","#FFD000"), w:397, h:8 });
+    i.push(makeItem("precoDe","",0,330,26,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("preco","69,90",0,360,160,"'Anton'","#8B0000",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:3 }));
+    i.push(makeItem("economia","",0,530,22,"'Bebas Neue'","#8B0000",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 5. HORTIFRUTI — Direto do Sítio (verde + amarelo) ----------
+  hortifruti: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFFBEA"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#1B7F3A"), w:397, h:78 });
+    i.push({ ...makeItem("bg","",0,78,0,"","#2EB14C"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",0,86,0,"","#FFD60A"), w:397, h:4 });
+    i.push(makeItem("head","DIRETO DO SÍTIO",0,18,34,"'Archivo Black'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("tagBadge","100%\nNATURAL",302,100,16,"'Anton'","#1B7F3A",{ bgCol:"#FFD60A", rot:12, w:0, h:0 }));
+    i.push(makeItem("desc","BANANA PRATA",0,118,40,"'Alfa Slab One'","#1B7F3A",{ w:397 }));
+    i.push(makeItem("marca","",0,180,18,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("peso","KG",0,210,32,"'Bebas Neue'","#E67E22",{ w:397 }));
+    i.push({ ...makeItem("bg","",30,275,0,"","#FFD60A"), w:337, h:240 });
+    i.push({ ...makeItem("bg","",30,275,0,"","#1B7F3A"), w:337, h:6 });
+    i.push({ ...makeItem("bg","",30,509,0,"","#1B7F3A"), w:337, h:6 });
+    i.push(makeItem("precoDe","",0,295,24,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("preco","4,99",0,330,150,"'Bebas Neue'","#1B7F3A",{ w:397, stroke:true, strokeCol:"#FFFFFF", strokeWidth:2 }));
+    i.push(makeItem("economia","",0,500,22,"'Bebas Neue'","#1B7F3A",{ w:397 }));
+    i.push(makeItem("custom","FRESQUINHO TODO DIA",0,532,18,"'Bebas Neue'","#1B7F3A",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 6. PADARIA — Forno Quente (marrom kraft + creme) ----------
+  padaria: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#F5E6CC"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#6B3410"), w:397, h:90 });
+    i.push(makeItem("custom","Padaria",0,16,42,"'Abril Fatface'","#F5E6CC",{ w:397 }));
+    i.push(makeItem("custom","artesanal",0,62,18,"'Bebas Neue'","#FFD89E",{ w:397 }));
+    i.push(makeItem("head","QUENTINHO!",0,108,52,"'Alfa Slab One'","#6B3410",{ w:397, shadow:true, shadowCol:"rgba(0,0,0,.18)", shadowBlur:8 }));
+    i.push(makeItem("desc","Pão Francês",0,180,44,"'Abril Fatface'","#A0522D",{ w:397 }));
+    i.push(makeItem("marca","",0,238,18,"'Bebas Neue'","#6B3410",{ w:397 }));
+    i.push(makeItem("peso","KG",0,260,30,"'Bebas Neue'","#6B3410",{ w:397 }));
+    i.push({ ...makeItem("bg","",40,308,0,"","#FFFFFF"), w:317, h:210 });
+    i.push({ ...makeItem("bg","",40,308,0,"","#6B3410"), w:317, h:5 });
+    i.push({ ...makeItem("bg","",40,513,0,"","#6B3410"), w:317, h:5 });
+    i.push(makeItem("precoDe","",0,322,22,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("preco","14,90",0,355,140,"'Abril Fatface'","#6B3410",{ w:397 }));
+    i.push(makeItem("economia","",0,528,22,"'Bebas Neue'","#6B3410",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 7. BEBIDAS — Geladíssima (azul gelo) ----------
+  bebidas: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#0B5394"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,150,0,"","#1E88E5"), w:397, h:200 });
+    i.push({ ...makeItem("bg","",0,350,0,"","#64B5F6"), w:397, h:211 });
+    i.push(makeItem("head","GELADA!",0,28,72,"'Bungee'","#FFFFFF",{ w:397, rot:-6, shadow:true, shadowCol:"rgba(0,0,0,.45)", shadowBlur:10 }));
+    i.push(makeItem("custom","* * congelada na hora * *",0,118,18,"'Bebas Neue'","#B3E5FC",{ w:397 }));
+    i.push(makeItem("desc","REFRIGERANTE",0,165,38,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("marca","COCA-COLA",0,212,30,"'Bebas Neue'","#FFEB3B",{ w:397 }));
+    i.push(makeItem("peso","2 LITROS",0,250,26,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    i.push({ ...makeItem("bg","",30,300,0,"","#FFFFFF"), w:337, h:225 });
+    i.push({ ...makeItem("bg","",30,300,0,"","#E63946"), w:337, h:8 });
+    i.push(makeItem("precoDe","",0,318,24,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("preco","9,99",0,350,150,"'Anton'","#0B5394",{ w:397 }));
+    i.push(makeItem("economia","",0,510,22,"'Bebas Neue'","#0B5394",{ w:397 }));
+    i.push(makeItem("custom","O F E R T Ã O",0,536,20,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 8. RELÂMPAGO (amarelo neon + preto, fonte Bungee) ----------
+  relampago: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFE600"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",-50,200,0,"","#000000"), w:500, h:90, rot:-8 });
+    i.push(makeItem("custom","RAIO! RAIO!",0,15,30,"'Bungee'","#000000",{ w:397 }));
+    i.push(makeItem("head","RELÂMPAGO",0,55,66,"'Bungee'","#000000",{ w:397, rot:-3, stroke:true, strokeCol:"#FFE600", strokeWidth:2 }));
+    i.push(makeItem("custom","SÓ POR 2 HORAS!",0,135,30,"'Anton'","#FFE600",{ w:397, rot:-3 }));
+    i.push(makeItem("desc","SÓ HOJE",0,260,38,"'Anton'","#FFE600",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:2 }));
+    i.push(makeItem("marca","CORRE!",0,302,32,"'Bebas Neue'","#000000",{ w:397 }));
+    i.push(makeItem("peso","",0,338,22,"'Bebas Neue'","#000000",{ w:397 }));
+    i.push(makeItem("precoDe","",0,358,26,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("preco","9,99",0,388,160,"'Bungee'","#E63946",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:4 }));
+    i.push(makeItem("economia","",0,538,20,"'Anton'","#000000",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 9. LEVE 3 PAGUE 2 (roxo + laranja) ----------
+  leve3: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFFFFF"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#7B2CBF"), w:397, h:135 });
+    i.push({ ...makeItem("bg","",0,135,0,"","#FF6B35"), w:397, h:6 });
+    i.push(makeItem("head","LEVE 3",0,18,80,"'Archivo Black'","#FFFFFF",{ w:397, shadow:true, shadowCol:"rgba(0,0,0,.3)", shadowBlur:8 }));
+    i.push({ ...makeItem("bg","",90,160,0,"","#FF6B35"), w:217, h:60 });
+    i.push(makeItem("custom","PAGUE 2",0,170,42,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("desc","PRODUTO",0,250,32,"'Anton'","#7B2CBF",{ w:397 }));
+    i.push(makeItem("marca","MARCA",0,295,22,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("peso","",0,325,18,"'Bebas Neue'","#7B2CBF",{ w:397 }));
+    i.push({ ...makeItem("bg","",0,360,0,"","#7B2CBF"), w:397, h:201 });
+    i.push(makeItem("custom","CADA UNIDADE",0,372,20,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    i.push(makeItem("precoDe","",0,395,24,"'Bebas Neue'","#FFB3D9",{ w:397 }));
+    i.push(makeItem("preco","19,99",0,420,140,"'Archivo Black'","#FFFFFF",{ w:397, stroke:true, strokeCol:"#FF6B35", strokeWidth:2 }));
+    i.push(makeItem("economia","",0,540,18,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 10. BLACK FRIDAY (preto absoluto + amarelo) ----------
+  blackfriday: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#000000"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,80,0,"","#F1C40F"), w:397, h:90 });
+    i.push(makeItem("custom","MEGA OFERTA",0,32,28,"'Inter'","#F1C40F",{ w:397 }));
+    i.push(makeItem("head","BLACK FRIDAY",0,95,52,"'Archivo Black'","#000000",{ w:397 }));
+    i.push(makeItem("desc","PRODUTO",0,200,38,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("marca","MARCA",0,250,22,"'Bebas Neue'","#F1C40F",{ w:397 }));
+    i.push(makeItem("peso","",0,280,20,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("tagBadge","-50%",290,210,32,"'Anton'","#000000",{ bgCol:"#F1C40F", rot:-15, w:0, h:0 }));
+    i.push(makeItem("precoDe","",0,330,28,"'Bebas Neue'","#888888",{ w:397 }));
+    i.push(makeItem("preco","99,00",0,365,170,"'Anton'","#F1C40F",{ w:397, stroke:true, strokeCol:"#000000", strokeWidth:3, shadow:true, shadowCol:"rgba(241,196,15,.4)", shadowBlur:18 }));
+    i.push(makeItem("economia","",0,540,20,"'Bebas Neue'","#F1C40F",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 11. NATAL (verde escuro + dourado + vermelho) ----------
+  natal: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#0F4C28"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#D4AF37"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",0,553,0,"","#D4AF37"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",30,30,0,"","#C8201E"), w:337, h:90 });
+    i.push(makeItem("head","FELIZ NATAL",0,52,46,"'Abril Fatface'","#FFFFFF",{ w:397, shadow:true, shadowCol:"rgba(0,0,0,.45)", shadowBlur:8 }));
+    i.push(makeItem("custom","* Especial Natal *",0,140,22,"'Bebas Neue'","#D4AF37",{ w:397 }));
+    i.push(makeItem("desc","CEIA COMPLETA",0,170,36,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("marca","",0,222,20,"'Bebas Neue'","#D4AF37",{ w:397 }));
+    i.push(makeItem("peso","",0,252,22,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    i.push({ ...makeItem("bg","",30,300,0,"","#FDF6E3"), w:337, h:220 });
+    i.push({ ...makeItem("bg","",30,300,0,"","#C8201E"), w:337, h:5 });
+    i.push({ ...makeItem("bg","",30,515,0,"","#C8201E"), w:337, h:5 });
+    i.push(makeItem("precoDe","",0,316,22,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("preco","24,90",0,348,150,"'Abril Fatface'","#C8201E",{ w:397 }));
+    i.push(makeItem("economia","",0,535,20,"'Abril Fatface'","#D4AF37",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 12. PÁSCOA (pastel rosa + roxo + amarelo) ----------
+  pascoa: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFF0F8"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#F8B4D9"), w:397, h:92 });
+    i.push({ ...makeItem("bg","",0,92,0,"","#FFD6E8"), w:397, h:6 });
+    i.push(makeItem("head","PÁSCOA FELIZ",0,28,42,"'Abril Fatface'","#7C3AED",{ w:397, shadow:true, shadowCol:"rgba(124,58,237,.25)", shadowBlur:6 }));
+    i.push(makeItem("custom","Doce Páscoa",0,118,24,"'Abril Fatface'","#E879F9",{ w:397 }));
+    i.push(makeItem("desc","OVO DE CHOCOLATE",0,160,32,"'Anton'","#7C3AED",{ w:397 }));
+    i.push(makeItem("marca","",0,212,20,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("peso","250G",0,242,26,"'Bebas Neue'","#E879F9",{ w:397 }));
+    i.push({ ...makeItem("bg","",30,290,0,"","#FFD89E"), w:337, h:230 });
+    i.push({ ...makeItem("bg","",30,290,0,"","#7C3AED"), w:337, h:6 });
+    i.push({ ...makeItem("bg","",30,514,0,"","#7C3AED"), w:337, h:6 });
+    i.push(makeItem("precoDe","",0,308,22,"'Bebas Neue'","#999999",{ w:397 }));
+    i.push(makeItem("preco","39,90",0,338,150,"'Abril Fatface'","#7C3AED",{ w:397 }));
+    i.push(makeItem("economia","",0,535,20,"'Abril Fatface'","#E879F9",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 13. NOVO — Lançamento (azul vibrante + amarelo) ----------
+  novo: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#FFFFFF"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#0066FF"), w:397, h:165 });
+    i.push({ ...makeItem("bg","",0,165,0,"","#FFD60A"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",-50,80,0,"","#FFD60A"), w:300, h:20, rot:-12 });
+    i.push(makeItem("custom","LANÇAMENTO",0,28,30,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    i.push(makeItem("head","NOVIDADE!",0,68,68,"'Archivo Black'","#FFFFFF",{ w:397, shadow:true, shadowCol:"rgba(0,0,0,.4)", shadowBlur:10 }));
+    i.push(makeItem("tagBadge","NOVO",290,185,28,"'Anton'","#0066FF",{ bgCol:"#FFD60A", rot:12, w:0, h:0 }));
+    i.push(makeItem("desc","PRODUTO NOVO",0,210,36,"'Anton'","#0066FF",{ w:397 }));
+    i.push(makeItem("marca","MARCA",0,260,22,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("peso","",0,290,20,"'Bebas Neue'","#0066FF",{ w:397 }));
+    i.push({ ...makeItem("bg","",0,340,0,"","#0066FF"), w:397, h:221 });
+    i.push(makeItem("precoDe","",0,355,24,"'Bebas Neue'","#B3D9FF",{ w:397 }));
+    i.push(makeItem("preco","19,99",0,385,150,"'Archivo Black'","#FFD60A",{ w:397, stroke:true, strokeCol:"#FFFFFF", strokeWidth:2 }));
+    i.push(makeItem("economia","",0,545,18,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
+
+  // ---------- 14. ÚLTIMAS UNIDADES (vermelho urgência + zebra) ----------
+  ultimas: () => {
+    const i = [];
+    i.push({ ...makeItem("bg","",0,0,0,"","#1A0000"), w:397, h:561 });
+    i.push({ ...makeItem("bg","",0,0,0,"","#E63946"), w:397, h:60 });
+    i.push({ ...makeItem("bg","",0,90,0,"","#E63946"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",0,503,0,"","#E63946"), w:397, h:8 });
+    i.push({ ...makeItem("bg","",0,540,0,"","#E63946"), w:397, h:21 });
+    i.push(makeItem("custom","ATENÇÃO!",0,12,30,"'Bungee'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("head","ÚLTIMAS UNIDADES",0,118,34,"'Archivo Black'","#E63946",{ w:397, shadow:true, shadowCol:"rgba(230,57,70,.55)", shadowBlur:18, stroke:true, strokeCol:"#FFFFFF", strokeWidth:1 }));
+    i.push(makeItem("custom","NÃO PERCA ESSA!",0,170,22,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    i.push(makeItem("desc","GARANTA JÁ",0,212,36,"'Anton'","#FFFFFF",{ w:397 }));
+    i.push(makeItem("marca","",0,265,20,"'Bebas Neue'","#FFD60A",{ w:397 }));
+    i.push(makeItem("peso","",0,295,22,"'Bebas Neue'","#E63946",{ w:397 }));
+    i.push({ ...makeItem("bg","",30,330,0,"","#FFD60A"), w:337, h:170 });
+    i.push(makeItem("precoDe","",0,343,24,"'Bebas Neue'","#666666",{ w:397 }));
+    i.push(makeItem("preco","29,99",0,375,115,"'Anton'","#1A0000",{ w:397 }));
+    i.push(makeItem("economia","",0,510,20,"'Bebas Neue'","#FFFFFF",{ w:397 }));
+    return { id: uid_(), itens: i };
+  },
 };
 
 function carregarTemplate(tipo) {
-  const t = TEMPLATES[tipo];
-  if (!t) return;
+  const builder = TEMPLATES[tipo];
+  if (typeof builder !== "function") return;
   snapshot();
-  const c = cartazBase();
-  c.itens.find(i => i.tipo === "head").val = t.chamada;
-  c.itens.find(i => i.tipo === "head").col = t.corChamada || "#d63031";
-  c.itens.find(i => i.tipo === "desc").val = t.desc;
-  c.itens.find(i => i.tipo === "marca").val = t.marca || "";
-  if (t.marcaSize) c.itens.find(i => i.tipo === "marca").size = t.marcaSize;
-  c.itens.find(i => i.tipo === "peso").val = t.peso || "";
-  c.itens.find(i => i.tipo === "preco").val = t.preco;
-  c.itens.find(i => i.tipo === "preco").col = t.corPreco || "#000";
-  if (t.precoSize) c.itens.find(i => i.tipo === "preco").size = t.precoSize;
-
-  if (t.fundo) {
-    c.itens.unshift({ ...makeItem("bg", "", 0, 0, 0, "", t.fundo), w: 493, h: 65 });
-    c.itens.unshift(makeItem("custom", t.textoFundo || "", 60, 12, 36, "'Anton'", "#fff", { shadow: true, shadowCol: "#000" }));
-  }
-  state.cartazes.push(c);
+  const cartaz = builder();
+  state.cartazes.push(cartaz);
   render(); save();
   toast(`Template "${tipo}" carregado`, "success");
 }

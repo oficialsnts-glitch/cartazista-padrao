@@ -1,54 +1,62 @@
-# Cartazista Pro 21.0 — PRD
+# Cartazista Pro 20 — PRD
 
-## Problem Statement Original
-"refactor completo para Vercel (frontend) + Render (backend) com SDKs oficiais e sua própria chave Gemini api AIzaSyBjL2b-072c40mMH0j9YhB16G-3dzMr25Q"
+## Original Problem Statement
+- Sumir o placeholder cinza quando não tem imagem
+- Refazer todos os 14 templates com identidades visuais ÚNICAS (não mais "cópias" do layout IA)
+- Templates funcionam independentes do cartazFromAI
+- Repo: https://github.com/oficialsnts-glitch/cartazista-padrao
+- Live: https://cartazista-padrao.vercel.app/
 
-## Arquitetura (21.0)
-- **Frontend**: Site estático HTML/CSS/JS em `/app/frontend/public/` → deploy **Vercel** via `vercel.json`. API base configurável em `config.js` (sem rebuild).
-- **Backend**: FastAPI em `/app/backend/server.py` → deploy **Render** via `render.yaml`. Usa **SDK oficial `google-genai`** (`gemini-2.5-flash`).
-- **IA**: chave Gemini própria do usuário (`GEMINI_API_KEY` em env vars).
-- **Sem MongoDB** — storage via Firebase Firestore client-side (mantido da v20).
+## Architecture
+- Frontend estático: HTML + CSS + JS vanilla servido por `serve` em `/app/frontend/public`
+- Lib: html2canvas, jsPDF, qrcodejs, Firebase (auth anônimo + Firestore)
+- Backend FastAPI externo (Render): `cartazista-backend.onrender.com` para IA/Nano Banana
+- Renderização do cartaz: 397×561 px (grid-4), itens absolutos com `tipo` (head/desc/marca/peso/preco/precoDe/economia/bg/img/qr/tagBadge/custom)
 
-## Arquivos-chave do refactor
-- `backend/server.py` — migrou de `emergentintegrations` → `from google import genai`
-- `backend/requirements.txt` — `google-genai>=1.0.0` substitui `emergentintegrations`
-- `backend/.env` — `GEMINI_API_KEY`, `GEMINI_MODEL`, `CORS_ORIGINS`
-- `frontend/public/config.js` — runtime config com `API_BASE` para cross-origin
-- `render.yaml` — Blueprint de deploy
-- `vercel.json` — serve `frontend/public/`
-- `README.md` — guia passo-a-passo de deploy nas duas plataformas
+## Personas
+- Operador de PDV (papelão de promoção, supermercado/açougue/padaria)
+- Gerente de loja em datas comemorativas (Black Friday, Natal, Páscoa)
 
-## Implementado (Jan/2026 — iteração de refactor)
-- ✅ Migração completa para SDK oficial `google-genai`
-- ✅ `response_mime_type="application/json"` para parse estável
-- ✅ CORS parametrizado por env var
-- ✅ Frontend desacoplado do backend via `config.js`
-- ✅ Health check `/api/health` testado → retorna `{"status":"ok","model":"gemini-2.5-flash"}`
-- ✅ Blueprints de deploy (`render.yaml`, `vercel.json`) prontos
-- ✅ README com instruções end-to-end
+## Core Requirements
+- 14 templates supermercadistas + datas comemorativas, layout único cada
+- Placeholder de imagem só aparece quando há imagem real
+- Editor permite editar todos os textos protegidos (head/desc/marca/peso/preco/precoDe/economia)
 
-## Status dos endpoints
-- `GET /api/health` → **OK**
-- `GET /api/ean/{ean}` → **OK** (Open Food Facts, não usa Gemini)
-- `POST /api/ai/generate-poster` → **código OK**, chave Gemini compartilhada foi revogada pelo Google (leaked) — precisa nova chave do usuário
-- `POST /api/ai/suggest-headlines` → idem
-- `POST /api/ai/parse-csv` → idem
+## Implemented (Jan/2026)
+### Sessão atual
+- Placeholder cinza condicional: `_isImagePlaceholder` flag + filtro em `buildCartazArea` (esconde quando `cartaz.itens` não tem `tipo:"img"`)
+- Recentralização: `_centerWhenNoImg` + `_altX/_altW` reposiciona desc/marca/peso para centro quando não há imagem
+- `buildItem` agora respeita `it.w/it.h` em itens de texto (necessário para centralização full-width)
+- 14 templates re-escritos como BUILDERS auto-contidos (sem chamar `cartazFromAI`/`cartazBase`):
+  1. promo — Mercado clássico vermelho/amarelo
+  2. preco — Preço gigante 210pt em fundo amarelo absoluto
+  3. marca — Premium dourado/preto Abril Fatface
+  4. acougue — Vermelho sangue + selo "FRESCO HOJE"
+  5. hortifruti — Verde sítio + selo "100% NATURAL"
+  6. padaria — Kraft marrom + Abril Fatface artesanal
+  7. bebidas — Gradiente azul gelo + Bungee "GELADA!"
+  8. relampago — Amarelo neon + faixa preta diagonal Bungee
+  9. leve3 — Roxo + laranja "LEVE 3 / PAGUE 2"
+  10. blackfriday — Preto absoluto + faixa amarela + selo "-50%"
+  11. natal — Verde escuro + dourado + faixa vermelha
+  12. pascoa — Pastel rosa/roxo/amarelo
+  13. novo — Lançamento azul vibrante + badge "NOVO"
+  14. ultimas — Vermelho urgência + zebra preto/vermelho
 
-## ⚠️ Ação necessária do usuário
-A chave `AIzaSyBjL2b-072c40mMH0j9YhB16G-3dzMr25Q` foi automaticamente **revogada pelo Google** porque foi publicada em texto público. Gere uma nova em <https://aistudio.google.com/app/apikey> e:
-- **Local**: edite `/app/backend/.env` → `GEMINI_API_KEY=...`
-- **Render**: painel → Environment → atualize `GEMINI_API_KEY`
+## Backlog (P1/P2)
+- Variar fontes em mais templates (atualmente Anton/Bebas/Archivo Black/Bungee/Abril Fatface)
+- Adicionar templates específicos: Frios/Laticínios, Limpeza, Pet, Higiene
+- Suporte a círculos verdadeiros para selos (atualmente quadrados)
+- Modo "compacto" automático quando `desc` muito longo
 
-## Backlog (mantido da v20)
-### P1
-- Busca EAN via cosmo.bluesoft.com.br (complemento ao Open Food Facts)
-- Colaboração em tempo real
-- Dark/light theme toggle
-- Tradução automática IA (EN/ES)
+## Next Tasks
+- Aguardar feedback do usuário sobre os 14 templates
+- Possíveis ajustes finos de cor/tipografia conforme preferência
 
-### P2
-- Multi-usuário SaaS
-- Calendário de ofertas
-- QR analytics
-- Modo TV
-- Bin-packing A4
+## Files Changed
+- `/app/frontend/public/app.js`
+  - `cartazFromAI`: adicionou `_isImagePlaceholder`, `_centerWhenNoImg`, `_altX`, `_altW`
+  - `buildCartazArea`: detecta `hasImage` e filtra placeholder + reposiciona texto
+  - `buildItem`: respeita `it.w`/`it.h` em itens de texto
+  - `TEMPLATES`: 14 builders independentes
+  - `carregarTemplate`: simplificada (apenas `builder()` + push)
