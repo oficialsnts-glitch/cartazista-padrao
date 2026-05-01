@@ -144,23 +144,28 @@ async def generate_poster(req: GeneratePosterRequest):
     system = (
         "Voce e um copywriter especialista em cartazes de PRECO de supermercado brasileiro. "
         "Receba a descricao do produto e retorne APENAS um JSON valido com os campos: "
-        "chamada (string curta chamativa em MAIUSCULAS, 2-4 palavras, ex: 'OFERTA DA SEMANA'), "
-        "produto (nome do produto em MAIUSCULAS, max 3 linhas curtas), "
-        "marca (marca em MAIUSCULAS), "
-        "peso (peso/volume, ex: '400 g', '1 L', '12 un'), "
-        "preco (apenas o numero com virgula, ex: '18,90'), "
-        "preco_de (preco anterior se houver, senao string vazia), "
-        "paleta (array de 3 cores HEX combinando com o produto, ex: ['#d63031','#ffffff','#000000']). "
+        "chamada (string MUITO CURTA, 1-3 palavras MAIUSCULAS, ex: 'OFERTA', 'CHEGOU', 'SUPER OFERTA', 'PROMO'). "
+        "produto (NOME do produto em MAIUSCULAS, MAXIMO 2 palavras curtas, ex: 'COCA-COLA', 'LEITE NINHO', 'ARROZ'). "
+        "marca (marca em MAIUSCULAS, MAX 1 palavra, ex: 'NESTLE', 'TIO JOAO'). "
+        "peso (peso/volume curto, ex: '400 g', '1 L', '12 un'). "
+        "preco (apenas o numero com virgula, SEM 'R$', ex: '18,90'). "
+        "preco_de (preco anterior se houver na descricao, senao string vazia). "
+        "paleta (array de 3 cores HEX que combinam com o produto: [primaria_vibrante, clara, escura], ex: ['#d63031','#ffffff','#1e272e']). "
+        "REGRA CRITICA: produto NUNCA com mais de 18 caracteres no total. "
         "Sem markdown, sem explicacoes, SO o JSON."
     )
     user = f"Tom: {req.tom}\nDescricao: {req.descricao}"
     try:
         raw = await _ask_gemini(system, user)
         data = _extract_json(raw)
+        # Sanitiza produto (truncate to avoid layout overflow)
+        produto = str(data.get("produto", "")).upper()
+        if len(produto) > 22:
+            produto = produto[:22]
         return GeneratePosterResponse(
-            chamada=str(data.get("chamada", "OFERTA")).upper(),
-            produto=str(data.get("produto", "")).upper(),
-            marca=str(data.get("marca", "")).upper(),
+            chamada=str(data.get("chamada", "OFERTA")).upper()[:18],
+            produto=produto,
+            marca=str(data.get("marca", "")).upper()[:18],
             peso=str(data.get("peso", "")),
             preco=str(data.get("preco", "0,00")).replace("R$", "").strip(),
             preco_de=str(data.get("preco_de", "")).replace("R$", "").strip(),
@@ -271,6 +276,68 @@ async def lookup_ean(ean: str):
         print(f"EAN lookup error: {e}")
 
     return EanResponse(found=False, ean=ean, fonte="não encontrado")
+
+
+# ---------- Nano Banana — geração de imagem do produto ----------
+GEMINI_IMAGE_MODEL = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+
+
+class GenerateImageRequest(BaseModel):
+    produto: str = Field(..., description="Nome do produto, ex: 'Coca-Cola 2L'")
+    marca: str = ""
+    estilo: str = Field(default="produto", description="produto | ilustracao | aquarela | flat")
+
+
+class GenerateImageResponse(BaseModel):
+    imagem_data_url: str
+    prompt_usado: str
+
+
+@api.post("/ai/generate-product-image", response_model=GenerateImageResponse)
+async def generate_product_image(req: GenerateImageRequest):
+    """Gera foto/ilustração do produto via Gemini 2.5 Flash Image (Nano Banana)."""
+    estilo_map = {
+        "produto": "professional product photography, studio lighting, clean white background, isolated, e-commerce style, sharp focus, high detail",
+        "ilustracao": "flat vector illustration, modern minimalist style, clean shapes, vibrant colors, white background",
+        "aquarela": "watercolor painting style, soft pastel colors, artistic, white background",
+        "flat": "flat design icon style, simple shapes, solid colors, no shadow, white background",
+    }
+    estilo_desc = estilo_map.get(req.estilo, estilo_map["produto"])
+    marca_part = f" by {req.marca}" if req.marca else ""
+    prompt = (
+        f"A single product image of {req.produto}{marca_part}, {estilo_desc}, "
+        f"square 1:1 ratio, centered, no text, no logos, no watermarks, no people"
+    )
+
+    last_err = None
+    for attempt in range(2):
+        try:
+            response = await gemini.aio.models.generate_content(
+                model=GEMINI_IMAGE_MODEL,
+                contents=prompt,
+            )
+            for part in response.candidates[0].content.parts:
+                if getattr(part, "inline_data", None) and part.inline_data.data:
+                    raw = part.inline_data.data
+                    # SDK pode retornar bytes ou base64-string conforme versao
+                    if isinstance(raw, bytes):
+                        b64 = base64.b64encode(raw).decode("ascii")
+                    else:
+                        b64 = raw if isinstance(raw, str) else base64.b64encode(bytes(raw)).decode("ascii")
+                    mime = part.inline_data.mime_type or "image/png"
+                    return GenerateImageResponse(
+                        imagem_data_url=f"data:{mime};base64,{b64}",
+                        prompt_usado=prompt,
+                    )
+            raise ValueError("Resposta sem inline_data")
+        except Exception as e:
+            last_err = e
+            msg = str(e)
+            if "429" in msg or "503" in msg or "RESOURCE_EXHAUSTED" in msg or "UNAVAILABLE" in msg:
+                await asyncio.sleep(2 + attempt * 3)
+                continue
+            raise HTTPException(status_code=500, detail=f"Falha ao gerar imagem: {e}")
+    raise HTTPException(status_code=503, detail=f"Imagem indisponivel: {last_err}")
 
 
 app.mount("/api", api)

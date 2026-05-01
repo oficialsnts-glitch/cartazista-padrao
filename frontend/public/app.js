@@ -199,38 +199,40 @@ function makeItem(tipo, val, x, y, size, font, col, extra = {}) {
 }
 
 function cartazBase() {
-  const id = uid_();
-  return {
-    id,
-    itens: [
-      makeItem("head",    "OFERTA IMPERDÍVEL",   60, 25,  48,  "'Bebas Neue'", "#d63031"),
-      makeItem("desc",    "PRODUTO EM DESTAQUE", 40, 95,  58,  "'Bebas Neue'", "#000000"),
-      makeItem("marca",   "MARCA PREMIUM",       60, 165, 34,  "'Bebas Neue'", "#1e272e"),
-      makeItem("peso",    "1 kg",                60, 210, 30,  "'Bebas Neue'", "#d63031"),
-      makeItem("preco",   "9,99",                40, 250, 145, "'Anton'",      "#000000"),
-      makeItem("precoDe", "",                    40, 230, 26,  "'Bebas Neue'", "#777777"),
-      makeItem("economia","",                    40, 390, 22,  "'Bebas Neue'", "#d63031"),
-    ],
-  };
+  return cartazFromAI({
+    chamada: "SUPER OFERTA",
+    produto: "PRODUTO",
+    marca: "MARCA",
+    peso: "1 kg",
+    preco: "9,99",
+    preco_de: "",
+    paleta: ["#d63031", "#ffffff", "#1e272e"],
+  });
 }
 
 /**
- * Cria cartaz "pronto pra produção" a partir de dados da IA.
+ * Cria cartaz "premium" a partir de dados da IA — layout profissional sem overlap.
+ * Dimensões alvo: ~397×561 (grid-4), funciona escalado em grid-2 e grid-1.
+ *
+ * Estrutura:
+ *  - Tarja superior colorida (chamada centralizada, branca)
+ *  - Slot de imagem do produto (esquerda)  +  Texto produto/marca/peso (direita)
+ *  - Bloco inferior do preço com fundo claro destacado
+ *  - Badge diagonal de desconto (canto superior direito)
+ *
  * @param {object} s - { chamada, produto, marca, peso, preco, preco_de, paleta[] }
- * Aplica tarja colorida no topo, gradiente no produto, badge diagonal de desconto,
- * stroke + sombra no preço, posicionamento profissional automático.
  */
 function cartazFromAI(s) {
   const id = uid_();
-  // Paleta com defaults inteligentes
   const pal = (s.paleta && s.paleta.length >= 3)
     ? s.paleta
     : ["#d63031", "#ffffff", "#1e272e"];
-  const cPrim = pal[0];                 // chamada / tarja / acentos
-  const cBg = pal[1] || "#ffffff";      // fundo tarja preço (claro)
-  const cText = pal[2] || "#1e272e";    // texto principal (preço)
+  const cPrim = pal[0];
+  const cText = pal[2] || "#1e272e";
+  // bloco do preço sempre claro pra contraste
+  const cPriceBg = "#f5f6f8";
 
-  // Calcula desconto se houver preço de
+  // Calcula desconto
   let pctOff = 0;
   if (s.preco_de) {
     const de = parseFloat(String(s.preco_de).replace(",", "."));
@@ -240,80 +242,108 @@ function cartazFromAI(s) {
 
   const itens = [];
 
-  // 1) TARJA TOPO (fundo colorido full-width) — z=5
-  itens.push({ ...makeItem("bg", "", 0, 0, 0, "", cPrim), w: 396, h: 78 });
+  // ===== HEADER: TARJA TOPO =====
+  itens.push({ ...makeItem("bg", "", 0, 0, 0, "", cPrim), w: 397, h: 70 });
+  // Pequena faixa de acento embaixo da tarja
+  itens.push({ ...makeItem("bg", "", 0, 70, 0, "", cText), w: 397, h: 4 });
 
-  // 2) CHAMADA — centralizada na tarja, branca, com sombra suave
+  // CHAMADA (branca, centralizada na tarja)
   itens.push(makeItem(
     "head", s.chamada || "OFERTA",
-    20, 18, 34, "'Anton'", "#ffffff",
-    { shadow: true, shadowCol: "#000", shadowBlur: 6, w: 0, h: 0 }
+    20, 16, 36, "'Anton'", "#ffffff",
+    { shadow: true, shadowCol: "rgba(0,0,0,0.45)", shadowBlur: 4 }
   ));
 
-  // 3) PRODUTO — destaque com gradiente do escuro pro primário
+  // ===== AREA PRODUTO (esquerda: slot imagem 140x140 / direita: texto) =====
+  // Card placeholder atrás da imagem (cinza muito leve)
+  itens.push({ ...makeItem("bg", "", 15, 90, 0, "", "#f0f1f4"), w: 140, h: 140 });
+
+  // Texto produto à direita do slot imagem
   itens.push(makeItem(
     "desc", s.produto || "PRODUTO",
-    20, 110, 46, "'Archivo Black'", cText,
-    {
-      gradient: true,
-      gradC1: cText,
-      gradC2: cPrim,
-      gradDir: "to bottom",
-      shadow: true,
-      shadowCol: "rgba(0,0,0,0.15)",
-      shadowBlur: 4,
-    }
-  ));
-
-  // 4) MARCA — pequena, abaixo do produto
-  itens.push(makeItem(
-    "marca", s.marca || "",
-    20, 215, 24, "'Bebas Neue'", cText
-  ));
-
-  // 5) PESO — chip-like, mesma linha da marca à direita
-  itens.push(makeItem(
-    "peso", s.peso || "",
-    260, 215, 22, "'Bebas Neue'", cPrim
-  ));
-
-  // 6) PREÇO DE (riscado) — pequeno, acima do preço grande
-  itens.push(makeItem(
-    "precoDe", s.preco_de || "",
-    30, 280, 26, "'Bebas Neue'", "#777777"
-  ));
-
-  // 7) PREÇO GIGANTE com stroke + sombra para máximo impacto
-  itens.push(makeItem(
-    "preco", s.preco || "0,00",
-    30, 320, 140, "'Anton'", cText,
-    {
-      stroke: true,
-      strokeCol: "#ffffff",
-      strokeWidth: 3,
-      shadow: true,
-      shadowCol: "rgba(0,0,0,0.3)",
-      shadowBlur: 12,
-    }
-  ));
-
-  // 8) ECONOMIA — calculada automaticamente no render()
-  itens.push(makeItem(
-    "economia", "",
-    30, 480, 22, "'Bebas Neue'", cPrim,
+    170, 100, 32, "'Anton'", cText,
     { stroke: false, shadow: false }
   ));
 
-  // 9) BADGE diagonal de desconto (canto superior direito) — só se houver desconto
+  // Marca pequena
+  itens.push(makeItem(
+    "marca", s.marca || "",
+    170, 175, 18, "'Bebas Neue'", "#666666"
+  ));
+
+  // Peso/volume colorido (acento primário)
+  itens.push(makeItem(
+    "peso", s.peso || "",
+    170, 200, 22, "'Bebas Neue'", cPrim
+  ));
+
+  // ===== BLOCO PREÇO inferior =====
+  itens.push({ ...makeItem("bg", "", 0, 255, 0, "", cPriceBg), w: 397, h: 280 });
+  // Faixa de acento no topo do bloco preço
+  itens.push({ ...makeItem("bg", "", 0, 255, 0, "", cPrim), w: 397, h: 5 });
+
+  // PRECO DE (struck, pequeno em cima)
+  itens.push(makeItem(
+    "precoDe", s.preco_de || "",
+    25, 275, 22, "'Bebas Neue'", "#999999"
+  ));
+
+  // PRECO GIGANTE com stroke + sombra para impacto
+  itens.push(makeItem(
+    "preco", s.preco || "0,00",
+    20, 310, 130, "'Anton'", cText,
+    {
+      stroke: true,
+      strokeCol: "#ffffff",
+      strokeWidth: 2,
+      shadow: true,
+      shadowCol: "rgba(0,0,0,0.25)",
+      shadowBlur: 10,
+    }
+  ));
+
+  // ECONOMIA (calculada no render)
+  itens.push(makeItem(
+    "economia", "",
+    25, 490, 22, "'Bebas Neue'", cPrim
+  ));
+
+  // ===== BADGE DESCONTO =====
   if (pctOff > 0) {
     itens.push(makeItem(
       "tagBadge", `-${pctOff}%`,
-      290, 95, 30, "'Anton'", "#ffffff",
+      300, 88, 28, "'Anton'", "#ffffff",
       { bgCol: cPrim, rot: -15, w: 0, h: 0 }
     ));
   }
 
-  return { id, itens };
+  return { id, itens, _imgSlot: { x: 25, y: 100, w: 120, h: 120 } };
+}
+
+/**
+ * Tenta gerar imagem do produto via Nano Banana e adicionar ao cartaz.
+ * Falha silenciosamente (não bloqueia o cartaz se quota estourou).
+ */
+async function tentarGerarImagemProduto(cartaz, produto, marca = "") {
+  if (!cartaz._imgSlot) return;
+  try {
+    const r = await fetch(`${API}/ai/generate-product-image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ produto, marca, estilo: "produto" }),
+    });
+    if (!r.ok) return; // 429/quota etc — fica sem imagem
+    const data = await r.json();
+    if (!data.imagem_data_url) return;
+    const slot = cartaz._imgSlot;
+    cartaz.itens.push({
+      ...makeItem("img", data.imagem_data_url, slot.x, slot.y, 0, "", ""),
+      w: slot.w, h: slot.h,
+    });
+    render(); save();
+  } catch (e) {
+    console.warn("Imagem nano banana falhou (ok, segue sem):", e.message);
+  }
 }
 
 function adicionarCartaz(skipHistory = false) {
@@ -1383,7 +1413,9 @@ function aplicarIA() {
   $("iaDesc").value = "";
   $("iaResultado").innerHTML = "";
   $("btnIAAplicar").classList.add("hidden");
-  toast("Cartaz criado pela IA — pronto pra usar!", "success");
+  toast("Cartaz criado pela IA — gerando imagem...", "success");
+  // Tenta gerar foto do produto via Nano Banana (não bloqueia)
+  tentarGerarImagemProduto(c, s.produto, s.marca);
 }
 
 async function iaSugerirChamadas() {
