@@ -491,7 +491,8 @@ function buildCartazArea(c, idx) {
     // Recentraliza textos que normalmente ficam ao lado da imagem
     if (!hasImage && it._centerWhenNoImg) {
       el.style.left = (it._altX ?? 0) + "px";
-      if (it._altW) el.style.width = it._altW + "px";
+      // Aplica largura padrão (centralizada) APENAS se o usuário não definiu uma largura customizada
+      if (!it.w && it._altW) el.style.width = it._altW + "px";
     }
     content.appendChild(el);
     if (it.tipo === "qr") enqueueQR(el, it);
@@ -770,7 +771,8 @@ function mostrarNoPainel(it, c) {
   $("inW").value = it.w || 0;
   $("inH").value = it.h || 0;
   $("inRot").value = it.rot || 0;
-  $("secaoFundo").style.display = (it.tipo === "bg" || it.tipo === "img" || it.tipo === "qr") ? "block" : "none";
+  // Tamanho (largura/altura) agora disponível para QUALQUER item — edição livre
+  $("secaoFundo").style.display = "block";
   // Atualiza proporção base quando troca de item
   if ((it.tipo === "img" || it.tipo === "qr") && it.w && it.h) {
     aspectRatio = it.w / it.h;

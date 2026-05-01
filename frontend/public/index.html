@@ -212,13 +212,13 @@
         </div>
 
         <div class="secao" id="secaoFundo" style="display:none">
-          <h4><i class="fa-solid fa-expand"></i> Tamanho (fundo/imagem/QR)</h4>
+          <h4><i class="fa-solid fa-expand"></i> Tamanho do item (largura/altura)</h4>
           <div class="row-2" style="grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end">
             <div class="campo"><label>Largura (px)</label><input type="number" id="inW" data-testid="in-w" min="10" step="1" /></div>
             <div class="campo"><label>Altura (px)</label><input type="number" id="inH" data-testid="in-h" min="10" step="1" /></div>
             <button class="btn" id="btnLockAspect" data-testid="btn-lock-aspect" title="Travar proporção (W/H juntos)" style="padding:8px 10px"><i class="fa-solid fa-link-slash"></i></button>
           </div>
-          <div class="small" id="lockAspectHint" style="margin-top:4px; opacity:.6">W e H independentes</div>
+          <div class="small" id="lockAspectHint" style="margin-top:4px; opacity:.6">W e H independentes. Use 0 para deixar automático (texto ajusta ao conteúdo).</div>
         </div>
 
         <div class="secao">
