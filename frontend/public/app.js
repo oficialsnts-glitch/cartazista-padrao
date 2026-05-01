@@ -214,6 +214,108 @@ function cartazBase() {
   };
 }
 
+/**
+ * Cria cartaz "pronto pra produção" a partir de dados da IA.
+ * @param {object} s - { chamada, produto, marca, peso, preco, preco_de, paleta[] }
+ * Aplica tarja colorida no topo, gradiente no produto, badge diagonal de desconto,
+ * stroke + sombra no preço, posicionamento profissional automático.
+ */
+function cartazFromAI(s) {
+  const id = uid_();
+  // Paleta com defaults inteligentes
+  const pal = (s.paleta && s.paleta.length >= 3)
+    ? s.paleta
+    : ["#d63031", "#ffffff", "#1e272e"];
+  const cPrim = pal[0];                 // chamada / tarja / acentos
+  const cBg = pal[1] || "#ffffff";      // fundo tarja preço (claro)
+  const cText = pal[2] || "#1e272e";    // texto principal (preço)
+
+  // Calcula desconto se houver preço de
+  let pctOff = 0;
+  if (s.preco_de) {
+    const de = parseFloat(String(s.preco_de).replace(",", "."));
+    const por = parseFloat(String(s.preco).replace(",", "."));
+    if (de > 0 && por > 0 && de > por) pctOff = Math.round(((de - por) / de) * 100);
+  }
+
+  const itens = [];
+
+  // 1) TARJA TOPO (fundo colorido full-width) — z=5
+  itens.push({ ...makeItem("bg", "", 0, 0, 0, "", cPrim), w: 396, h: 78 });
+
+  // 2) CHAMADA — centralizada na tarja, branca, com sombra suave
+  itens.push(makeItem(
+    "head", s.chamada || "OFERTA",
+    20, 18, 34, "'Anton'", "#ffffff",
+    { shadow: true, shadowCol: "#000", shadowBlur: 6, w: 0, h: 0 }
+  ));
+
+  // 3) PRODUTO — destaque com gradiente do escuro pro primário
+  itens.push(makeItem(
+    "desc", s.produto || "PRODUTO",
+    20, 110, 46, "'Archivo Black'", cText,
+    {
+      gradient: true,
+      gradC1: cText,
+      gradC2: cPrim,
+      gradDir: "to bottom",
+      shadow: true,
+      shadowCol: "rgba(0,0,0,0.15)",
+      shadowBlur: 4,
+    }
+  ));
+
+  // 4) MARCA — pequena, abaixo do produto
+  itens.push(makeItem(
+    "marca", s.marca || "",
+    20, 215, 24, "'Bebas Neue'", cText
+  ));
+
+  // 5) PESO — chip-like, mesma linha da marca à direita
+  itens.push(makeItem(
+    "peso", s.peso || "",
+    260, 215, 22, "'Bebas Neue'", cPrim
+  ));
+
+  // 6) PREÇO DE (riscado) — pequeno, acima do preço grande
+  itens.push(makeItem(
+    "precoDe", s.preco_de || "",
+    30, 280, 26, "'Bebas Neue'", "#777777"
+  ));
+
+  // 7) PREÇO GIGANTE com stroke + sombra para máximo impacto
+  itens.push(makeItem(
+    "preco", s.preco || "0,00",
+    30, 320, 140, "'Anton'", cText,
+    {
+      stroke: true,
+      strokeCol: "#ffffff",
+      strokeWidth: 3,
+      shadow: true,
+      shadowCol: "rgba(0,0,0,0.3)",
+      shadowBlur: 12,
+    }
+  ));
+
+  // 8) ECONOMIA — calculada automaticamente no render()
+  itens.push(makeItem(
+    "economia", "",
+    30, 480, 22, "'Bebas Neue'", cPrim,
+    { stroke: false, shadow: false }
+  ));
+
+  // 9) BADGE diagonal de desconto (canto superior direito) — só se houver desconto
+  if (pctOff > 0) {
+    itens.push(makeItem(
+      "tagBadge", `-${pctOff}%`,
+      290, 95, 30, "'Anton'", "#ffffff",
+      { bgCol: cPrim, rot: -15, w: 0, h: 0 }
+    ));
+  }
+
+  return { id, itens };
+}
+
 function adicionarCartaz(skipHistory = false) {
   if (!skipHistory) snapshot();
   state.cartazes.push(cartazBase());
@@ -904,15 +1006,18 @@ function aplicarEAN() {
   const preco = ($("eanPreco")?.value || "0,00").replace(".", ",");
   const precoDe = ($("eanPrecoDe")?.value || "").replace(".", ",");
   snapshot();
-  const c = cartazBase();
-  c.itens.find(i => i.tipo === "head").val = "OFERTA";
-  c.itens.find(i => i.tipo === "desc").val = eanResultado.produto;
-  c.itens.find(i => i.tipo === "marca").val = eanResultado.marca || "";
-  c.itens.find(i => i.tipo === "peso").val = eanResultado.peso || "";
-  c.itens.find(i => i.tipo === "preco").val = preco;
-  c.itens.find(i => i.tipo === "precoDe").val = precoDe;
+  const c = cartazFromAI({
+    chamada: "OFERTA",
+    produto: eanResultado.produto,
+    marca: eanResultado.marca || "",
+    peso: eanResultado.peso || "",
+    preco: preco,
+    preco_de: precoDe,
+    paleta: ["#d63031", "#ffffff", "#1e272e"],
+  });
+  // Imagem do produto à direita (se houver)
   if (eanResultado.imagem_data_url) {
-    c.itens.push({ ...makeItem("img", eanResultado.imagem_data_url, 280, 80, 0, "", ""), w: 180, h: 180 });
+    c.itens.push({ ...makeItem("img", eanResultado.imagem_data_url, 240, 95, 0, "", ""), w: 140, h: 140 });
   }
   state.cartazes.push(c);
   render(); save();
@@ -1271,25 +1376,14 @@ function aplicarIA() {
   const s = state.lastAISuggestions;
   if (!s) return;
   snapshot();
-  const c = cartazBase();
-  c.itens.find(i => i.tipo === "head").val = s.chamada;
-  c.itens.find(i => i.tipo === "desc").val = s.produto;
-  c.itens.find(i => i.tipo === "marca").val = s.marca;
-  c.itens.find(i => i.tipo === "peso").val = s.peso;
-  c.itens.find(i => i.tipo === "preco").val = s.preco;
-  c.itens.find(i => i.tipo === "precoDe").val = s.preco_de || "";
-  if (s.paleta && s.paleta.length >= 2) {
-    c.itens.find(i => i.tipo === "head").col = s.paleta[0];
-    const prcItem = c.itens.find(i => i.tipo === "preco");
-    prcItem.col = s.paleta[2] || s.paleta[0];
-  }
+  const c = cartazFromAI(s);
   state.cartazes.push(c);
   render(); save();
   closeModal("modalIA");
   $("iaDesc").value = "";
   $("iaResultado").innerHTML = "";
   $("btnIAAplicar").classList.add("hidden");
-  toast("Cartaz criado pela IA", "success");
+  toast("Cartaz criado pela IA — pronto pra usar!", "success");
 }
 
 async function iaSugerirChamadas() {
@@ -1350,14 +1444,25 @@ async function csvAnalisar() {
 function csvGerar() {
   if (!csvParsed.length) return;
   snapshot();
-  csvParsed.forEach(l => {
-    const c = cartazBase();
-    c.itens.find(i => i.tipo === "head").val = "OFERTA";
-    c.itens.find(i => i.tipo === "desc").val = l.produto;
-    c.itens.find(i => i.tipo === "marca").val = l.marca;
-    c.itens.find(i => i.tipo === "peso").val = l.peso;
-    c.itens.find(i => i.tipo === "preco").val = l.preco;
-    c.itens.find(i => i.tipo === "precoDe").val = l.preco_de || "";
+  // Paletas variadas pra cada cartaz não ficar tudo igual
+  const PALETAS_AUTO = [
+    ["#d63031", "#ffffff", "#1e272e"],   // vermelho clássico
+    ["#0984e3", "#ffffff", "#2d3436"],   // azul
+    ["#00b894", "#ffeaa7", "#2d3436"],   // verde hortifruti
+    ["#fdcb6e", "#ffffff", "#6c3a00"],   // amarelo padaria
+    ["#8e44ad", "#ffffff", "#1e272e"],   // roxo
+    ["#e17055", "#ffeaa7", "#2d3436"],   // laranja
+  ];
+  csvParsed.forEach((l, i) => {
+    const c = cartazFromAI({
+      chamada: "OFERTA",
+      produto: l.produto,
+      marca: l.marca,
+      peso: l.peso,
+      preco: l.preco,
+      preco_de: l.preco_de || "",
+      paleta: PALETAS_AUTO[i % PALETAS_AUTO.length],
+    });
     state.cartazes.push(c);
   });
   render(); save();
@@ -1365,7 +1470,7 @@ function csvGerar() {
   $("csvInput").value = ""; $("csvPreview").innerHTML = "";
   $("btnCSVGerar").classList.add("hidden");
   csvParsed = [];
-  toast(`Cartazes gerados!`, "success");
+  toast(`Cartazes gerados com estilos variados!`, "success");
 }
 
 // ---------- Modelos salvos ----------

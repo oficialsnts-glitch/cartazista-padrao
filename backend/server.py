@@ -4,6 +4,7 @@ Pronto para rodar em:
   - Local:  uvicorn server:app --port 8001
   - Render: Web Service (Python) — comando: uvicorn server:app --host 0.0.0.0 --port $PORT
 """
+import asyncio
 import base64
 import json
 import os
@@ -23,11 +24,10 @@ load_dotenv(ROOT_DIR / ".env")
 
 # ---------- Config ----------
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-# CORS: aceita lista separada por vírgula OU "*"
+# flash-lite tem cota free MUITO maior (~1500/dia) e qualidade ótima pro caso de uso
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
 
-# Cliente Gemini oficial (thread-safe, async via client.aio)
 gemini = genai.Client(api_key=GEMINI_API_KEY)
 
 app = FastAPI(title="Cartazista Pro API", version="21.0")
@@ -108,17 +108,29 @@ def _extract_json(text: str) -> dict:
 
 
 async def _ask_gemini(system: str, user: str) -> str:
-    """Chama Gemini via SDK oficial e retorna o texto da resposta."""
-    response = await gemini.aio.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=user,
-        config=types.GenerateContentConfig(
-            system_instruction=system,
-            response_mime_type="application/json",
-            temperature=0.7,
-        ),
-    )
-    return response.text or ""
+    """Chama Gemini via SDK oficial. Retry automático em 429/503 (até 3 tentativas)."""
+    last_err = None
+    for attempt in range(3):
+        try:
+            response = await gemini.aio.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=user,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    response_mime_type="application/json",
+                    temperature=0.7,
+                ),
+            )
+            return response.text or ""
+        except Exception as e:
+            last_err = e
+            msg = str(e)
+            if "429" in msg or "503" in msg or "RESOURCE_EXHAUSTED" in msg or "UNAVAILABLE" in msg:
+                # backoff: 1.5s, 4s
+                await asyncio.sleep(1.5 + attempt * 2.5)
+                continue
+            raise
+    raise last_err  # type: ignore
 
 
 # ---------- Endpoints ----------

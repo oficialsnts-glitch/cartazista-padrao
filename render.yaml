@@ -12,7 +12,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false           # defina no painel do Render
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+        value: gemini-2.5-flash-lite
       - key: CORS_ORIGINS
         value: "*"            # em produção, troque pelo domínio Vercel
       - key: PYTHON_VERSION
