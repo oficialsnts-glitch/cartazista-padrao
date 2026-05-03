@@ -29,6 +29,7 @@ const db = getFirestore(fbApp);
 const auth = getAuth(fbApp);
 
 let uid = null;
+let accessCode = localStorage.getItem("cartazista_access_code") || "";
 let sessionRef = null;
 let modelosRef = null;
 
@@ -1992,6 +1993,23 @@ function wire() {
   $("closePreview").onclick = () => $("previewOverlay").classList.remove("open");
   $("btnSalvarModelo").onclick = salvarModeloAtual;
   $("selectModelos").onchange = (e) => handleModeloSelect(e.target.value);
+  
+  if ($("inputAccessCode")) {
+    $("inputAccessCode").value = accessCode;
+    $("btnSyncCode").onclick = () => {
+      const code = $("inputAccessCode").value.trim();
+      if (!code) return toast("Digite um código", "error");
+      if (code === accessCode) return toast("Já sincronizado", "info");
+      if (confirm("Mudar o código de acesso? Isso carregará os modelos vinculados a este novo código.")) {
+        accessCode = code;
+        localStorage.setItem("cartazista_access_code", code);
+        updateFirebaseRefs();
+        load();
+        loadModelos();
+        toast("Sincronizado com sucesso!", "success");
+      }
+    };
+  }
 
   $("selectLayout").onchange = (e) => {
     snapshot(); state.layout = e.target.value; render(); save();
@@ -2145,6 +2163,22 @@ function dismissSplash() {
   setTimeout(() => { s.style.display = "none"; }, 600);
 }
 
+function updateFirebaseRefs() {
+  if (accessCode) {
+    // Se tiver código de acesso, usa uma coleção compartilhada baseada no código
+    sessionRef = doc(db, "shared_data", accessCode, "data", "session");
+    modelosRef = doc(db, "shared_data", accessCode, "data", "modelos");
+  } else if (uid) {
+    // Caso contrário, usa o UID anônimo do dispositivo
+    sessionRef = doc(db, "users", uid, "data", "session");
+    modelosRef = doc(db, "users", uid, "data", "modelos");
+  } else {
+    // Fallback global
+    sessionRef = doc(db, "projeto", "sessao_atual");
+    modelosRef = doc(db, "projeto", "modelos_salvos");
+  }
+}
+
 async function boot() {
   // Splash sempre desaparece, mesmo que algo abaixo falhe
   setTimeout(dismissSplash, 1200);
@@ -2162,17 +2196,15 @@ async function boot() {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           uid = user.uid;
-          sessionRef = doc(db, "users", uid, "data", "session");
-          modelosRef = doc(db, "users", uid, "data", "modelos");
+          updateFirebaseRefs();
           unsubscribe();
           resolve();
         }
       });
     });
   } catch (e) {
-    console.warn("Auth falhou, usando doc global (fallback):", e);
-    sessionRef = doc(db, "projeto", "sessao_atual");
-    modelosRef = doc(db, "projeto", "modelos_salvos");
+    console.warn("Auth falhou, usando fallback:", e);
+    updateFirebaseRefs();
   }
 
   await load();

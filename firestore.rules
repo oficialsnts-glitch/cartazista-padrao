@@ -1,12 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que usuários autenticados (incluindo anônimos) acessem seus próprios dados
+    // Permite que usuários autenticados acessem seus próprios dados privados
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Fallback para o modo global (se necessário, mas desencorajado para produção real)
+    // Permite acesso a dados compartilhados via Código de Acesso
+    // Qualquer usuário autenticado pode ler/gravar se souber o código (ID do documento)
+    match /shared_data/{accessCode}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Fallback global
     match /projeto/{document=**} {
       allow read, write: if request.auth != null;
     }
