@@ -114,11 +114,7 @@
 
   <div class="spacer"></div>
   <div class="tbar-group" style="margin-left: 10px; border-left: 1px solid #333; padding-left: 10px;">
-    <div style="display: flex; align-items: center; gap: 5px;">
-      <i class="fa-solid fa-key" style="color: #f1c40f; font-size: 12px;"></i>
-      <input type="text" id="inputAccessCode" placeholder="Cód. Acesso" title="Use o mesmo código em outros dispositivos para ver seus modelos" style="width: 100px; height: 28px; font-size: 11px; background: #1a2029; border: 1px solid #333; color: #fff; border-radius: 4px; padding: 0 5px;" />
-      <button class="btn btn-sm" id="btnSyncCode" title="Sincronizar com este código" style="height: 28px; padding: 0 8px; font-size: 11px;"><i class="fa-solid fa-sync"></i></button>
-    </div>
+    <button class="btn btn-primary btn-sm" id="btnAbrirLogin" title="Entrar na conta"><i class="fa-solid fa-user"></i> <span id="userStatus">Entrar</span></button>
   </div>
 
   <div class="spacer"></div>
@@ -382,6 +378,30 @@ Coca-Cola 2L 9,99"></textarea>
       </div>
       <div id="iconGrid" class="icon-grid mt-10"></div>
       <div class="small mt-6">Clique em um ícone para adicioná-lo ao cartaz. Use a cor escolhida.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MODAL: Login ============== -->
+<div class="modal-backdrop" id="modalLogin">
+  <div class="modal" style="max-width: 350px;">
+    <div class="modal-header">
+      <h2><i class="fa-solid fa-user-lock"></i> Acesso Restrito</h2>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" placeholder="loja1@gestor.com" value="loja1@gestor.com" />
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="loginPass" placeholder="••••••••" value="admpadrao" />
+      </div>
+      <div id="loginMsg" class="small" style="color: var(--danger); margin-top: 5px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="btnLoginExecutar" style="width: 100%;">Entrar</button>
     </div>
   </div>
 </div>

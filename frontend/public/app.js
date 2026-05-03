@@ -12,7 +12,7 @@ import {
   getFirestore, doc, setDoc, getDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, onAuthStateChanged
+  getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ---------- Firebase ----------
@@ -29,7 +29,6 @@ const db = getFirestore(fbApp);
 const auth = getAuth(fbApp);
 
 let uid = null;
-let accessCode = localStorage.getItem("cartazista_access_code") || "";
 let sessionRef = null;
 let modelosRef = null;
 
@@ -1994,22 +1993,35 @@ function wire() {
   $("btnSalvarModelo").onclick = salvarModeloAtual;
   $("selectModelos").onchange = (e) => handleModeloSelect(e.target.value);
   
-  if ($("inputAccessCode")) {
-    $("inputAccessCode").value = accessCode;
-    $("btnSyncCode").onclick = () => {
-      const code = $("inputAccessCode").value.trim();
-      if (!code) return toast("Digite um código", "error");
-      if (code === accessCode) return toast("Já sincronizado", "info");
-      if (confirm("Mudar o código de acesso? Isso carregará os modelos vinculados a este novo código.")) {
-        accessCode = code;
-        localStorage.setItem("cartazista_access_code", code);
-        updateFirebaseRefs();
-        load();
-        loadModelos();
-        toast("Sincronizado com sucesso!", "success");
+  $("btnAbrirLogin").onclick = () => {
+    if (auth.currentUser && !auth.currentUser.isAnonymous) {
+      if (confirm("Deseja sair da conta?")) {
+        signOut(auth).then(() => {
+          window.location.reload();
+        });
       }
-    };
-  }
+    } else {
+      openModal("modalLogin");
+    }
+  };
+
+  $("btnLoginExecutar").onclick = async () => {
+    const email = $("loginEmail").value.trim();
+    const pass = $("loginPass").value.trim();
+    const msg = $("loginMsg");
+    if (!email || !pass) return msg.textContent = "Preencha todos os campos";
+    
+    msg.textContent = "Entrando...";
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      msg.textContent = "";
+      $("modalLogin").classList.remove("open");
+      toast("Login realizado com sucesso!", "success");
+    } catch (e) {
+      console.error(e);
+      msg.textContent = "Erro ao entrar. Verifique os dados.";
+    }
+  };
 
   $("selectLayout").onchange = (e) => {
     snapshot(); state.layout = e.target.value; render(); save();
@@ -2164,53 +2176,45 @@ function dismissSplash() {
 }
 
 function updateFirebaseRefs() {
-  if (accessCode) {
-    // Se tiver código de acesso, usa uma coleção compartilhada baseada no código
-    sessionRef = doc(db, "shared_data", accessCode, "data", "session");
-    modelosRef = doc(db, "shared_data", accessCode, "data", "modelos");
-  } else if (uid) {
-    // Caso contrário, usa o UID anônimo do dispositivo
+  if (uid) {
     sessionRef = doc(db, "users", uid, "data", "session");
     modelosRef = doc(db, "users", uid, "data", "modelos");
   } else {
-    // Fallback global
     sessionRef = doc(db, "projeto", "sessao_atual");
     modelosRef = doc(db, "projeto", "modelos_salvos");
   }
 }
 
 async function boot() {
-  // Splash sempre desaparece, mesmo que algo abaixo falhe
   setTimeout(dismissSplash, 1200);
-  // Segurança extra: se algo trava, força em 5s
   setTimeout(dismissSplash, 5000);
 
   try { wire(); } catch (e) { console.error("wire() erro:", e); }
   try { renderColorPalette(); } catch (e) { console.error("palette erro:", e); }
   try { renderPalettePresets(); } catch (e) { console.error("presets erro:", e); }
 
-  // Firebase anonymous auth
-  try {
-    await signInAnonymously(auth);
-    await new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          uid = user.uid;
-          updateFirebaseRefs();
-          unsubscribe();
-          resolve();
-        }
-      });
-    });
-  } catch (e) {
-    console.warn("Auth falhou, usando fallback:", e);
-    updateFirebaseRefs();
-  }
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      uid = user.uid;
+      updateFirebaseRefs();
+      
+      const statusEl = $("userStatus");
+      if (statusEl) {
+        statusEl.textContent = user.isAnonymous ? "Entrar" : user.email.split("@")[0];
+      }
 
-  await load();
-  await loadModelos();
+      await load();
+      await loadModelos();
+    } else {
+      // Se não houver usuário, tenta entrar anonimamente
+      try {
+        await signInAnonymously(auth);
+      } catch (e) {
+        console.error("Erro ao iniciar anonimamente", e);
+      }
+    }
+  });
 
-  // Register SW
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
