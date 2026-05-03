@@ -130,7 +130,7 @@ async function save() {
       cartazes: state.cartazes,
       layout: state.layout,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (e) {
     console.error("save error", e);
   }
@@ -145,13 +145,13 @@ async function load() {
       const d = snap.data();
       state.cartazes = migrateCartazes(d.cartazes || [], d.schemaVersion || 1);
       state.layout = d.layout || "grid-4";
-      $("selectLayout").value = state.layout;
+      if ($("selectLayout")) $("selectLayout").value = state.layout;
     }
     if (state.cartazes.length === 0) adicionarCartaz(true);
     render();
   } catch (e) {
     console.error("load error", e);
-    adicionarCartaz(true);
+    if (state.cartazes.length === 0) adicionarCartaz(true);
     render();
   }
 }
@@ -167,7 +167,11 @@ async function loadModelos() {
 
 async function saveModelos() {
   if (!modelosRef) return;
-  await setDoc(modelosRef, { modelos: state.modelos });
+  try {
+    await setDoc(modelosRef, { modelos: state.modelos }, { merge: true });
+  } catch (e) {
+    console.error("saveModelos error", e);
+  }
 }
 
 // Schema migration: add any new fields with defaults
@@ -2155,11 +2159,12 @@ async function boot() {
   try {
     await signInAnonymously(auth);
     await new Promise((resolve) => {
-      onAuthStateChanged(auth, (user) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
           uid = user.uid;
           sessionRef = doc(db, "users", uid, "data", "session");
           modelosRef = doc(db, "users", uid, "data", "modelos");
+          unsubscribe();
           resolve();
         }
       });

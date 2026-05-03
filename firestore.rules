@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permite que usuários autenticados (incluindo anônimos) acessem seus próprios dados
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Fallback para o modo global (se necessário, mas desencorajado para produção real)
+    match /projeto/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
