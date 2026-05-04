@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cartazista-cache-v2';
+const CACHE_NAME = 'cartazista-cache-v3';
 const assets = [
   './',
   './index.html',

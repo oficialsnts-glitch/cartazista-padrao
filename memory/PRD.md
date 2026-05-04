@@ -66,3 +66,24 @@
   - `buildItem`: respeita `it.w`/`it.h` em itens de texto
   - `TEMPLATES`: 14 builders independentes
   - `carregarTemplate`: simplificada (apenas `builder()` + push)
+
+## Bug Fix — Jan/2026: Modelos não salvavam no Firebase
+**Sintoma**: usuário relatou "só salva no localStorage em cache". Modelos apareciam na lista mas sumiam ao recarregar.
+
+**Causa raiz**: todos os modelos eram persistidos em UM ÚNICO documento `users/{uid}/data/modelos` via `setDoc({modelos: state.modelos})`. Como cada modelo guarda `dados` (cartazes) que incluem itens `tipo:"img"` com `val` em **base64 data URL** (de busca EAN/Open Food Facts, Nano Banana, e remoção de fundo), 2-3 modelos já estouravam o **limite de 1 MiB por documento do Firestore**. O `setDoc` falhava com erro silencioso (apenas `console.error`).
+
+**Correção** (`/app/frontend/public/app.js`):
+- Refatorado para subcoleção: `users/{uid}/modelos/{id}` (1 documento por modelo) — limite passa a ser 1 MiB *por modelo* em vez de para o conjunto
+- Imports adicionados: `collection, getDocs, deleteDoc, query, orderBy`
+- Novas funções: `saveModeloDoc`, `deleteModeloDoc` com toast de erro visível para o usuário
+- `loadModelos`: lê coleção ordenada por timestamp; **migração automática** do formato antigo (lê doc `data/modelos`, cria 1 doc por entrada, marca `migrated:true`)
+- `salvarModeloAtual`: gera `id` único, valida tamanho (<950KB) antes de gravar, mostra toast claro em caso de falha
+- `handleModeloSelect` (delete): usa `deleteDoc` da subcoleção
+- `updateFirebaseRefs`: aponta para `modelosColRef` (coleção) + `modelosLegacyRef` (doc antigo para migração)
+- `/app/frontend/public/sw.js`: cache name v2 → v3 (força usuários existentes a baixar novo `app.js`)
+
+**Validação**: `node --check app.js` passou; rules `users/{userId}/{document=**}` já cobrem a nova subcoleção.
+
+## Next Action Items
+- Testar em produção: salvar 3+ modelos com imagens, recarregar página, verificar persistência
+- Se ainda houver falha, abrir DevTools → Console para ver toast/log do erro Firebase exato

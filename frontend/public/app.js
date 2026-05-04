@@ -9,7 +9,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
-  getFirestore, doc, setDoc, getDoc, onSnapshot
+  getFirestore, doc, setDoc, getDoc, onSnapshot,
+  collection, getDocs, deleteDoc, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -30,7 +31,8 @@ const auth = getAuth(fbApp);
 
 let uid = null;
 let sessionRef = null;
-let modelosRef = null;
+let modelosColRef = null;       // subcoleção: users/{uid}/modelos
+let modelosLegacyRef = null;    // doc legado: users/{uid}/data/modelos (para migração)
 
 // ---------- API ----------
 const API = ((window.CARTAZISTA_CONFIG && window.CARTAZISTA_CONFIG.API_BASE) || "").replace(/\/$/, "") + "/api";
@@ -157,20 +159,95 @@ async function load() {
 }
 
 async function loadModelos() {
-  if (!modelosRef) return;
+  if (!modelosColRef) return;
   try {
-    const snap = await getDoc(modelosRef);
-    if (snap.exists()) state.modelos = snap.data().modelos || [];
+    // 1) Carrega da subcoleção (formato novo: 1 documento por modelo)
+    let snap;
+    try {
+      snap = await getDocs(query(modelosColRef, orderBy("timestamp", "desc")));
+    } catch {
+      // fallback caso algum doc não tenha timestamp
+      snap = await getDocs(modelosColRef);
+    }
+    state.modelos = [];
+    snap.forEach(d => {
+      const data = d.data() || {};
+      state.modelos.push({ id: d.id, ...data });
+    });
+
+    // 2) Migração automática do formato antigo (array em /data/modelos)
+    if (modelosLegacyRef) {
+      try {
+        const legacy = await getDoc(modelosLegacyRef);
+        if (legacy.exists()) {
+          const arr = (legacy.data() || {}).modelos || [];
+          if (arr.length > 0) {
+            for (const m of arr) {
+              const id = m.id || ("m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8));
+              try {
+                await setDoc(doc(modelosColRef, id), { ...m, id, timestamp: m.timestamp || Date.now() });
+                state.modelos.unshift({ id, ...m, timestamp: m.timestamp || Date.now() });
+              } catch (mig) {
+                console.error("migracao modelo falhou (provavel >1MiB)", mig, m?.nome);
+              }
+            }
+            // remove doc legado após migrar
+            try { await setDoc(modelosLegacyRef, { modelos: [], migrated: true }); } catch {}
+            // ordena por timestamp desc
+            state.modelos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            toast(`Modelos migrados para o novo formato (${arr.length})`, "success");
+          }
+        }
+      } catch (e) {
+        console.error("legacy load error", e);
+      }
+    }
+
     renderModelosSelect();
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error("loadModelos error", e);
+    toast("Falha ao carregar modelos do Firebase", "error");
+  }
 }
 
-async function saveModelos() {
-  if (!modelosRef) return;
+function _approxSizeBytes(obj) {
+  try { return new TextEncoder().encode(JSON.stringify(obj)).length; }
+  catch { return JSON.stringify(obj).length; }
+}
+
+async function saveModeloDoc(modelo) {
+  if (!modelosColRef) {
+    toast("Aguarde o login antes de salvar", "error");
+    return false;
+  }
+  // Aviso de limite por documento (1 MiB)
+  const size = _approxSizeBytes(modelo);
+  if (size > 950 * 1024) {
+    toast(
+      `Modelo muito grande (${(size / 1024).toFixed(0)} KB). Limite Firestore: 1 MiB. Reduza imagens.`,
+      "error", 5000
+    );
+    return false;
+  }
   try {
-    await setDoc(modelosRef, { modelos: state.modelos }, { merge: true });
+    await setDoc(doc(modelosColRef, modelo.id), modelo);
+    return true;
   } catch (e) {
-    console.error("saveModelos error", e);
+    console.error("saveModeloDoc error", e);
+    toast("Falha ao salvar modelo no Firebase: " + (e?.message || e), "error", 5000);
+    return false;
+  }
+}
+
+async function deleteModeloDoc(id) {
+  if (!modelosColRef || !id) return false;
+  try {
+    await deleteDoc(doc(modelosColRef, id));
+    return true;
+  } catch (e) {
+    console.error("deleteModeloDoc error", e);
+    toast("Falha ao excluir no Firebase: " + (e?.message || e), "error", 5000);
+    return false;
   }
 }
 
@@ -1837,11 +1914,20 @@ function csvGerar() {
 async function salvarModeloAtual() {
   const nome = prompt("Nome do modelo:", "Modelo " + new Date().toLocaleDateString("pt-BR"));
   if (!nome) return;
-  state.modelos.unshift({ nome: nome.trim(), layout: state.layout, dados: deepClone(state.cartazes), timestamp: Date.now() });
+  const modelo = {
+    id: "m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+    nome: nome.trim(),
+    layout: state.layout,
+    dados: deepClone(state.cartazes),
+    timestamp: Date.now(),
+  };
+  const ok = await saveModeloDoc(modelo);
+  if (!ok) return;
+  state.modelos.unshift(modelo);
+  // Limite local de 30 (mais antigos saem do dropdown — permanecem no Firestore)
   if (state.modelos.length > 30) state.modelos.pop();
-  await saveModelos();
   renderModelosSelect();
-  toast("Modelo salvo!", "success");
+  toast("Modelo salvo no Firebase!", "success");
 }
 
 function renderModelosSelect() {
@@ -1877,8 +1963,9 @@ async function handleModeloSelect(v) {
     const i = parseInt(v.slice(4));
     const m = state.modelos[i]; if (!m) return;
     if (confirm(`Excluir "${m.nome}"?`)) {
+      const ok = await deleteModeloDoc(m.id);
+      if (!ok) { $("selectModelos").value = ""; return; }
       state.modelos.splice(i, 1);
-      await saveModelos();
       renderModelosSelect();
       toast("Excluído", "success");
     }
@@ -2178,10 +2265,12 @@ function dismissSplash() {
 function updateFirebaseRefs() {
   if (uid) {
     sessionRef = doc(db, "users", uid, "data", "session");
-    modelosRef = doc(db, "users", uid, "data", "modelos");
+    modelosColRef = collection(db, "users", uid, "modelos");
+    modelosLegacyRef = doc(db, "users", uid, "data", "modelos");
   } else {
     sessionRef = doc(db, "projeto", "sessao_atual");
-    modelosRef = doc(db, "projeto", "modelos_salvos");
+    modelosColRef = collection(db, "projeto", "shared", "modelos");
+    modelosLegacyRef = doc(db, "projeto", "modelos_salvos");
   }
 }
 
