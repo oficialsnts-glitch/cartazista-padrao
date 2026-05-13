@@ -34,6 +34,23 @@ let sessionRef = null;
 let modelosColRef = null;       // subcoleção: users/{uid}/modelos
 let modelosLegacyRef = null;    // doc legado: users/{uid}/data/modelos (para migração)
 
+// Auth ready promise: garante que save/load só rodem após o Firebase Auth resolver
+// (evita perdas silenciosas quando o usuário interage antes do anon sign-in completar).
+let _authReadyResolve;
+let authReady = new Promise(r => { _authReadyResolve = r; });
+let authIsReady = false;
+function markAuthReady() {
+  if (!authIsReady) {
+    authIsReady = true;
+    _authReadyResolve(true);
+  }
+}
+// Permite "resetar" a promise quando o usuário troca de conta (logout/login)
+function resetAuthReady() {
+  authIsReady = false;
+  authReady = new Promise(r => { _authReadyResolve = r; });
+}
+
 // ---------- API ----------
 const API = ((window.CARTAZISTA_CONFIG && window.CARTAZISTA_CONFIG.API_BASE) || "").replace(/\/$/, "") + "/api";
 
@@ -92,6 +109,24 @@ function debounce(fn, ms) {
   return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 }
 
+// ---------- Sync status indicator ----------
+// Mostra ao usuário se os cartazes estão sendo salvos na nuvem em tempo real.
+function setSyncStatus(state) {
+  const el = $("syncStatus");
+  if (!el) return;
+  const map = {
+    connecting: { txt: "Conectando…", cls: "syncing", icon: "fa-cloud-arrow-up fa-fade" },
+    syncing:    { txt: "Sincronizando…", cls: "syncing", icon: "fa-cloud-arrow-up fa-fade" },
+    synced:     { txt: "Salvo na nuvem", cls: "ok",      icon: "fa-cloud-check" },
+    offline:    { txt: "Offline (não salvo)", cls: "warn", icon: "fa-cloud-bolt" },
+    error:      { txt: "Erro ao salvar",  cls: "err",     icon: "fa-triangle-exclamation" },
+  };
+  const cfg = map[state] || map.connecting;
+  el.innerHTML = `<i class="fa-solid ${cfg.icon}"></i> ${cfg.txt}`;
+  el.className = `sync-status ${cfg.cls}`;
+  el.dataset.state = state;
+}
+
 // ---------- History (debounced, snapshot-based) ----------
 function snapshot() {
   state.history.push(JSON.stringify({ cartazes: state.cartazes, layout: state.layout }));
@@ -125,6 +160,10 @@ function redoAction() {
 
 // ---------- Firebase persistence ----------
 async function save() {
+  // Aguarda o Firebase Auth resolver antes de tentar salvar
+  // (evita perdas silenciosas: clicar "Novo" antes do anon login completar
+  //  costumava cair em `if (!sessionRef) return` e nunca persistir).
+  await authReady;
   if (!sessionRef) return;
   try {
     await setDoc(sessionRef, {
@@ -133,13 +172,17 @@ async function save() {
       layout: state.layout,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+    setSyncStatus("synced");
   } catch (e) {
     console.error("save error", e);
+    setSyncStatus("error");
+    toast("Falha ao salvar no Firebase: " + (e?.message || e), "error", 4000);
   }
 }
 const saveDebounced = debounce(save, 600);
 
 async function load() {
+  await authReady;
   if (!sessionRef) return;
   try {
     const snap = await getDoc(sessionRef);
@@ -159,6 +202,7 @@ async function load() {
 }
 
 async function loadModelos() {
+  await authReady;
   if (!modelosColRef) return;
   try {
     // 1) Carrega da subcoleção (formato novo: 1 documento por modelo)
@@ -216,8 +260,9 @@ function _approxSizeBytes(obj) {
 }
 
 async function saveModeloDoc(modelo) {
+  await authReady;
   if (!modelosColRef) {
-    toast("Aguarde o login antes de salvar", "error");
+    toast("Conecte-se à sua conta para salvar modelos no Firebase", "error", 4000);
     return false;
   }
   // Aviso de limite por documento (1 MiB)
@@ -240,6 +285,7 @@ async function saveModeloDoc(modelo) {
 }
 
 async function deleteModeloDoc(id) {
+  await authReady;
   if (!modelosColRef || !id) return false;
   try {
     await deleteDoc(doc(modelosColRef, id));
@@ -2282,24 +2328,84 @@ async function boot() {
   try { renderColorPalette(); } catch (e) { console.error("palette erro:", e); }
   try { renderPalettePresets(); } catch (e) { console.error("presets erro:", e); }
 
+  setSyncStatus("connecting");
+
+  // Timeout de segurança: se o auth não resolver em 8s (ex: anônimo desabilitado),
+  // libera o app em modo "guest" para o usuário ao menos conseguir abrir o login.
+  const authTimeout = setTimeout(() => {
+    if (!authIsReady) {
+      console.warn("Auth timeout — liberando app em modo guest");
+      setSyncStatus("offline");
+      const statusEl = $("userStatus");
+      if (statusEl) statusEl.textContent = "Entrar";
+      // Garante UI funcional mesmo sem auth
+      if (state.cartazes.length === 0) adicionarCartaz(true);
+      render();
+      markAuthReady(); // libera promises, save() ainda detecta sessionRef=null
+    }
+  }, 8000);
+
   onAuthStateChanged(auth, async (user) => {
     if (user) {
+      const wasReady = authIsReady;
+      // Se troca de usuário (anon -> email ou email -> anon), preserva estado em memória
+      // para que ao logar o usuário não perca o trabalho atual se o destino estiver vazio.
+      const pendingCartazes = (state.cartazes && state.cartazes.length > 0) ? deepClone(state.cartazes) : null;
+      const pendingLayout = state.layout;
+
       uid = user.uid;
       updateFirebaseRefs();
-      
+      clearTimeout(authTimeout);
+
       const statusEl = $("userStatus");
       if (statusEl) {
-        statusEl.textContent = user.isAnonymous ? "Entrar" : user.email.split("@")[0];
+        statusEl.textContent = user.isAnonymous ? "Entrar" : (user.email ? user.email.split("@")[0] : "Conta");
+      }
+      const btn = $("btnAbrirLogin");
+      if (btn) btn.title = user.isAnonymous ? "Entrar na conta" : `Sair de ${user.email || ''}`;
+
+      markAuthReady();
+      setSyncStatus("syncing");
+
+      // Carrega cartazes do usuário atual
+      try {
+        const snap = await getDoc(sessionRef);
+        if (snap.exists()) {
+          const d = snap.data();
+          state.cartazes = migrateCartazes(d.cartazes || [], d.schemaVersion || 1);
+          state.layout = d.layout || "grid-4";
+          if ($("selectLayout")) $("selectLayout").value = state.layout;
+        } else if (wasReady && pendingCartazes && !user.isAnonymous) {
+          // Login após já estar em modo anônimo: migra o trabalho atual para a conta
+          state.cartazes = pendingCartazes;
+          state.layout = pendingLayout;
+          await save();
+          toast("Cartazes da sessão atual vinculados à sua conta", "success");
+        }
+        if (state.cartazes.length === 0) adicionarCartaz(true);
+        render();
+      } catch (e) {
+        console.error("load on auth error", e);
+        setSyncStatus("error");
+        if (state.cartazes.length === 0) adicionarCartaz(true);
+        render();
       }
 
-      await load();
       await loadModelos();
+      setSyncStatus("synced");
     } else {
-      // Se não houver usuário, tenta entrar anonimamente
+      // Sem usuário: tenta anon (modo offline-friendly)
+      setSyncStatus("connecting");
       try {
         await signInAnonymously(auth);
       } catch (e) {
-        console.error("Erro ao iniciar anonimamente", e);
+        console.error("Erro ao iniciar anonimamente (verifique se 'Anônimo' está ativado no Firebase Console)", e);
+        setSyncStatus("offline");
+        // Mesmo sem auth, libera o app — botão de Login ainda funciona
+        if (state.cartazes.length === 0) adicionarCartaz(true);
+        render();
+        markAuthReady();
+        toast("Modo offline. Faça login para salvar seus cartazes na nuvem.", "error", 5000);
       }
     }
   });
