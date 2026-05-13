@@ -98,9 +98,24 @@
         <option value="ultimas">Últimas Unidades</option>
       </optgroup>
     </select>
-    <select id="selectModelos" data-testid="select-modelos" title="Modelos salvos">
-      <option value="">Modelos salvos</option>
-    </select>
+    <div class="modelos-dd" id="modelosDD">
+      <button class="modelos-trigger" id="btnModelosDD" data-testid="btn-modelos-dd" type="button" title="Modelos salvos" aria-haspopup="listbox" aria-expanded="false">
+        <i class="fa-regular fa-folder-open"></i>
+        <span class="modelos-trigger-label">Modelos salvos</span>
+        <i class="fa-solid fa-chevron-down modelos-trigger-chev"></i>
+      </button>
+      <div class="modelos-pop" id="modelosPop" data-testid="modelos-pop" role="listbox" hidden>
+        <div class="modelos-pop-head">
+          <span><i class="fa-regular fa-folder-open"></i> Modelos salvos</span>
+          <span class="modelos-pop-count" id="modelosPopCount">0</span>
+        </div>
+        <div class="modelos-pop-list" id="modelosPopList"></div>
+        <div class="modelos-pop-empty" id="modelosPopEmpty">
+          <i class="fa-regular fa-folder"></i>
+          <span>Nenhum modelo salvo ainda</span>
+        </div>
+      </div>
+    </div>
     <button class="btn btn-success" id="btnSalvarModelo" data-testid="btn-salvar-modelo" title="Salvar atual como modelo"><i class="fa-solid fa-floppy-disk"></i></button>
   </div>
 

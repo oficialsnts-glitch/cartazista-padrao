@@ -1977,47 +1977,85 @@ async function salvarModeloAtual() {
 }
 
 function renderModelosSelect() {
-  const sel = $("selectModelos");
-  sel.innerHTML = '<option value="">Modelos salvos</option>';
+  const list = $("modelosPopList");
+  const pop = $("modelosPop");
+  const countEl = $("modelosPopCount");
+  if (!list || !pop) return;
+  list.innerHTML = "";
+  const count = state.modelos.length;
+  if (countEl) countEl.textContent = String(count);
+  pop.classList.toggle("is-empty", count === 0);
+
   state.modelos.forEach((m, i) => {
-    const o = document.createElement("option");
-    o.value = `load_${i}`;
-    o.textContent = m.nome;
-    sel.appendChild(o);
-    const d = document.createElement("option");
-    d.value = `del_${i}`;
-    d.textContent = `  ✕ excluir "${m.nome}"`;
-    sel.appendChild(d);
+    const row = document.createElement("div");
+    row.className = "modelo-row";
+    row.setAttribute("role", "option");
+    row.setAttribute("data-testid", `modelo-row-${i}`);
+    row.title = `Carregar "${m.nome}"`;
+
+    const name = document.createElement("span");
+    name.className = "modelo-row-name";
+    name.textContent = m.nome;
+
+    const date = document.createElement("span");
+    date.className = "modelo-row-date";
+    if (m.timestamp) {
+      try { date.textContent = new Date(m.timestamp).toLocaleDateString("pt-BR"); } catch { date.textContent = ""; }
+    }
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "modelo-row-del";
+    del.title = `Excluir "${m.nome}"`;
+    del.setAttribute("aria-label", `Excluir modelo ${m.nome}`);
+    del.setAttribute("data-testid", `modelo-del-${i}`);
+    del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+    del.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Excluir o modelo "${m.nome}"?`)) return;
+      const ok = await deleteModeloDoc(m.id);
+      if (!ok) return;
+      state.modelos.splice(i, 1);
+      renderModelosSelect();
+      toast("Modelo excluído", "success");
+    };
+
+    row.onclick = () => loadModeloAtIndex(i);
+
+    row.appendChild(name);
+    row.appendChild(date);
+    row.appendChild(del);
+    list.appendChild(row);
   });
 }
 
-async function handleModeloSelect(v) {
-  if (!v) return;
-  if (v.startsWith("load_")) {
-    const i = parseInt(v.slice(5));
-    const m = state.modelos[i];
-    if (!m) return;
-    if (confirm(`Carregar "${m.nome}"? Isso substitui os cartazes atuais.`)) {
-      snapshot();
-      state.cartazes = migrateCartazes(deepClone(m.dados), 1);
-      state.layout = m.layout || "grid-4";
-      $("selectLayout").value = state.layout;
-      render(); save();
-      toast(`"${m.nome}" carregado`, "success");
-    }
-  } else if (v.startsWith("del_")) {
-    const i = parseInt(v.slice(4));
-    const m = state.modelos[i]; if (!m) return;
-    if (confirm(`Excluir "${m.nome}"?`)) {
-      const ok = await deleteModeloDoc(m.id);
-      if (!ok) { $("selectModelos").value = ""; return; }
-      state.modelos.splice(i, 1);
-      renderModelosSelect();
-      toast("Excluído", "success");
-    }
-  }
-  $("selectModelos").value = "";
+async function loadModeloAtIndex(i) {
+  const m = state.modelos[i];
+  if (!m) return;
+  if (!confirm(`Carregar "${m.nome}"? Isso substitui os cartazes atuais.`)) return;
+  snapshot();
+  state.cartazes = migrateCartazes(deepClone(m.dados), 1);
+  state.layout = m.layout || "grid-4";
+  const layoutEl = $("selectLayout"); if (layoutEl) layoutEl.value = state.layout;
+  render(); save();
+  closeModelosDD();
+  toast(`"${m.nome}" carregado`, "success");
 }
+
+function toggleModelosDD(force) {
+  const pop = $("modelosPop");
+  const btn = $("btnModelosDD");
+  if (!pop || !btn) return;
+  const willOpen = (typeof force === "boolean") ? force : pop.hasAttribute("hidden");
+  if (willOpen) {
+    pop.removeAttribute("hidden");
+    btn.setAttribute("aria-expanded", "true");
+  } else {
+    pop.setAttribute("hidden", "");
+    btn.setAttribute("aria-expanded", "false");
+  }
+}
+function closeModelosDD() { toggleModelosDD(false); }
 
 // ---------- Zoom ----------
 function setZoom(z) {
@@ -2124,7 +2162,14 @@ function wire() {
   $("btnPreview").onclick = abrirPreview;
   $("closePreview").onclick = () => $("previewOverlay").classList.remove("open");
   $("btnSalvarModelo").onclick = salvarModeloAtual;
-  $("selectModelos").onchange = (e) => handleModeloSelect(e.target.value);
+  $("btnModelosDD").onclick = (e) => { e.stopPropagation(); toggleModelosDD(); };
+  document.addEventListener("click", (e) => {
+    const dd = $("modelosDD");
+    if (dd && !dd.contains(e.target)) closeModelosDD();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModelosDD();
+  });
   
   $("btnAbrirLogin").onclick = () => {
     if (auth.currentUser && !auth.currentUser.isAnonymous) {
