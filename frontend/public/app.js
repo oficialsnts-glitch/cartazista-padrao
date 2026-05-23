@@ -691,7 +691,7 @@ function buildItem(it, c) {
       // safe innerHTML (values escaped)
       const int = escapeHtml(v[0] || "0");
       const cents = escapeHtml(v[1] ? v[1].slice(0, 2).padEnd(2, "0") : "00");
-      el.innerHTML = `<small style="font-size:0.38em">R$</small>${int}<small style="font-size:0.58em; border-bottom:7px solid currentColor">,${cents}</small>`;
+      el.innerHTML = `<small style="font-size:0.38em">R$</small>${int}<small style="font-size:0.58em">,${cents}</small>`;
     } else if (it.tipo === "precoDe") {
       if (it.val) {
         el.innerHTML = `<span>R$ ${escapeHtml(it.val)}</span>`;
