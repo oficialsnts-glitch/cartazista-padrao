@@ -2456,7 +2456,26 @@ async function boot() {
   });
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      // Procura atualizações ao carregar
+      reg.update().catch(() => {});
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            // Nova versão pronta: assume controle imediatamente
+            newWorker.postMessage("SKIP_WAITING");
+          }
+        });
+      });
+    }).catch(() => {});
   }
 }
 

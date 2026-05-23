@@ -84,6 +84,18 @@
 
 **Validação**: `node --check app.js` passou; rules `users/{userId}/{document=**}` já cobrem a nova subcoleção.
 
+## Bug Fix — Jan/2026: Cache do Service Worker exigia Ctrl+Shift+R
+**Sintoma**: ao abrir o app, a lista de "Modelos salvos" mostrava a UI antiga (botão "Excluir" embaixo do nome) em vez da nova (lixeirinha). Só após Ctrl+Shift+R aparecia a UI correta.
+
+**Causa raiz**: `sw.js` usava estratégia **cache-first** para `app.js`/`style.css`/`index.html`. O navegador servia a versão antiga do JS direto do cache do Service Worker, ignorando updates no servidor. O bump v2→v3 da correção anterior só funcionou na primeira vez; novos deploys ficavam presos no cache v3.
+
+**Correção** (`/app/frontend/public/sw.js` + `app.js`):
+- `sw.js` reescrito com estratégia **network-first** para HTML/CSS/JS (cai para cache só se offline); cache-first mantido para imagens/fontes
+- Bump `CACHE_NAME` v3 → v4; `clients.claim()` no `activate` para o novo SW assumir controle imediato
+- Listener `message` para `SKIP_WAITING`
+- `app.js` registro do SW: `reg.update()` no boot; `updatefound` envia `SKIP_WAITING`; `controllerchange` recarrega a página **uma vez** automaticamente quando uma nova versão entra em ação
+- Resultado: a partir desta versão, qualquer update futuro chega sem Ctrl+Shift+R
+
 ## Next Action Items
-- Testar em produção: salvar 3+ modelos com imagens, recarregar página, verificar persistência
-- Se ainda houver falha, abrir DevTools → Console para ver toast/log do erro Firebase exato
+- Backlog: adicionar versão visível no rodapé/about para o usuário confirmar que está na build mais recente
+- Sugestão de melhoria: que tal um botão "Compartilhar modelo" gerando um link público (Firestore read-only) para o operador mandar pro WhatsApp da equipe? Aumenta muito o uso colaborativo entre lojas.
