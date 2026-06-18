@@ -1,101 +1,86 @@
-# Cartazista Pro 20 — PRD
+# Cartazista Pro 21 — PRD
 
-## Original Problem Statement
-- Sumir o placeholder cinza quando não tem imagem
-- Refazer todos os 14 templates com identidades visuais ÚNICAS (não mais "cópias" do layout IA)
-- Templates funcionam independentes do cartazFromAI
-- Repo: https://github.com/oficialsnts-glitch/cartazista-padrao
-- Live: https://cartazista-padrao.vercel.app/
+## Original Problem Statement (sessão atual, Jan/2026)
+> "Meu app cartazista tem pequenos bugs a serem corrigidos, não sei exatamente em qual
+> cartaz mas identifiquei na versão 4x1 que não sai o preço em algum dos cartazes
+> gerados a partir do oitavo eu acho, de início remova a opção templates, vou usar
+> somente os modelos salvos que eu criei e salvei no firebase, me liste os pequenos
+> bugs após remover a guia templates"
 
 ## Architecture
 - Frontend estático: HTML + CSS + JS vanilla servido por `serve` em `/app/frontend/public`
-- Lib: html2canvas, jsPDF, qrcodejs, Firebase (auth anônimo + Firestore)
-- Backend FastAPI externo (Render): `cartazista-backend.onrender.com` para IA/Nano Banana
-- Renderização do cartaz: 397×561 px (grid-4), itens absolutos com `tipo` (head/desc/marca/peso/preco/precoDe/economia/bg/img/qr/tagBadge/custom)
+- Lib: html2canvas, jsPDF, qrcodejs, Firebase (auth anônimo+email + Firestore)
+- Backend FastAPI (Render): `cartazista-backend.onrender.com` para IA/Nano Banana
+- Renderização: 397×561 px (grid-4), itens absolutos por `tipo` (head/desc/marca/peso/preco/precoDe/economia/bg/img/qr/tagBadge/custom)
 
 ## Personas
-- Operador de PDV (papelão de promoção, supermercado/açougue/padaria)
-- Gerente de loja em datas comemorativas (Black Friday, Natal, Páscoa)
+- Operador de PDV (mercado/açougue/padaria) que quer cartazes rápidos via modelos próprios
+- Gerente de loja em datas comemorativas
 
 ## Core Requirements
-- 14 templates supermercadistas + datas comemorativas, layout único cada
-- Placeholder de imagem só aparece quando há imagem real
-- Editor permite editar todos os textos protegidos (head/desc/marca/peso/preco/precoDe/economia)
+- Modelos salvos no Firebase substituem totalmente a galeria de Templates fixos
+- Cada cartaz deve preservar TODOS os tipos protegidos (head/desc/marca/peso/preco/precoDe/economia)
+- Layout 4/folha (grid-4), 2/folha (grid-2) e 1/folha A4 (grid-1) devem renderizar
+  identicamente, apenas escalando via CSS
 
-## Implemented (Jan/2026)
-### Sessão atual
-- Placeholder cinza condicional: `_isImagePlaceholder` flag + filtro em `buildCartazArea` (esconde quando `cartaz.itens` não tem `tipo:"img"`)
-- Recentralização: `_centerWhenNoImg` + `_altX/_altW` reposiciona desc/marca/peso para centro quando não há imagem
-- `buildItem` agora respeita `it.w/it.h` em itens de texto (necessário para centralização full-width)
-- 14 templates re-escritos como BUILDERS auto-contidos (sem chamar `cartazFromAI`/`cartazBase`)
-- **Layout 1/folha e 2/folha agora preenchem o papel**:
-  - Wrapper `.cartaz-content` (397×561) com `transform: scale` por layout
-  - 4/folha: `scale(1, 1)` (perfeito)
-  - 2/folha: `scale(2, 1)` → metade superior + metade inferior da A4
-  - 1/folha: `scale(2, 2)` → ocupa A4 inteira
-  - `getLayoutScale()` ajusta drag/snap/alignar para coordenadas de design
-  1. promo — Mercado clássico vermelho/amarelo
-  2. preco — Preço gigante 210pt em fundo amarelo absoluto
-  3. marca — Premium dourado/preto Abril Fatface
-  4. acougue — Vermelho sangue + selo "FRESCO HOJE"
-  5. hortifruti — Verde sítio + selo "100% NATURAL"
-  6. padaria — Kraft marrom + Abril Fatface artesanal
-  7. bebidas — Gradiente azul gelo + Bungee "GELADA!"
-  8. relampago — Amarelo neon + faixa preta diagonal Bungee
-  9. leve3 — Roxo + laranja "LEVE 3 / PAGUE 2"
-  10. blackfriday — Preto absoluto + faixa amarela + selo "-50%"
-  11. natal — Verde escuro + dourado + faixa vermelha
-  12. pascoa — Pastel rosa/roxo/amarelo
-  13. novo — Lançamento azul vibrante + badge "NOVO"
-  14. ultimas — Vermelho urgência + zebra preto/vermelho
+## Implemented (Jan/2026 — sessão atual)
+- **Removida a guia "Templates" da toolbar** (`index.html`): `<select id="selectTemplate">`
+  com 14 opções (promo, preço, marca, açougue, hortifruti, padaria, bebidas, relâmpago,
+  leve3, blackfriday, natal, páscoa, novo, ultimas) foi totalmente removida.
+- **Removidos do `app.js`**: const `TEMPLATES` (~280 linhas), função `carregarTemplate`
+  e o handler `$("selectTemplate").onchange` em `wire()`.
+- **`sw.js` v5 → v6** para forçar atualização dos clientes existentes.
+- Auditoria detalhada de bugs entregue ao usuário (ver seção abaixo).
 
-## Backlog (P1/P2)
-- Variar fontes em mais templates (atualmente Anton/Bebas/Archivo Black/Bungee/Abril Fatface)
-- Adicionar templates específicos: Frios/Laticínios, Limpeza, Pet, Higiene
-- Suporte a círculos verdadeiros para selos (atualmente quadrados)
-- Modo "compacto" automático quando `desc` muito longo
+## Bugs identificados (aguardando confirmação do usuário)
+### Suspeitas para "preço some em alguns cartazes (4×1, a partir do 8º)"
+1. **Limite de 1 MiB do Firestore por documento**: `save()` ainda grava TODOS os cartazes
+   em um único doc `users/{uid}/data/session`. Cartazes com imagens base64 (EAN, Nano
+   Banana, remoção de fundo) estouram 1 MiB com poucos cartazes → `setDoc` falha
+   silenciosamente → no próximo load o estado volta truncado, sem alguns itens.
+   *Mesmo padrão do bug antigo já corrigido nos Modelos salvos.*
+2. **Paletas temáticas com 3ª cor branca** (`Premium`, `Black Friday`, `Natal`): em
+   `aplicarPaleta()` o preço recebe `c3 || "#000"`. Se c3 = `#ffffff` e o cartaz tem
+   fundo de bloco do preço `#f5f6f8` (cinza claro do `cartazFromAI`), o preço fica
+   branco em fundo branco → invisível.
+3. **`zOverride` no preço via menu de contexto**: "Enviar para trás" no preço seta
+   `zOverride = 1`, ficando ABAIXO dos itens `bg` (z=5) → preço escondido atrás
+   do fundo claro do cartaz.
+
+### Bugs menores / inconsistências
+4. **`renderModelosSelect`**: limite local de 30 modelos no dropdown silenciosamente
+   esconde modelos mais antigos (permanecem no Firestore, mas o usuário não vê).
+5. **Listener de `Esc` duplicado** em `wire()` (um global + um só para Esc).
+6. **`updateFirebaseRefs` quando uid é null** aponta para `doc(db, "projeto", "sessao_atual")`,
+   mas `firestore.rules` exige autenticação → save falha com PermissionDenied
+   (mascarado por `setSyncStatus("offline")`).
+7. **`buildItem` para `img` com `val=""`** cria `<img src="">` → request 404 inútil
+   para `/index.html`.
+8. **`aplicarPaleta`** não atualiza `tagBadge.bgCol` nem cores das tarjas (`bg`)
+   → resultado visual parcial ao aplicar paleta.
+9. **`migrateCartazes(arr, fromVersion)`** recebe `fromVersion` mas não usa →
+   parâmetro morto.
+10. **`zoomFit`** pode chamar `setZoom(NaN)` se a página ainda não renderizou
+    (offsetWidth/Height = 0).
+
+## Backlog
+- Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
+  por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.
+- Pré-validação de tamanho de cartaz antes do save (toast amigável quando estourar).
+- Cor de contraste automática: comparar `preco.col` com a média do `bg` mais próximo
+  e avisar quando contraste < AA.
+- "Enviar para trás" deve respeitar piso mínimo (z=6, acima de `bg`) para não
+  esconder texto.
+- Versão no rodapé/about (Backlog antigo, ainda pendente).
+- Botão "Compartilhar modelo" → link público read-only Firestore para WhatsApp.
 
 ## Next Tasks
-- Aguardar feedback do usuário sobre os 14 templates
-- Possíveis ajustes finos de cor/tipografia conforme preferência
+- Aguardar usuário responder sobre a auditoria + opcionalmente enviar screenshot
+  do cartaz com preço sumido (para confirmar qual das 3 suspeitas é a causa real).
+- Em seguida: aplicar correção definitiva ao bug confirmado (provavelmente
+  refatoração de `save()` para subcoleção).
 
-## Files Changed
-- `/app/frontend/public/app.js`
-  - `cartazFromAI`: adicionou `_isImagePlaceholder`, `_centerWhenNoImg`, `_altX`, `_altW`
-  - `buildCartazArea`: detecta `hasImage` e filtra placeholder + reposiciona texto
-  - `buildItem`: respeita `it.w`/`it.h` em itens de texto
-  - `TEMPLATES`: 14 builders independentes
-  - `carregarTemplate`: simplificada (apenas `builder()` + push)
-
-## Bug Fix — Jan/2026: Modelos não salvavam no Firebase
-**Sintoma**: usuário relatou "só salva no localStorage em cache". Modelos apareciam na lista mas sumiam ao recarregar.
-
-**Causa raiz**: todos os modelos eram persistidos em UM ÚNICO documento `users/{uid}/data/modelos` via `setDoc({modelos: state.modelos})`. Como cada modelo guarda `dados` (cartazes) que incluem itens `tipo:"img"` com `val` em **base64 data URL** (de busca EAN/Open Food Facts, Nano Banana, e remoção de fundo), 2-3 modelos já estouravam o **limite de 1 MiB por documento do Firestore**. O `setDoc` falhava com erro silencioso (apenas `console.error`).
-
-**Correção** (`/app/frontend/public/app.js`):
-- Refatorado para subcoleção: `users/{uid}/modelos/{id}` (1 documento por modelo) — limite passa a ser 1 MiB *por modelo* em vez de para o conjunto
-- Imports adicionados: `collection, getDocs, deleteDoc, query, orderBy`
-- Novas funções: `saveModeloDoc`, `deleteModeloDoc` com toast de erro visível para o usuário
-- `loadModelos`: lê coleção ordenada por timestamp; **migração automática** do formato antigo (lê doc `data/modelos`, cria 1 doc por entrada, marca `migrated:true`)
-- `salvarModeloAtual`: gera `id` único, valida tamanho (<950KB) antes de gravar, mostra toast claro em caso de falha
-- `handleModeloSelect` (delete): usa `deleteDoc` da subcoleção
-- `updateFirebaseRefs`: aponta para `modelosColRef` (coleção) + `modelosLegacyRef` (doc antigo para migração)
-- `/app/frontend/public/sw.js`: cache name v2 → v3 (força usuários existentes a baixar novo `app.js`)
-
-**Validação**: `node --check app.js` passou; rules `users/{userId}/{document=**}` já cobrem a nova subcoleção.
-
-## Bug Fix — Jan/2026: Cache do Service Worker exigia Ctrl+Shift+R
-**Sintoma**: ao abrir o app, a lista de "Modelos salvos" mostrava a UI antiga (botão "Excluir" embaixo do nome) em vez da nova (lixeirinha). Só após Ctrl+Shift+R aparecia a UI correta.
-
-**Causa raiz**: `sw.js` usava estratégia **cache-first** para `app.js`/`style.css`/`index.html`. O navegador servia a versão antiga do JS direto do cache do Service Worker, ignorando updates no servidor. O bump v2→v3 da correção anterior só funcionou na primeira vez; novos deploys ficavam presos no cache v3.
-
-**Correção** (`/app/frontend/public/sw.js` + `app.js`):
-- `sw.js` reescrito com estratégia **network-first** para HTML/CSS/JS (cai para cache só se offline); cache-first mantido para imagens/fontes
-- Bump `CACHE_NAME` v3 → v4; `clients.claim()` no `activate` para o novo SW assumir controle imediato
-- Listener `message` para `SKIP_WAITING`
-- `app.js` registro do SW: `reg.update()` no boot; `updatefound` envia `SKIP_WAITING`; `controllerchange` recarrega a página **uma vez** automaticamente quando uma nova versão entra em ação
-- Resultado: a partir desta versão, qualquer update futuro chega sem Ctrl+Shift+R
-
-## Next Action Items
-- Backlog: adicionar versão visível no rodapé/about para o usuário confirmar que está na build mais recente
-- Sugestão de melhoria: que tal um botão "Compartilhar modelo" gerando um link público (Firestore read-only) para o operador mandar pro WhatsApp da equipe? Aumenta muito o uso colaborativo entre lojas.
+## Files Changed (sessão atual)
+- `/app/frontend/public/index.html` — removido `<select id="selectTemplate">` da toolbar
+- `/app/frontend/public/app.js` — removidos `TEMPLATES`, `carregarTemplate` e handler
+- `/app/frontend/public/sw.js` — `CACHE_NAME` v5 → v6
