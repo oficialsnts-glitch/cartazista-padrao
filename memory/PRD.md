@@ -63,6 +63,13 @@
 10. **`zoomFit`** pode chamar `setZoom(NaN)` se a página ainda não renderizou
     (offsetWidth/Height = 0).
 
+## Implemented (Jun/2026)
+- **Posição dos centavos configurável**: nova seção "Posição dos centavos" na aba
+  Estilo do editor (só aparece quando o item selecionado é `preco`). Select
+  `#inCentsAlign` com opções Embaixo (padrão) / Em cima, gravado em `it.centsAlign`.
+  Aplicado em `buildItem` via `vertical-align` no `<small>` dos centavos → vale para
+  edição, PNG e PDF. `sw.js` v6 → v7.
+
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
   por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.

@@ -691,7 +691,8 @@ function buildItem(it, c) {
       // safe innerHTML (values escaped)
       const int = escapeHtml(v[0] || "0");
       const cents = escapeHtml(v[1] ? v[1].slice(0, 2).padEnd(2, "0") : "00");
-      el.innerHTML = `<small style="font-size:0.38em">R$</small>${int}<small style="font-size:0.58em">,${cents}</small>`;
+      const centsVA = it.centsAlign === "top" ? "top" : "baseline";
+      el.innerHTML = `<small style="font-size:0.38em">R$</small>${int}<small style="font-size:0.58em; vertical-align:${centsVA}">,${cents}</small>`;
     } else if (it.tipo === "precoDe") {
       if (it.val) {
         el.innerHTML = `<span>R$ ${escapeHtml(it.val)}</span>`;
@@ -898,6 +899,16 @@ function mostrarNoPainel(it, c) {
   $("inW").value = it.w || 0;
   $("inH").value = it.h || 0;
   $("inRot").value = it.rot || 0;
+  // Posição dos centavos: só faz sentido para o item de preço
+  const secCent = $("secaoCentavos");
+  if (secCent) {
+    if (it.tipo === "preco") {
+      secCent.style.display = "block";
+      $("inCentsAlign").value = it.centsAlign === "top" ? "top" : "bottom";
+    } else {
+      secCent.style.display = "none";
+    }
+  }
   // Tamanho (largura/altura) agora disponível para QUALQUER item — edição livre
   $("secaoFundo").style.display = "block";
   // Atualiza proporção base quando troca de item
@@ -993,6 +1004,7 @@ function atualizarEstilo() {
     if (!isNaN(newH)) d.h = newH;
   }
   d.rot = parseFloat($("inRot").value) || 0;
+  if (d.tipo === "preco") d.centsAlign = $("inCentsAlign").value === "top" ? "top" : "bottom";
   d.shadow = $("inShadow").checked;
   d.shadowCol = $("inShadowColor").value;
   d.shadowBlur = parseInt($("inShadowBlur").value) || 8;
@@ -1960,7 +1972,7 @@ function wire() {
   ["inFont","inSize","inColor","inW","inH","inRot",
    "inShadow","inShadowColor","inShadowBlur",
    "inStroke","inStrokeColor","inStrokeWidth",
-   "inGradient","inGradC1","inGradC2","inGradientDir"].forEach(id => {
+   "inGradient","inGradC1","inGradC2","inGradientDir","inCentsAlign"].forEach(id => {
     $(id)?.addEventListener("input", atualizarEstilo);
     $(id)?.addEventListener("change", atualizarEstilo);
   });
