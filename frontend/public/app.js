@@ -2438,6 +2438,7 @@ async function loadModeloAtIndex(i) {
   if (m.isNew) {
     m.isNew = false;
     if (modelosColRef) { try { await setDoc(doc(modelosColRef, m.id), { isNew: false }, { merge: true }); } catch (e) { console.error("clear isNew error", e); } }
+    renderModelosSelect();
   }
   snapshot();
   state.cartazes = migrateCartazes(deepClone(m.dados), 1);

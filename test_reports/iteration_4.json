@@ -1,0 +1,34 @@
+{
+  "summary": "E2E frontend testing for two new features on 'Modelos salvos': (1) NOVO badge on freshly received (admin-shared) models and (2) RENAME model button. Ran the full Passo A→D admin/user flow against the real Firebase-backed static frontend. RENAME works end-to-end. NOVO badge appears correctly on newly received modelo (Passo C). BUG: opening a NOVO modelo does NOT remove the badge from the in-session dropdown DOM (badge only disappears after a page reload, because the Firestore isNew:false update is persisted correctly but renderModelosSelect() is never re-invoked after loadModeloAtIndex clears m.isNew locally).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "loadModeloAtIndex() / Modelos salvos dropdown",
+        "issue": "After opening (loading) a modelo that has isNew=true, the local m.isNew is set to false and setDoc({isNew:false},{merge:true}) is persisted, but renderModelosSelect() is NOT called. Because toggleModelosDD only toggles visibility (does not rebuild the list DOM), reopening the dropdown in the same session still shows the stale .modelo-badge-new element. After a page reload the badge is correctly absent (persistence works).",
+        "selector": "[data-testid^='modelo-badge-new-']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_4.json"],
+  "action_items": [
+    "In /app/frontend/public/app.js, inside loadModeloAtIndex() (~line 2437-2448), call renderModelosSelect() right after `m.isNew = false;` (or immediately before/after closeModelosDD()) so the dropdown DOM reflects the cleared isNew state in the same session. Example: `if (m.isNew) { m.isNew = false; try { if (modelosColRef) await setDoc(doc(modelosColRef, m.id), { isNew: false }, { merge: true }); } catch (e) { console.error(e); } renderModelosSelect(); }`"
+  ],
+  "critical_code_review_comments": [
+    "loadModeloAtIndex clears local isNew but never re-renders the modelos list DOM; this is the root cause of the NOVO badge sticking within a session (see action_items).",
+    "toggleModelosDD() only toggles hidden attribute; the list is only rebuilt when renderModelosSelect() is explicitly called. Any operation mutating state.modelos should call renderModelosSelect() (rename already does this correctly — line 2429).",
+    "renomearModeloAtIndex() correctly stops propagation on the pencil button click and does NOT trigger the 'Carregar' confirm — verified.",
+    "app.js is ~2939 lines — still recommend splitting into modules (auth, inbox, admin, modelos, render)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "80% (4 of 5 sub-tests pass; Passo D fails in-session)"},
+  "test_credentials": "Admin: oficialsnts@gmail.com / 0fici@lSnts27 ; User: loja1@gestor.com / admpadrao",
+  "seed_data_creation": "Passo A creates one new shares/{id} (audience=all). Passo C imports it into users/{uid}/modelos for loja1 with isNew=true. Renamed modelo persisted as 'TESTE RENOMEADO QA' during the RENAME sub-test. loja1 now has 13 accumulated modelos.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Feature 1 (NOVO badge) partially works: badge shows correctly on freshly received modelo (data-testid modelo-badge-new-0 present at top after checkInbox). Feature 2 (RENAME) fully works: [data-testid='modelo-ren-0'] opens prompt('Novo nome do modelo:'), does NOT trigger the 'Carregar' confirm, updates state.modelos, calls renderModelosSelect and shows toast. The single failure is that clicking modelo-row-0 to open a NOVO modelo does not visually clear the badge in the same session — the Firestore document IS updated with isNew:false (verified by fresh-session reload showing no badge), but the DOM element remains until a re-render. Fix is a one-line renderModelosSelect() call inside loadModeloAtIndex() after clearing m.isNew. After the fix, retest Passo D specifically.",
+  "rca of the issue": "BUG RCA — NOVO badge not cleared in-session on open. Repro: (1) admin sends a page share; (2) loja1 logs in, checkInbox creates modelo with isNew:true and renderModelosSelect draws the badge; (3) click [data-testid='modelo-row-0'] and accept the 'Carregar' confirm; (4) reopen the dropdown via [data-testid='btn-modelos-dd'] — the badge is STILL rendered on that row. Root cause: loadModeloAtIndex() at /app/frontend/public/app.js ~line 2433: it sets `m.isNew = false` locally and awaits setDoc({isNew:false},{merge:true}), then calls render() (page canvas) + save() + closeModelosDD(), but never calls renderModelosSelect(), so the dropdown DOM (built once at login) still contains the .modelo-badge-new span. On page reload, checkInbox / initial load reads Firestore where isNew=false, and the badge is correctly absent, proving persistence works — only the in-session UI refresh is missing. Mitigation: add `renderModelosSelect();` immediately after the `if (m.isNew) { ... }` block in loadModeloAtIndex()."
+}
