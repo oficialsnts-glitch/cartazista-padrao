@@ -174,6 +174,19 @@
   e persiste no Firebase. Bug intermediário (falta de re-render ao limpar o selo)
   corrigido com `renderModelosSelect()` em `loadModeloAtIndex`.
 
+## Implemented (Jun/2026 — Remoção de 5 funções)
+- Removidas a pedido do usuário: **Gerar cartaz com IA** (btn-ia-gerar + modalIA),
+  **Buscar por código de barras** (btn-ean + modalEAN), **Adicionar imagem** (btn-imagem),
+  **Removedor de fundo** (btn-remover-bg + item ctxRemoverFundo no menu de contexto) e
+  **Sugerir chamadas com IA** (btn-sugerir).
+- `app.js`: removidas as funções `adicionarImagem`, `buscarEAN`, `aplicarEAN`,
+  `loadImgly`, `removerFundoItem`, `iaGerarCartaz`, `aplicarIA`, `iaSugerirChamadas`
+  e o wiring correspondente; `showCtxMenu()` não referencia mais o botão de remover fundo.
+- Mantidos: Lote CSV, Galeria de ícones, QR, Modelos salvos (e o backend intacto).
+- **Verificado E2E (testing agent, iteration_6, frontend 100%)**: os 5 elementos ausentes
+  do DOM; recursos preservados funcionais; editor carrega sem erros; menu de contexto sem
+  "Remover fundo".
+
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
   por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.

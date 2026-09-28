@@ -1,0 +1,21 @@
+{
+  "summary": "Regression testing after removal of 5 features (IA Gerar, Adicionar imagem, Removedor de fundo, Código de barras/EAN, Sugerir chamadas com IA). Logged in as admin, editor loaded normally without fatal JS errors. All 5 removed testids and #ctxRemoverFundo confirmed absent. Preserved buttons (Lote CSV, Icones, QR, Modelos, Novo) visible and functional. modal-csv opens on btn-ia-lote. Modelos dropdown expands (aria-expanded=true). btn-novo creates a new poster. Right-click context menu shows only Duplicar/Trazer/Enviar/Excluir (no 'Remover fundo').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Firebase anonymous auth ainda é tentado no boot e gera erro 'auth/admin-restricted-operation' no console (esperado conforme nota do agente). Considerar remover a chamada signInAnonymously ou tratá-la silenciosamente para evitar ruído no console."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "admin: oficialsnts@gmail.com / 0fici@lSnts27",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Removal task validated end-to-end via UI. All removed elements absent from DOM; preserved elements functional. Only console noise is the expected anonymous auth 400 error before login (Firebase anonymous auth disabled)."
+}
