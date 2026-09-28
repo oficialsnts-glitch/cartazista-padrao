@@ -160,6 +160,20 @@
   imediatamente após o login, sem mexer na página atual. Funciona com as regras Firestore
   já deployadas (usuário grava seus próprios modelos + lê shares).
 
+## Implemented (Jun/2026 — Selo "NOVO" + botão Renomear em "Modelos salvos")
+- **Selo "NOVO"**: modelos recém-recebidos (compartilhados pelo admin, via `checkInbox`)
+  são salvos com `isNew:true`. `renderModelosSelect()` desenha um selo verde "NOVO"
+  (`.modelo-badge-new`, data-testid `modelo-badge-new-{i}`). Ao ABRIR o modelo
+  (`loadModeloAtIndex`), o selo é limpo (`isNew:false`, persistido via `setDoc` merge)
+  e a lista é re-renderizada na mesma sessão.
+- **Botão Renomear**: cada linha ganhou um botão lápis (`.modelo-row-ren`, data-testid
+  `modelo-ren-{i}`) → `renomearModeloAtIndex()` usa `prompt()` + `saveModeloDoc()`
+  (não dispara o "Carregar"; `stopPropagation`).
+- **Verificado E2E (testing agent, iterations 4 e 5, frontend 100%)**: selo aparece em
+  modelo recebido e some ao abrir (mesma sessão, sem reload); renomear altera o nome
+  e persiste no Firebase. Bug intermediário (falta de re-render ao limpar o selo)
+  corrigido com `renderModelosSelect()` em `loadModeloAtIndex`.
+
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
   por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.

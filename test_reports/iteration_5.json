@@ -1,0 +1,16 @@
+{
+  "summary": "Retest of Step D (bug HIGH from iteration 4): admin logged in, sent page to all users, logged out, logged in as loja1. Opened Modelos salvos dropdown — modelo-row-0 had NOVO badge (data-testid modelo-badge-new-0). Clicked modelo-row-0 and accepted the 'Carregar' confirm. Reopened dropdown (dropdown was still visible; badge count queried directly). Result: badge-new-0 is GONE and total NOVO badges decreased from 2 → 1 in the SAME SESSION, without any reload. Fix confirmed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"frontend": "100%"},
+  "test_credentials": "admin oficialsnts@gmail.com/0fici@lSnts27; user loja1@gestor.com/admpadrao",
+  "seed_data_creation": "Admin sent current page as new modelo to all users (creates a fresh NOVO entry on loja1).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Step D validated. Before click: total NOVO badges = 2, badge-new-0 present. After click on modelo-row-0 + accept confirm: badge-new-0 absent, total NOVO badges = 1. Same session, no reload. renderModelosSelect() call inside loadModeloAtIndex() works as expected.",
+  "rca of the issue": "Previous bug: loadModeloAtIndex() set m.isNew=false and persisted via setDoc merge, but did not re-render the dropdown DOM, so the visual NOVO badge stayed until next reload. Fix: call renderModelosSelect() right after clearing isNew — now the badge is removed immediately in the same session."
+}
