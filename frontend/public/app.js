@@ -172,6 +172,7 @@ async function checkInbox() {
         layout: modelLayout,
         dados,
         timestamp: Date.now(),
+        isNew: true,
       };
       if (modelosColRef) {
         try {
@@ -2364,11 +2365,29 @@ function renderModelosSelect() {
     name.className = "modelo-row-name";
     name.textContent = m.nome;
 
+    if (m.isNew) {
+      const badge = document.createElement("span");
+      badge.className = "modelo-badge-new";
+      badge.textContent = "NOVO";
+      badge.setAttribute("data-testid", `modelo-badge-new-${i}`);
+      name.appendChild(document.createTextNode(" "));
+      name.appendChild(badge);
+    }
+
     const date = document.createElement("span");
     date.className = "modelo-row-date";
     if (m.timestamp) {
       try { date.textContent = new Date(m.timestamp).toLocaleDateString("pt-BR"); } catch { date.textContent = ""; }
     }
+
+    const ren = document.createElement("button");
+    ren.type = "button";
+    ren.className = "modelo-row-ren";
+    ren.title = `Renomear "${m.nome}"`;
+    ren.setAttribute("aria-label", `Renomear modelo ${m.nome}`);
+    ren.setAttribute("data-testid", `modelo-ren-${i}`);
+    ren.innerHTML = '<i class="fa-solid fa-pen"></i>';
+    ren.onclick = (e) => { e.stopPropagation(); renomearModeloAtIndex(i); };
 
     const del = document.createElement("button");
     del.type = "button";
@@ -2391,15 +2410,35 @@ function renderModelosSelect() {
 
     row.appendChild(name);
     row.appendChild(date);
+    row.appendChild(ren);
     row.appendChild(del);
     list.appendChild(row);
   });
+}
+
+async function renomearModeloAtIndex(i) {
+  const m = state.modelos[i];
+  if (!m) return;
+  const novo = prompt("Novo nome do modelo:", m.nome || "");
+  if (novo === null) return;
+  const nome = novo.trim();
+  if (!nome || nome === m.nome) return;
+  m.nome = nome;
+  const ok = await saveModeloDoc(m);
+  if (!ok) return;
+  renderModelosSelect();
+  toast("Modelo renomeado", "success");
 }
 
 async function loadModeloAtIndex(i) {
   const m = state.modelos[i];
   if (!m) return;
   if (!confirm(`Carregar "${m.nome}"? Isso substitui os cartazes atuais.`)) return;
+  // Limpa o selo "NOVO" ao abrir o modelo (persiste no Firebase)
+  if (m.isNew) {
+    m.isNew = false;
+    if (modelosColRef) { try { await setDoc(doc(modelosColRef, m.id), { isNew: false }, { merge: true }); } catch (e) { console.error("clear isNew error", e); } }
+  }
   snapshot();
   state.cartazes = migrateCartazes(deepClone(m.dados), 1);
   state.layout = m.layout || "grid-4";

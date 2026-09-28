@@ -206,6 +206,25 @@ body {
 .modelo-row-del:active { transform: scale(0.95); }
 .modelo-row-del i { font-size: 12px; }
 
+.modelo-row-ren {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px; border: none;
+  background: transparent; color: rgba(255,255,255,0.45);
+  cursor: pointer; flex-shrink: 0;
+  transition: background-color .12s ease, color .12s ease, transform .12s ease;
+}
+.modelo-row-ren:hover { background: rgba(74, 144, 226, 0.18); color: #6db3ff; transform: scale(1.05); }
+.modelo-row-ren:active { transform: scale(0.95); }
+.modelo-row-ren i { font-size: 11px; }
+
+.modelo-badge-new {
+  display: inline-block; vertical-align: middle;
+  font-size: 9px; font-weight: 800; letter-spacing: .5px;
+  color: #10331f; background: #34d399;
+  padding: 1px 6px; border-radius: 999px; text-transform: uppercase;
+  box-shadow: 0 0 0 2px rgba(52,211,153,.18);
+}
+
 .modelos-pop-empty {
   display: none; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px; padding: 32px 16px; color: rgba(255,255,255,0.4);
