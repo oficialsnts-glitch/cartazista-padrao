@@ -54,15 +54,11 @@
   </div>
 
   <div class="tbar-group">
-    <button class="btn btn-ai" id="btnIAGerar" data-testid="btn-ia-gerar" title="Gerar cartaz com IA"><i class="fa-solid fa-wand-magic-sparkles"></i> IA Gerar</button>
     <button class="btn btn-orange" id="btnIALote" data-testid="btn-ia-lote" title="Gerar em lote (CSV)"><i class="fa-solid fa-table-list"></i> Lote CSV</button>
   </div>
 
   <div class="tbar-group">
-    <button class="btn" id="btnImagem" data-testid="btn-imagem" title="Adicionar imagem"><i class="fa-solid fa-image"></i></button>
-    <button class="btn" id="btnRemoverBg" data-testid="btn-remover-bg" title="Remover fundo da imagem selecionada (IA no navegador)"><i class="fa-solid fa-scissors"></i> Sem Fundo</button>
     <button class="btn" id="btnIcones" data-testid="btn-icones" title="Galeria de ícones"><i class="fa-solid fa-icons"></i></button>
-    <button class="btn" id="btnEAN" data-testid="btn-ean" title="Buscar por código de barras"><i class="fa-solid fa-barcode"></i></button>
     <button class="btn" id="btnQR" data-testid="btn-qr" title="QR Code"><i class="fa-solid fa-qrcode"></i></button>
     <button class="btn" id="btnTarja" data-testid="btn-tarja" title="Tarja / faixa"><i class="fa-solid fa-tag"></i></button>
     <button class="btn" id="btnBadge" data-testid="btn-badge" title="Selo diagonal"><i class="fa-solid fa-certificate"></i></button>
@@ -157,7 +153,6 @@
             <div class="campo"><label>Preço "DE" (riscado)</label><input type="text" id="inPrecoDe" placeholder="ex: 22,00" data-testid="in-preco-de" /></div>
             <div class="campo"><label>Rótulo economia</label><input type="text" id="inEconomia" placeholder="ECONOMIZE R$ 3,10" data-testid="in-economia" readonly /></div>
           </div>
-          <button class="btn btn-primary" id="btnSugerirChamadas" data-testid="btn-sugerir" style="width:100%"><i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir chamadas com IA</button>
         </div>
       </div>
 
@@ -287,37 +282,6 @@
       <button class="btn" id="btnFecharEditor" data-testid="btn-fechar-editor"><i class="fa-solid fa-xmark"></i></button>
     </div>
   </aside>
-</div>
-
-<!-- ============== MODAL: IA Gerar ============== -->
-<div class="modal-backdrop" id="modalIA" data-testid="modal-ia">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Gerar cartaz com IA</h2>
-      <button class="modal-close" data-close>&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="campo">
-        <label>Descreva o produto (uma linha basta)</label>
-        <textarea id="iaDesc" data-testid="ia-desc" placeholder="Ex: Leite Ninho 400g R$ 18,90 de R$ 22,00"></textarea>
-      </div>
-      <div class="campo">
-        <label>Tom</label>
-        <div class="chip-row" id="iaTomRow">
-          <div class="chip active" data-tom="promocional">Promocional</div>
-          <div class="chip" data-tom="elegante">Elegante</div>
-          <div class="chip" data-tom="divertido">Divertido</div>
-          <div class="chip" data-tom="agressivo">Agressivo</div>
-        </div>
-      </div>
-      <div id="iaResultado"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" data-close>Cancelar</button>
-      <button class="btn btn-ai" id="btnIAExecutar" data-testid="btn-ia-executar"><i class="fa-solid fa-wand-magic-sparkles"></i> Gerar</button>
-      <button class="btn btn-success hidden" id="btnIAAplicar" data-testid="btn-ia-aplicar"><i class="fa-solid fa-check"></i> Aplicar ao cartaz</button>
-    </div>
-  </div>
 </div>
 
 <!-- ============== MODAL: Lote CSV ============== -->
@@ -459,29 +423,6 @@ Coca-Cola 2L 9,99"></textarea>
 </div>
 
 
-<!-- ============== MODAL: EAN / Código de barras ============== -->
-<div class="modal-backdrop" id="modalEAN" data-testid="modal-ean">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-barcode"></i> Buscar produto por código de barras</h2>
-      <button class="modal-close" data-close>&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="campo">
-        <label>Código EAN / UPC (8 a 14 dígitos)</label>
-        <input type="text" id="eanInput" data-testid="ean-input" placeholder="Ex: 7891000100103" inputmode="numeric" />
-      </div>
-      <div class="small">Busca em base aberta (Open Food Facts). Alguns produtos podem não estar cadastrados.</div>
-      <div id="eanResultado"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" data-close>Cancelar</button>
-      <button class="btn btn-primary" id="btnEANBuscar" data-testid="btn-ean-buscar"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-      <button class="btn btn-success hidden" id="btnEANAplicar" data-testid="btn-ean-aplicar"><i class="fa-solid fa-check"></i> Criar cartaz</button>
-    </div>
-  </div>
-</div>
-
 <!-- ============== PREVIEW OVERLAY ============== -->
 <div class="preview-overlay" id="previewOverlay" data-testid="preview-overlay">
   <button class="close-preview" id="closePreview"><i class="fa-solid fa-xmark"></i></button>
@@ -493,7 +434,6 @@ Coca-Cola 2L 9,99"></textarea>
   <button id="ctxDuplicate"><i class="fa-regular fa-clone"></i> Duplicar item</button>
   <button id="ctxFront"><i class="fa-solid fa-layer-group"></i> Trazer para frente</button>
   <button id="ctxBack"><i class="fa-solid fa-layer-group fa-flip-vertical"></i> Enviar para trás</button>
-  <button id="ctxRemoverFundo" class="hidden"><i class="fa-solid fa-scissors"></i> Remover fundo (IA)</button>
   <div class="sep"></div>
   <button id="ctxDelete" style="color:var(--danger)"><i class="fa-solid fa-trash"></i> Excluir</button>
 </div>

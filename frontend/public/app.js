@@ -1711,15 +1711,6 @@ function ensureCartaz() {
   return state.sel.cartaz;
 }
 
-function adicionarImagem() {
-  const c = ensureCartaz(); if (!c) return toast("Crie um cartaz primeiro.", "error");
-  pickImage((url) => {
-    snapshot();
-    c.itens.push({ ...makeItem("img", url, 50, 50, 0, "", ""), w: 220, h: 180 });
-    render(); save();
-  });
-}
-
 function adicionarQR() {
   const c = ensureCartaz(); if (!c) return;
   const texto = prompt("Texto ou URL do QR Code:", "https://exemplo.com");
@@ -1841,120 +1832,6 @@ async function adicionarIcone(iconName, cor) {
     closeModal("modalIcones");
   } catch (e) {
     toast("Erro ao carregar ícone", "error");
-  }
-}
-
-// ---------- EAN lookup ----------
-let eanResultado = null;
-async function buscarEAN() {
-  const ean = ($("eanInput").value || "").replace(/\D/g, "");
-  if (ean.length < 8) return toast("Digite um EAN válido (8-14 dígitos)", "error");
-  const btn = $("btnEANBuscar");
-  btn.disabled = true; btn.innerHTML = '<span class="loader"></span> Buscando...';
-  try {
-    const r = await fetch(`${API}/ean/${ean}`);
-    const data = await r.json();
-    eanResultado = data;
-    if (data.found) {
-      $("eanResultado").innerHTML = `
-        <div class="ean-card">
-          ${data.imagem_data_url ? `<img src="${data.imagem_data_url}" alt="${escapeHtml(data.produto)}" />` : ""}
-          <div class="info">
-            <b>${escapeHtml(data.produto)}</b>
-            Marca: ${escapeHtml(data.marca) || "—"}<br>
-            Peso/Volume: ${escapeHtml(data.peso) || "—"}<br>
-            ${data.categoria ? `Categoria: ${escapeHtml(data.categoria)}<br>` : ""}
-            <small style="opacity:.6">Fonte: ${escapeHtml(data.fonte)}</small>
-          </div>
-        </div>
-        <div class="campo mt-10">
-          <label>Preço a anunciar</label>
-          <input type="text" id="eanPreco" placeholder="ex: 9,99" />
-        </div>
-        <div class="campo">
-          <label>Preço anterior (opcional, riscado)</label>
-          <input type="text" id="eanPrecoDe" placeholder="ex: 12,90" />
-        </div>`;
-      $("btnEANAplicar").classList.remove("hidden");
-      toast("Produto encontrado!", "success");
-    } else {
-      $("eanResultado").innerHTML = `<div class="ai-result-card"><b>Produto não encontrado.</b><br>Tente cadastrá-lo manualmente via IA Gerar ou preencher os campos.</div>`;
-      $("btnEANAplicar").classList.add("hidden");
-    }
-  } catch (e) {
-    toast("Erro: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Buscar';
-  }
-}
-
-function aplicarEAN() {
-  if (!eanResultado?.found) return;
-  const preco = ($("eanPreco")?.value || "0,00").replace(".", ",");
-  const precoDe = ($("eanPrecoDe")?.value || "").replace(".", ",");
-  snapshot();
-  const c = cartazFromAI({
-    chamada: "OFERTA",
-    produto: eanResultado.produto,
-    marca: eanResultado.marca || "",
-    peso: eanResultado.peso || "",
-    preco: preco,
-    preco_de: precoDe,
-    paleta: ["#d63031", "#ffffff", "#1e272e"],
-  });
-  // Imagem do produto à direita (se houver)
-  if (eanResultado.imagem_data_url) {
-    c.itens.push({ ...makeItem("img", eanResultado.imagem_data_url, 240, 95, 0, "", ""), w: 140, h: 140 });
-  }
-  state.cartazes.push(c);
-  render(); save();
-  closeModal("modalEAN");
-  $("eanInput").value = ""; $("eanResultado").innerHTML = "";
-  $("btnEANAplicar").classList.add("hidden");
-  eanResultado = null;
-  toast("Cartaz criado a partir do EAN", "success");
-}
-
-// ---------- Remoção de fundo (@imgly/background-removal via CDN) ----------
-let imglyModule = null;
-async function loadImgly() {
-  if (imglyModule) return imglyModule;
-  toast("Carregando modelo de remoção de fundo...", "info", 4000);
-  imglyModule = await import("https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.6.0/+esm");
-  return imglyModule;
-}
-
-async function removerFundoItem() {
-  if (!state.sel || state.sel.data.tipo !== "img") {
-    return toast("Selecione uma imagem primeiro", "error");
-  }
-  const it = state.sel.data;
-  const btn = $("btnRemoverBg");
-  const orig = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="loader"></span> Processando...';
-  try {
-    const imgly = await loadImgly();
-    const removeBg = imgly.default || imgly.removeBackground;
-    btn.innerHTML = '<span class="loader"></span> Removendo fundo...';
-    const blob = await removeBg(it.val, {
-      output: { format: "image/png", quality: 0.9 },
-    });
-    const dataUrl = await new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.readAsDataURL(blob);
-    });
-    snapshot();
-    it.val = dataUrl;
-    render(); save();
-    toast("Fundo removido!", "success");
-  } catch (e) {
-    console.error(e);
-    toast("Erro: " + (e.message || "falha ao remover fundo"), "error", 4000);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = orig;
   }
 }
 
@@ -2184,88 +2061,6 @@ async function gerarImagemWhats() {
   toast("Imagem gerada", "success");
 }
 
-// ---------- AI ----------
-async function iaGerarCartaz() {
-  const desc = $("iaDesc").value.trim();
-  if (!desc) return toast("Descreva o produto", "error");
-  const tom = qs(".chip.active", $("iaTomRow"))?.dataset.tom || "promocional";
-
-  const btn = $("btnIAExecutar");
-  btn.innerHTML = '<span class="loader"></span> Gerando...';
-  btn.disabled = true;
-  try {
-    const r = await fetch(`${API}/ai/generate-poster`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ descricao: desc, tom }),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    state.lastAISuggestions = data;
-    $("iaResultado").innerHTML = `
-      <div class="ai-result-card">
-        <div class="row"><b>Chamada</b><span>${escapeHtml(data.chamada)}</span></div>
-        <div class="row"><b>Produto</b><span>${escapeHtml(data.produto)}</span></div>
-        <div class="row"><b>Marca</b><span>${escapeHtml(data.marca)}</span></div>
-        <div class="row"><b>Peso</b><span>${escapeHtml(data.peso)}</span></div>
-        <div class="row"><b>Preço</b><span>R$ ${escapeHtml(data.preco)}${data.preco_de ? " <small>de R$ " + escapeHtml(data.preco_de) + "</small>" : ""}</span></div>
-        ${data.paleta?.length ? `<div class="row"><b>Paleta</b><span>${data.paleta.map(c => `<span style="display:inline-block;width:18px;height:18px;background:${c};border-radius:4px;vertical-align:middle;margin:0 2px"></span>`).join("")}</span></div>` : ""}
-      </div>
-    `;
-    $("btnIAAplicar").classList.remove("hidden");
-    toast("IA pronta! Clique em Aplicar.", "success");
-  } catch (e) {
-    toast("Erro ao gerar: " + e.message, "error");
-  } finally {
-    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Gerar';
-    btn.disabled = false;
-  }
-}
-
-function aplicarIA() {
-  const s = state.lastAISuggestions;
-  if (!s) return;
-  snapshot();
-  const c = cartazFromAI(s);
-  state.cartazes.push(c);
-  render(); save();
-  closeModal("modalIA");
-  $("iaDesc").value = "";
-  $("iaResultado").innerHTML = "";
-  $("btnIAAplicar").classList.add("hidden");
-  toast("Cartaz criado pela IA — gerando imagem...", "success");
-  // Tenta gerar foto do produto via Nano Banana (não bloqueia)
-  tentarGerarImagemProduto(c, s.produto, s.marca);
-}
-
-async function iaSugerirChamadas() {
-  const produto = $("inDesc").value || $("inHead").value || "produto";
-  const btn = $("btnSugerirChamadas");
-  btn.disabled = true; btn.innerHTML = '<span class="loader"></span> Buscando...';
-  try {
-    const r = await fetch(`${API}/ai/suggest-headlines`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ produto, quantidade: 5 }),
-    });
-    const data = await r.json();
-    const opts = data.chamadas || [];
-    if (opts.length === 0) throw new Error("vazio");
-    const lista = opts.map((c, i) => `${i + 1}) ${c}`).join("\n");
-    const escolhido = prompt(`Chamadas sugeridas pela IA:\n\n${lista}\n\nDigite o número (1-${opts.length}) ou cole seu próprio texto:`);
-    if (escolhido) {
-      const num = parseInt(escolhido);
-      const val = (num && opts[num - 1]) ? opts[num - 1] : escolhido.toUpperCase();
-      snapshot();
-      const c = state.sel?.cartaz || state.cartazes[0];
-      const head = c?.itens.find(i => i.tipo === "head");
-      if (head) { head.val = val; render(); save(); toast("Chamada aplicada", "success"); }
-    }
-  } catch (e) {
-    toast("Erro: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Sugerir chamadas com IA';
-  }
-}
-
 // ---------- CSV Batch ----------
 let csvParsed = [];
 async function csvAnalisar() {
@@ -2483,13 +2278,6 @@ function showCtxMenu(x, y) {
   const m = $("ctxMenu");
   m.classList.add("open");
   m.style.left = x + "px"; m.style.top = y + "px";
-  // "Remover fundo (IA)" só aparece em imagens
-  const isImg = state.sel?.data?.tipo === "img";
-  const removeBtn = $("ctxRemoverFundo");
-  if (removeBtn) {
-    if (isImg) removeBtn.classList.remove("hidden");
-    else removeBtn.classList.add("hidden");
-  }
 }
 function hideCtxMenu() { $("ctxMenu").classList.remove("open"); }
 
@@ -2553,10 +2341,7 @@ $("workspace")?.addEventListener("wheel", (e) => {
 function wire() {
   $("btnNovo").onclick = () => adicionarCartaz();
   $("btnDuplicar").onclick = duplicarCartaz;
-  $("btnImagem").onclick = adicionarImagem;
-  $("btnRemoverBg").onclick = removerFundoItem;
   $("btnIcones").onclick = () => { openModal("modalIcones"); renderIconCategorias(); renderIconGrid(); };
-  $("btnEAN").onclick = () => openModal("modalEAN");
   $("btnNovaPagina").onclick = novaPagina;
   $("btnQR").onclick = adicionarQR;
   $("btnTarja").onclick = adicionarTarja;
@@ -2636,7 +2421,6 @@ function wire() {
     snapshot(); state.layout = e.target.value; render(); save();
   };
 
-  $("btnIAGerar").onclick = () => openModal("modalIA");
   $("btnIALote").onclick = () => openModal("modalCSV");
   $("btnWhats").onclick = () => openModal("modalWhats");
 
@@ -2653,16 +2437,10 @@ function wire() {
   }));
   updateAdminUI();
 
-  $("btnIAExecutar").onclick = iaGerarCartaz;
-  $("btnIAAplicar").onclick = aplicarIA;
   $("btnCSVAnalisar").onclick = csvAnalisar;
   $("btnCSVGerar").onclick = csvGerar;
-  $("btnSugerirChamadas").onclick = iaSugerirChamadas;
 
   $("btnWhatsBaixar").onclick = gerarImagemWhats;
-  $("btnEANBuscar").onclick = buscarEAN;
-  $("btnEANAplicar").onclick = aplicarEAN;
-  $("eanInput")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); buscarEAN(); } });
   $("iconSearch")?.addEventListener("input", (e) => { iconSearch = e.target.value; renderIconGrid(); });
   $("iconColor")?.addEventListener("change", () => renderIconGrid());
   qsa("#modalWhats .chip").forEach(c => c.onclick = () => {
@@ -2780,10 +2558,6 @@ function wire() {
     }
     render(); save(); hideCtxMenu();
     toast("Enviado para trás", "success");
-  };
-  $("ctxRemoverFundo").onclick = () => {
-    hideCtxMenu();
-    removerFundoItem();
   };
   $("ctxDelete").onclick = () => { excluirItemSelecionado(); hideCtxMenu(); };
 }
