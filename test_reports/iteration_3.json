@@ -1,0 +1,24 @@
+{
+  "summary": "E2E validation of the reported bug fix: admin shares a page → common user receives it in 'Modelos salvos' (not pushed directly to page). Flow executed end-to-end via Playwright against the real Firebase env. Bug is FIXED.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_3.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "checkInbox() in /app/frontend/public/app.js (~line 127) now correctly persists received shares as modelos via setDoc(doc(modelosColRef, modeloId), modelo) and unshifts into state.modelos + renderModelosSelect(). Behavior verified.",
+    "Anonymous auth errors in console (auth/admin-restricted-operation) occur before login. Expected per instructions but noisy; consider gating signInAnonymously behind a feature flag or catching silently to reduce noise.",
+    "app.js is 2900 lines — recommend splitting into modules (auth, shares/inbox, admin, modelos, render) for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "test_credentials": "Admin: oficialsnts@gmail.com / 0fici@lSnts27 ; User: loja1@gestor.com / admpadrao (as provided)",
+  "seed_data_creation": "Each run of Passo 1 creates one new shares/{id} document in Firestore (audience=all) with the current admin page as modelo. Passo 3 imports it, creating a new users/{uid}/modelos/{id} for loja1.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug fixed and validated. When user 'loja1@gestor.com' logged in, dropdown 'Modelos salvos' opened with count=11 and top row was 'Página (4 cartaz(es) · 4 por folha)' dated 28/09/2026 — the exact modelo enviado by admin in Passo 1 (page had a 4-cartaz layout). The 'Você recebeu N modelo(s)' toast may fade quickly; the authoritative check is the presence of the new row and increased count in #modelosPopList/#modelosPopCount. checkInbox runs at login. Note: user already had many previous 'Página (8 cartaz(es) ...)' etc from earlier tests, showing accumulation works idempotently via importedShares set on session doc.",
+  "rca of the issue": "Original bug: checkInbox() was pushing received cartazes into state.cartazes (the user's active page) instead of storing them as reusable modelos. Fix: checkInbox() now clones the cartazes with fresh ids and persists them to users/{uid}/modelos via setDoc, updates state.modelos, re-renders the dropdown, and shows a toast. Verified E2E: admin sent a page and loja1 saw the new modelo at the top of 'Modelos salvos' immediately after login, without any modification to their current page."
+}

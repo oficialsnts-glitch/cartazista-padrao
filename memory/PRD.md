@@ -146,6 +146,20 @@
 
 ## Implemented (Jan/2026)
 
+## Implemented (Jun/2026 — Bug: modelo compartilhado não aparecia em "Modelos salvos")
+- **Reportado**: usuário comum recebia a NOTIFICAÇÃO de "modelo compartilhado", mas o
+  modelo (ex.: HORTIFRUTI enviado pelo admin) NÃO aparecia na lista "Modelos salvos" dele.
+- **RCA**: `checkInbox()` empurrava os cartazes recebidos para `state.cartazes` (a PÁGINA
+  ativa do usuário) em vez de salvá-los como modelo reutilizável.
+- **Fix (`app.js` checkInbox ~linha 127)**: ao receber um share (`sh.modelo` ou `sh.cartaz`),
+  clona os cartazes com ids novos e SALVA como modelo em `users/{uid}/modelos/{id}` via
+  `setDoc`, faz `state.modelos.unshift(modelo)` + `renderModelosSelect()`; toast
+  "Você recebeu N modelo(s) em Modelos salvos!". Não altera mais a página do usuário.
+- **Verificado E2E (testing agent, iteration_3, frontend 100%)**: admin "Enviar esta página"
+  (audience=all) → login loja1@gestor.com → o modelo apareceu no topo de "Modelos salvos"
+  imediatamente após o login, sem mexer na página atual. Funciona com as regras Firestore
+  já deployadas (usuário grava seus próprios modelos + lê shares).
+
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
   por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.
