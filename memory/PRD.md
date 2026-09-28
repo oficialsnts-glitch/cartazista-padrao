@@ -73,6 +73,9 @@
   - **Inbox automática**: no login, `checkInbox()` importa (cópia editável, ids novos)
     os shares destinados ao usuário (`audience=all` ou `targets` contém o uid),
     marcando importados em `users/{uid}/data/session.importedShares`.
+  - **Miniatura visual**: as listas do painel admin (cartazes da página e de todos os
+    usuários) mostram uma prévia real do cartaz (`renderCartazThumb`, reusa `buildItem`
+    escalado 397×561 → 70px). `sw.js` v10 → v11.
   - **Ver todos os cartazes salvos**: `collectionGroup("cartazes")` lista os cartazes
     de todos os usuários (com e-mail do dono via `directory`). Cada linha tem
     **Compartilhar** (envia aquele cartaz para os destinatários selecionados via

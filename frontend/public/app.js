@@ -170,6 +170,33 @@ function cartazLabel(c) {
   return `${prod}${preco ? " — R$ " + preco : ""}`;
 }
 
+// Miniatura visual de um cartaz (reusa a renderização real, escalada).
+const THUMB_BASE_W = 397, THUMB_BASE_H = 561;
+function renderCartazThumb(c, widthPx = 70) {
+  const scale = widthPx / THUMB_BASE_W;
+  const wrap = document.createElement("div");
+  wrap.className = "cartaz-thumb";
+  wrap.style.width = widthPx + "px";
+  wrap.style.height = Math.round(THUMB_BASE_H * scale) + "px";
+  const content = document.createElement("div");
+  content.className = "cartaz-content";
+  content.style.transform = `scale(${scale})`;
+  const hasImage = (c.itens || []).some(i => i.tipo === "img");
+  (c.itens || []).forEach(it => {
+    if (it._isImagePlaceholder && !hasImage) return;
+    if (it.tipo === "qr") return; // QR não renderiza em miniatura
+    const el = buildItem(it, c);
+    el.id = "";
+    if (!hasImage && it._centerWhenNoImg) {
+      el.style.left = (it._altX ?? 0) + "px";
+      if (!it.w && it._altW) el.style.width = it._altW + "px";
+    }
+    content.appendChild(el);
+  });
+  wrap.appendChild(content);
+  return wrap;
+}
+
 // ---------- Painel Admin ----------
 let _adminDirectory = [];
 let _adminAll = [];
@@ -186,12 +213,19 @@ async function openAdminPanel() {
 function renderAdminCartazList() {
   const box = $("adminCartazList");
   if (!box) return;
+  box.innerHTML = "";
   if (!state.cartazes.length) { box.innerHTML = '<div class="small">Nenhum cartaz na página atual.</div>'; return; }
-  box.innerHTML = state.cartazes.map((c, i) => `
-    <label class="admin-row">
-      <input type="checkbox" class="admin-cartaz-chk" value="${c.id}" ${i === 0 ? "checked" : ""} />
-      <span>Cartaz ${i + 1} — ${escapeHtml(cartazLabel(c))}</span>
-    </label>`).join("");
+  state.cartazes.forEach((c, i) => {
+    const label = document.createElement("label");
+    label.className = "admin-row";
+    const chk = document.createElement("input");
+    chk.type = "checkbox"; chk.className = "admin-cartaz-chk"; chk.value = c.id;
+    if (i === 0) chk.checked = true;
+    const span = document.createElement("span");
+    span.textContent = `Cartaz ${i + 1} — ${cartazLabel(c)}`;
+    label.append(chk, renderCartazThumb(c), span);
+    box.appendChild(label);
+  });
 }
 
 async function loadAdminDirectory() {
@@ -288,17 +322,28 @@ async function adminVerTodos() {
     // Cartazes de OUTROS usuários primeiro (é o que o admin quer compartilhar)
     rows.sort((a, b) => (a.ownerUid === uid ? 1 : 0) - (b.ownerUid === uid ? 1 : 0));
     _adminAll = rows;
-    box.innerHTML = rows.map((r, i) => {
+    box.innerHTML = "";
+    rows.forEach((r, i) => {
       const owner = emailByUid[r.ownerUid] || r.ownerUid;
-      const meuTag = r.ownerUid === uid ? ' (você)' : '';
-      return `<div class="admin-row">
-        <span style="flex:1">${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}${meuTag}</span></span>
-        <button class="btn btn-sm btn-success" data-share="${i}" title="Compartilhar este cartaz"><i class="fa-solid fa-paper-plane"></i> Compartilhar</button>
-        <button class="btn btn-sm" data-clone="${i}" title="Clonar para a sua página"><i class="fa-regular fa-clone"></i></button>
-      </div>`;
-    }).join("");
-    qsa("[data-clone]", box).forEach(b => b.onclick = () => adminClonarParaMim(parseInt(b.dataset.clone)));
-    qsa("[data-share]", box).forEach(b => b.onclick = () => adminCompartilharCartaz(parseInt(b.dataset.share)));
+      const meuTag = r.ownerUid === uid ? " (você)" : "";
+      const row = document.createElement("div");
+      row.className = "admin-row";
+      const span = document.createElement("span");
+      span.style.flex = "1";
+      span.innerHTML = `${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}${meuTag}</span>`;
+      const shareBtn = document.createElement("button");
+      shareBtn.className = "btn btn-sm btn-success";
+      shareBtn.title = "Compartilhar este cartaz";
+      shareBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Compartilhar';
+      shareBtn.onclick = () => adminCompartilharCartaz(i);
+      const cloneBtn = document.createElement("button");
+      cloneBtn.className = "btn btn-sm";
+      cloneBtn.title = "Clonar para a sua página";
+      cloneBtn.innerHTML = '<i class="fa-regular fa-clone"></i>';
+      cloneBtn.onclick = () => adminClonarParaMim(i);
+      row.append(renderCartazThumb(r.data), span, shareBtn, cloneBtn);
+      box.appendChild(row);
+    });
   } catch (e) {
     console.error("adminVerTodos error", e);
     box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("cartazes") para o admin.</div>';
