@@ -64,6 +64,18 @@
     (offsetWidth/Height = 0).
 
 ## Implemented (Jun/2026)
+- **Compartilhamento por PÁGINA/MODELO (não por célula)**: o compartilhamento agora
+  trata a página inteira (todos os cartazes + `layout` 1/2/4 por folha) como um único
+  modelo, entregue idêntico ao criado.
+  - `shares/{id}` grava `{ modelo: { cartazes[], layout }, ... }` (compat: `checkInbox`
+    ainda importa o formato antigo `cartaz`). Ao receber, aplica o `layout` do modelo.
+  - Painel admin "Enviar sua página": mostra miniatura da PÁGINA (`renderPageThumb`,
+    respeita layout) + contagem; envia `state.cartazes`+`state.layout` como modelo.
+  - "Modelos de cada usuário": 1 entrada por usuário (agrupa `collectionGroup('cartazes')`
+    + lê `users/{uid}/data/session` para layout/order), com miniatura da página,
+    Compartilhar (envia o modelo) e Clonar (carrega o modelo na página do admin).
+  - Verificado pelo testing agent: 100% frontend, 2 usuários listados como modelos.
+  - `sw.js` v11 → v12.
 - **Admin Master (`oficialsnts@gmail.com`)**: allowlist `ADMIN_EMAILS` no `app.js`.
   Botão "Admin" na toolbar (só aparece para o admin). Auto-registro só desse e-mail
   no 1º login (`createUserWithEmailAndPassword`) caso não exista.
