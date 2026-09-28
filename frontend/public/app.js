@@ -241,12 +241,15 @@ function renderPageThumb(cartazes, layout, maxW = 120) {
 // ---------- Painel Admin ----------
 let _adminDirectory = [];
 let _adminAll = [];
+let _adminModelos = [];   // modelos salvos de TODOS os usuários (collectionGroup "modelos")
 
 async function openAdminPanel() {
   if (!isAdminUser()) return toast("Acesso restrito ao administrador.", "error");
   openModal("modalAdmin");
   renderAdminCartazList();
   $("adminAllList").innerHTML = '<div class="small" style="opacity:.6">Clique em "Carregar" para listar todos os cartazes salvos.</div>';
+  const mBox = $("adminModelosList");
+  if (mBox) mBox.innerHTML = '<div class="small" style="opacity:.6">Clique em "Carregar modelos salvos" para listar os modelos de todos os usuários.</div>';
   await loadAdminDirectory();
   renderAdminUserList();
 }
@@ -427,6 +430,184 @@ async function adminCompartilharModelo(i) {
   const ok = await enviarShareModelo(m, `Modelo de ${owner}`);
   if (ok) toast(`Modelo enviado para ${dest}. Eles recebem exatamente igual ao abrir o app.`, "success", 4800);
   else toast("Falha ao compartilhar. Verifique as regras do Firestore.", "error", 4500);
+}
+
+// ---------- Admin: Modelos salvos de TODOS os usuários ----------
+// Lê a subcoleção "modelos" de todos os usuários (collectionGroup) e agrupa por dono.
+async function adminVerModelosTodos() {
+  if (!isAdminUser()) return;
+  const box = $("adminModelosList");
+  if (!box) return;
+  box.innerHTML = '<div class="small">Carregando modelos salvos de todos os usuários...</div>';
+  try {
+    if (!_adminDirectory.length) await loadAdminDirectory();
+    const emailByUid = {};
+    _adminDirectory.forEach(u => { emailByUid[u.uid] = u.email; });
+
+    const snap = await getDocs(collectionGroup(db, "modelos"));
+    _adminModelos = [];
+    snap.forEach(d => {
+      const parts = d.ref.path.split("/"); // users/{uid}/modelos/{id}
+      if (parts.length < 4 || parts[0] !== "users") return;
+      const ownerUid = parts[1];
+      const data = d.data() || {};
+      if (!Array.isArray(data.dados)) return; // ignora docs legados/inválidos
+      _adminModelos.push({
+        ownerUid,
+        id: d.id,
+        nome: data.nome || "Modelo",
+        layout: data.layout || "grid-4",
+        dados: data.dados,
+        timestamp: data.timestamp || 0,
+      });
+    });
+    renderAdminModelosList(emailByUid);
+  } catch (e) {
+    console.error("adminVerModelosTodos error", e);
+    box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("modelos") para o admin.</div>';
+  }
+}
+
+function renderAdminModelosList(emailByUid) {
+  const box = $("adminModelosList");
+  if (!box) return;
+  if (!_adminModelos.length) {
+    box.innerHTML = '<div class="small">Nenhum modelo salvo encontrado entre os usuários.</div>';
+    return;
+  }
+  // Agrupa por usuário (pasta)
+  const groups = {};
+  _adminModelos.forEach((m, idx) => { (groups[m.ownerUid] = groups[m.ownerUid] || []).push(idx); });
+
+  box.innerHTML = "";
+  Object.keys(groups)
+    .sort((a, b) => (emailByUid[a] || a).localeCompare(emailByUid[b] || b))
+    .forEach(ownerUid => {
+      const email = emailByUid[ownerUid] || ownerUid;
+      const meuTag = ownerUid === uid ? " (você)" : "";
+      const idxs = groups[ownerUid];
+
+      const folder = document.createElement("div");
+      folder.className = "admin-folder";
+      folder.setAttribute("data-testid", `admin-folder-${ownerUid}`);
+
+      const head = document.createElement("div");
+      head.className = "admin-folder-head";
+      head.innerHTML = `<i class="fa-regular fa-folder-open"></i> <b>${escapeHtml(email)}</b>${meuTag} <span class="small" style="opacity:.6">· ${idxs.length} modelo(s)</span>`;
+      folder.appendChild(head);
+
+      idxs.sort((a, b) => (_adminModelos[b].timestamp || 0) - (_adminModelos[a].timestamp || 0));
+      idxs.forEach(i => {
+        const m = _adminModelos[i];
+        const row = document.createElement("div");
+        row.className = "admin-row";
+        row.setAttribute("data-testid", `admin-modelo-row-${i}`);
+
+        const span = document.createElement("span");
+        span.style.flex = "1";
+        let dstr = "";
+        if (m.timestamp) { try { dstr = new Date(m.timestamp).toLocaleDateString("pt-BR"); } catch {} }
+        span.innerHTML = `<b>${escapeHtml(m.nome)}</b><br><span class="small" style="opacity:.7">${(m.dados || []).length} cartaz(es) · ${layoutLabel(m.layout)}${dstr ? " · " + dstr : ""}</span>`;
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "btn btn-sm";
+        copyBtn.setAttribute("data-testid", `admin-modelo-copiar-${i}`);
+        copyBtn.title = "Copiar este modelo para a sua tela (para editar)";
+        copyBtn.innerHTML = '<i class="fa-regular fa-clone"></i> Copiar';
+        copyBtn.onclick = () => adminCopiarModeloParaTela(i);
+
+        const repBtn = document.createElement("button");
+        repBtn.className = "btn btn-sm btn-success";
+        repBtn.setAttribute("data-testid", `admin-modelo-replicar-${i}`);
+        repBtn.title = "Replicar este modelo (como está) para os usuários";
+        repBtn.innerHTML = '<i class="fa-solid fa-users"></i> Replicar';
+        repBtn.onclick = () => adminReplicarModelo(i);
+
+        row.append(renderPageThumb(m.dados, m.layout), span, copyBtn, repBtn);
+        folder.appendChild(row);
+      });
+      box.appendChild(folder);
+    });
+}
+
+// Copia um modelo salvo (de qualquer usuário) para a tela do admin, para edição.
+function adminCopiarModeloParaTela(i) {
+  const m = _adminModelos[i];
+  if (!m) return;
+  if (!confirm(`Copiar o modelo "${m.nome}" para a sua tela? Isso substitui os cartazes atuais (você poderá editar antes de replicar).`)) return;
+  snapshot();
+  state.cartazes = migrateCartazes(deepClone(m.dados), 1);
+  (state.cartazes || []).forEach(cz => {
+    cz.id = uid_();
+    (cz.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
+  });
+  state.layout = m.layout || "grid-4";
+  const el = $("selectLayout"); if (el) el.value = state.layout;
+  render(); save();
+  closeModal("modalAdmin");
+  toast(`Modelo "${m.nome}" copiado para sua tela. Edite e use "Replicar minha tela" no painel Admin.`, "success", 5500);
+}
+
+// Núcleo: grava uma cópia do modelo na subcoleção "modelos" de cada destinatário.
+async function replicarModeloParaUsuarios(modelo, nome) {
+  const { audience, targets } = getAdminAudience();
+  let destUids;
+  if (audience === "selected") {
+    if (!targets.length) { toast("Selecione ao menos um usuário destinatário.", "info"); return 0; }
+    destUids = targets;
+  } else {
+    destUids = _adminDirectory.map(u => u.uid).filter(u => u && u !== uid);
+  }
+  if (!destUids.length) { toast("Nenhum usuário destinatário disponível.", "info"); return 0; }
+
+  const size = _approxSizeBytes(modelo);
+  if (size > 950 * 1024) {
+    toast(`Modelo grande demais (${(size / 1024).toFixed(0)} KB). Limite Firestore: 1 MiB. Reduza imagens.`, "error", 5000);
+    return 0;
+  }
+
+  let ok = 0;
+  await Promise.all(destUids.map(async (tUid) => {
+    const newId = "m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    const payload = {
+      id: newId,
+      nome: nome || modelo.nome || "Modelo",
+      layout: modelo.layout || "grid-4",
+      dados: deepClone(modelo.dados || []),
+      timestamp: Date.now(),
+      replicadoDe: auth.currentUser?.email || "admin",
+    };
+    try { await setDoc(doc(db, "users", tUid, "modelos", newId), payload); ok++; }
+    catch (e) { console.error("replicar modelo falhou p/", tUid, e); }
+  }));
+  return ok;
+}
+
+// Replica um modelo salvo específico (como está) para os destinatários.
+async function adminReplicarModelo(i) {
+  const m = _adminModelos[i];
+  if (!m) return;
+  const { audience } = getAdminAudience();
+  const destLabel = audience === "all" ? "todos os usuários" : "os usuários selecionados";
+  if (!confirm(`Replicar o modelo "${m.nome}" para ${destLabel}? Cada um recebe uma cópia editável em "Modelos salvos".`)) return;
+  const n = await replicarModeloParaUsuarios(m, m.nome);
+  if (n > 0) toast(`Modelo "${m.nome}" replicado para ${n} usuário(s).`, "success", 4800);
+  else toast("Nenhum modelo replicado. Verifique destinatários e regras do Firestore.", "error", 4500);
+}
+
+// Replica a TELA ATUAL do admin (após editar) como um novo modelo para os destinatários.
+async function adminReplicarTelaAtual() {
+  if (!isAdminUser()) return;
+  if (!state.cartazes.length) return toast("Sua tela está vazia.", "info");
+  const nome = prompt("Nome do modelo a replicar para os usuários:", "Modelo " + new Date().toLocaleDateString("pt-BR"));
+  if (!nome) return;
+  const btn = $("btnAdminReplicarTela");
+  if (btn) { btn.disabled = true; btn.textContent = "Replicando..."; }
+  const modelo = { nome: nome.trim(), layout: state.layout, dados: deepClone(state.cartazes) };
+  const n = await replicarModeloParaUsuarios(modelo, nome.trim());
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-users"></i> Replicar minha tela como modelo p/ todos'; }
+  if (n > 0) toast(`"${nome.trim()}" replicado para ${n} usuário(s) em Modelos salvos.`, "success", 5000);
+  else toast("Nenhum modelo replicado. Verifique destinatários e regras do Firestore.", "error", 4500);
 }
 
 // Mostra/esconde o botão Admin conforme o usuário logado
@@ -2412,6 +2593,8 @@ function wire() {
   $("btnAdmin")?.addEventListener("click", openAdminPanel);
   $("btnAdminEnviar")?.addEventListener("click", adminEnviarCopias);
   $("btnAdminVerTodos")?.addEventListener("click", adminVerTodos);
+  $("btnAdminModelosTodos")?.addEventListener("click", adminVerModelosTodos);
+  $("btnAdminReplicarTela")?.addEventListener("click", adminReplicarTelaAtual);
   qsa('input[name="adminAudience"]').forEach(r => r.addEventListener("change", () => {
     const sel = qs('input[name="adminAudience"]:checked')?.value === "selected";
     const box = $("adminUserSection");

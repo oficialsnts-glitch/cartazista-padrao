@@ -21,6 +21,12 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // Collection group: admin pode ler os MODELOS SALVOS de TODOS os usuários
+    // (necessário para "Modelos salvos de todos os usuários" no painel admin).
+    match /{path=**}/modelos/{modeloId} {
+      allow read: if isAdmin();
+    }
+
     // Diretório de usuários (email + uid). Cada um grava o seu; admin lê todos.
     match /directory/{userId} {
       allow read: if isAdmin();

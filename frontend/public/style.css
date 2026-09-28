@@ -640,6 +640,14 @@ textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-si
 .admin-row:hover { background: rgba(255,255,255,0.05); }
 .admin-row input { accent-color: var(--accent, #e74c3c); width: 15px; height: 15px; flex: 0 0 auto; }
 .admin-row span { flex: 1; }
+.admin-folder { border: 1px solid #2b3444; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.admin-folder-head { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 13px; background: rgba(231,76,60,0.10); border-bottom: 1px solid #2b3444; }
+.admin-folder-head b { font-weight: 700; }
+.admin-folder .admin-row { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.admin-folder .admin-row:last-child { border-bottom: none; }
+.admin-folder .btn-sm { flex: 0 0 auto; }
+#adminModelosList { max-height: 320px; }
+
 
 /* ===== Miniatura de cartaz no painel admin ===== */
 .cartaz-thumb {
