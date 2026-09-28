@@ -64,6 +64,24 @@
     (offsetWidth/Height = 0).
 
 ## Implemented (Jun/2026)
+- **Admin Master (`oficialsnts@gmail.com`)**: allowlist `ADMIN_EMAILS` no `app.js`.
+  Botão "Admin" na toolbar (só aparece para o admin). Auto-registro só desse e-mail
+  no 1º login (`createUserWithEmailAndPassword`) caso não exista.
+  - **Enviar cópias**: painel lista os cartazes da página + destinatários
+    (Todos / Selecionar). Cada envio grava um doc em `shares/{id}` com `audience`,
+    `targets[]`, `cartaz` e `fromUid`.
+  - **Inbox automática**: no login, `checkInbox()` importa (cópia editável, ids novos)
+    os shares destinados ao usuário (`audience=all` ou `targets` contém o uid),
+    marcando importados em `users/{uid}/data/session.importedShares`.
+  - **Ver todos os cartazes salvos**: `collectionGroup("cartazes")` lista os cartazes
+    de todos os usuários (com e-mail do dono via `directory`) e permite "Clonar p/ mim".
+  - **Diretório de usuários**: `upsertDirectory()` grava `directory/{uid}={email,uid}`
+    em cada login com e-mail, para o admin escolher destinatários.
+  - **firestore.rules** atualizadas (admin por `token.email`, collectionGroup de
+    cartazes p/ admin, `directory`, `shares`). ⚠️ PRECISA DE DEPLOY manual.
+  - `sw.js` v8 → v9. Verificado em Firebase real: login admin, painel, ver-todos OK.
+
+## Implemented (Jun/2026 — sessão anterior)
 - **Padrão da posição dos centavos**: a escolha Em cima/Embaixo feita no editor é
   salva em `localStorage` (`cartazista_centsAlign`) via `setCentsAlignDefault()` e
   aplicada automaticamente a NOVOS cartazes em `cartazFromAI` (`getCentsAlignDefault()`).

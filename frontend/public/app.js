@@ -10,10 +10,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, onSnapshot,
-  collection, getDocs, deleteDoc, query, orderBy
+  collection, getDocs, deleteDoc, query, orderBy, where, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut
+  getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ---------- Firebase ----------
@@ -87,6 +87,224 @@ function getCentsAlignDefault() {
 }
 function setCentsAlignDefault(v) {
   try { localStorage.setItem("cartazista_centsAlign", v === "top" ? "top" : "bottom"); } catch {}
+}
+
+// ---------- Admin Master ----------
+const ADMIN_EMAILS = ["oficialsnts@gmail.com"];
+function isAdminUser() {
+  const u = auth.currentUser;
+  return !!(u && u.email && ADMIN_EMAILS.includes(u.email.toLowerCase()));
+}
+
+// Guarda email+uid de quem faz login, para o admin poder escolher destinatários.
+async function upsertDirectory(user) {
+  if (!user || !user.email || !uid) return;
+  try {
+    await setDoc(doc(db, "directory", uid), {
+      uid,
+      email: user.email,
+      lastSeen: new Date().toISOString(),
+    }, { merge: true });
+  } catch (e) { console.error("directory upsert error", e); }
+}
+
+// ---------- Inbox de cartazes compartilhados ----------
+async function getImportedShareIds() {
+  try {
+    const s = await getDoc(sessionRef);
+    return (s.exists() && Array.isArray(s.data().importedShares)) ? s.data().importedShares : [];
+  } catch { return []; }
+}
+async function markImported(ids) {
+  try {
+    const cur = await getImportedShareIds();
+    const merged = Array.from(new Set([...cur, ...ids]));
+    await setDoc(sessionRef, { importedShares: merged }, { merge: true });
+  } catch (e) { console.error("markImported error", e); }
+}
+
+// Verifica se há cartazes enviados para este usuário e importa (cópia editável).
+async function checkInbox() {
+  if (!uid || !sessionRef) return;
+  try {
+    const sharesCol = collection(db, "shares");
+    const empty = { forEach() {} };
+    const [s1, s2] = await Promise.all([
+      getDocs(query(sharesCol, where("audience", "==", "all"))).catch(() => empty),
+      getDocs(query(sharesCol, where("targets", "array-contains", uid))).catch(() => empty),
+    ]);
+    const shares = {};
+    s1.forEach(d => { shares[d.id] = { id: d.id, ...(d.data() || {}) }; });
+    s2.forEach(d => { shares[d.id] = { id: d.id, ...(d.data() || {}) }; });
+
+    const imported = await getImportedShareIds();
+    const toMark = [];
+    let count = 0;
+    for (const sid in shares) {
+      if (imported.includes(sid)) continue;
+      const sh = shares[sid];
+      // Não reimporta cópias que eu mesmo enviei
+      if (sh.fromUid === uid) { toMark.push(sid); continue; }
+      if (!sh.cartaz) { toMark.push(sid); continue; }
+      const clone = deepClone(sh.cartaz);
+      clone.id = uid_();
+      (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
+      state.cartazes.push(clone);
+      toMark.push(sid);
+      count++;
+    }
+    if (toMark.length) await markImported(toMark);
+    if (count > 0) {
+      render();
+      await save();
+      toast(`Você recebeu ${count} cartaz(es) compartilhado(s)!`, "success", 4500);
+    }
+  } catch (e) { console.error("checkInbox error", e); }
+}
+
+// Rótulo curto de um cartaz (para listas do painel admin)
+function cartazLabel(c) {
+  const get = t => (c.itens || []).find(i => i.tipo === t)?.val || "";
+  const prod = get("desc") || "PRODUTO";
+  const preco = get("preco") || "";
+  return `${prod}${preco ? " — R$ " + preco : ""}`;
+}
+
+// ---------- Painel Admin ----------
+let _adminDirectory = [];
+let _adminAll = [];
+
+async function openAdminPanel() {
+  if (!isAdminUser()) return toast("Acesso restrito ao administrador.", "error");
+  openModal("modalAdmin");
+  renderAdminCartazList();
+  $("adminAllList").innerHTML = '<div class="small" style="opacity:.6">Clique em "Carregar" para listar todos os cartazes salvos.</div>';
+  await loadAdminDirectory();
+  renderAdminUserList();
+}
+
+function renderAdminCartazList() {
+  const box = $("adminCartazList");
+  if (!box) return;
+  if (!state.cartazes.length) { box.innerHTML = '<div class="small">Nenhum cartaz na página atual.</div>'; return; }
+  box.innerHTML = state.cartazes.map((c, i) => `
+    <label class="admin-row">
+      <input type="checkbox" class="admin-cartaz-chk" value="${c.id}" ${i === 0 ? "checked" : ""} />
+      <span>Cartaz ${i + 1} — ${escapeHtml(cartazLabel(c))}</span>
+    </label>`).join("");
+}
+
+async function loadAdminDirectory() {
+  const box = $("adminUserList");
+  try {
+    const snap = await getDocs(collection(db, "directory"));
+    _adminDirectory = [];
+    snap.forEach(d => { const v = d.data() || {}; if (v.uid && v.email) _adminDirectory.push(v); });
+    _adminDirectory.sort((a, b) => (a.email || "").localeCompare(b.email || ""));
+  } catch (e) {
+    console.error("loadAdminDirectory error", e);
+    if (box) box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar usuários (verifique as regras do Firestore).</div>';
+  }
+}
+
+function renderAdminUserList() {
+  const box = $("adminUserList");
+  if (!box) return;
+  const others = _adminDirectory.filter(u => u.uid !== uid);
+  if (!others.length) { box.innerHTML = '<div class="small">Nenhum outro usuário registrado ainda. Peça para eles abrirem o app e fazerem login.</div>'; return; }
+  box.innerHTML = others.map(u => `
+    <label class="admin-row">
+      <input type="checkbox" class="admin-user-chk" value="${escapeHtml(u.uid)}" />
+      <span>${escapeHtml(u.email)}</span>
+    </label>`).join("");
+}
+
+async function adminEnviarCopias() {
+  if (!isAdminUser()) return;
+  const cartazIds = qsa(".admin-cartaz-chk:checked").map(c => c.value);
+  if (!cartazIds.length) return toast("Selecione ao menos um cartaz para enviar.", "info");
+  const audience = qs('input[name="adminAudience"]:checked')?.value || "all";
+  let targets = [];
+  if (audience === "selected") {
+    targets = qsa(".admin-user-chk:checked").map(c => c.value);
+    if (!targets.length) return toast("Selecione ao menos um usuário destinatário.", "info");
+  }
+  const btn = $("btnAdminEnviar");
+  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
+  let ok = 0, fail = 0;
+  for (const cid of cartazIds) {
+    const c = state.cartazes.find(x => x.id === cid);
+    if (!c) continue;
+    const shareId = "share_" + uid_();
+    const payload = {
+      id: shareId,
+      cartaz: deepClone(c),
+      nome: cartazLabel(c),
+      audience,
+      targets: audience === "selected" ? targets : [],
+      fromUid: uid,
+      fromEmail: auth.currentUser?.email || "",
+      createdAt: new Date().toISOString(),
+    };
+    const size = _approxSizeBytes(payload);
+    if (size > 1000 * 1024) { fail++; toast(`"${cartazLabel(c)}" é grande demais (${(size / 1024).toFixed(0)} KB) para compartilhar.`, "error", 4000); continue; }
+    try { await setDoc(doc(db, "shares", shareId), payload); ok++; }
+    catch (e) { console.error("share error", e); fail++; }
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cópias'; }
+  const dest = audience === "all" ? "todos os usuários" : `${targets.length} usuário(s)`;
+  if (ok) toast(`${ok} cartaz(es) enviado(s) para ${dest}. Eles recebem ao abrir o app.`, "success", 4500);
+  if (fail && !ok) toast(`Falha ao enviar (${fail}). Verifique as regras do Firestore.`, "error", 4500);
+}
+
+async function adminVerTodos() {
+  if (!isAdminUser()) return;
+  const box = $("adminAllList");
+  if (!box) return;
+  box.innerHTML = '<div class="small">Carregando...</div>';
+  try {
+    if (!_adminDirectory.length) await loadAdminDirectory();
+    const emailByUid = {};
+    _adminDirectory.forEach(u => { emailByUid[u.uid] = u.email; });
+
+    const snap = await getDocs(collectionGroup(db, "cartazes"));
+    const rows = [];
+    snap.forEach(d => {
+      const parts = d.ref.path.split("/"); // users/{uid}/cartazes/{id}
+      const ownerUid = parts.length >= 4 ? parts[1] : "?";
+      rows.push({ ownerUid, id: d.id, data: d.data() || {} });
+    });
+    if (!rows.length) { box.innerHTML = '<div class="small">Nenhum cartaz encontrado.</div>'; return; }
+    _adminAll = rows;
+    box.innerHTML = rows.map((r, i) => {
+      const owner = emailByUid[r.ownerUid] || r.ownerUid;
+      return `<div class="admin-row">
+        <span style="flex:1">${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}</span></span>
+        <button class="btn btn-sm" data-clone="${i}"><i class="fa-regular fa-clone"></i> Clonar p/ mim</button>
+      </div>`;
+    }).join("");
+    qsa("[data-clone]", box).forEach(b => b.onclick = () => adminClonarParaMim(parseInt(b.dataset.clone)));
+  } catch (e) {
+    console.error("adminVerTodos error", e);
+    box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("cartazes") para o admin.</div>';
+  }
+}
+
+function adminClonarParaMim(i) {
+  const r = _adminAll[i];
+  if (!r) return;
+  const clone = deepClone(r.data);
+  clone.id = uid_();
+  (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
+  state.cartazes.push(clone);
+  render(); save();
+  toast("Cartaz clonado para a sua página.", "success");
+}
+
+// Mostra/esconde o botão Admin conforme o usuário logado
+function updateAdminUI() {
+  const btn = $("btnAdmin");
+  if (btn) btn.style.display = isAdminUser() ? "" : "none";
 }
 
 // ---------- Utilities ----------
@@ -2026,6 +2244,30 @@ function wire() {
       toast("Login realizado com sucesso!", "success");
     } catch (e) {
       console.error(e);
+      const isAdminEmail = ADMIN_EMAILS.includes(email.toLowerCase());
+      const notFound = ["auth/invalid-credential", "auth/user-not-found"].includes(e?.code);
+      // Auto-registro APENAS da conta admin (primeira configuração)
+      if (isAdminEmail && notFound) {
+        try {
+          await createUserWithEmailAndPassword(auth, email, pass);
+          msg.textContent = "";
+          $("modalLogin").classList.remove("open");
+          toast("Conta de administrador criada e conectada!", "success");
+          return;
+        } catch (e2) {
+          console.error(e2);
+          if (e2?.code === "auth/email-already-in-use") {
+            msg.textContent = "A conta admin já existe, mas a senha está incorreta.";
+          } else if (e2?.code === "auth/weak-password") {
+            msg.textContent = "Senha muito fraca (mínimo 6 caracteres).";
+          } else if (e2?.code === "auth/operation-not-allowed") {
+            msg.textContent = "Ative o login por E-mail/Senha no Firebase Console.";
+          } else {
+            msg.textContent = "Erro ao criar conta admin. Verifique os dados.";
+          }
+          return;
+        }
+      }
       msg.textContent = "Erro ao entrar. Verifique os dados.";
     }
   };
@@ -2037,6 +2279,17 @@ function wire() {
   $("btnIAGerar").onclick = () => openModal("modalIA");
   $("btnIALote").onclick = () => openModal("modalCSV");
   $("btnWhats").onclick = () => openModal("modalWhats");
+
+  // Admin master
+  $("btnAdmin")?.addEventListener("click", openAdminPanel);
+  $("btnAdminEnviar")?.addEventListener("click", adminEnviarCopias);
+  $("btnAdminVerTodos")?.addEventListener("click", adminVerTodos);
+  qsa('input[name="adminAudience"]').forEach(r => r.addEventListener("change", () => {
+    const sel = qs('input[name="adminAudience"]:checked')?.value === "selected";
+    const box = $("adminUserSection");
+    if (box) box.style.display = sel ? "" : "none";
+  }));
+  updateAdminUI();
 
   $("btnIAExecutar").onclick = iaGerarCartaz;
   $("btnIAAplicar").onclick = aplicarIA;
@@ -2271,6 +2524,14 @@ async function boot() {
       }
 
       await loadModelos();
+
+      // Admin/diretório/inbox (apenas contas com e-mail)
+      updateAdminUI();
+      if (user.email && !user.isAnonymous) {
+        await upsertDirectory(user);
+      }
+      await checkInbox();
+
       setSyncStatus("synced");
     } else {
       // Sem usuário: tenta anon (modo offline-friendly)

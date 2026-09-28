@@ -1,12 +1,40 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite que usuários autenticados (anônimos ou e-mail) acessem seus próprios dados
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // Admin master: identificado pelo e-mail no token de autenticação
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'oficialsnts@gmail.com';
     }
-    
-    // Fallback global para compatibilidade
+
+    // Dados de cada usuário (cartazes, sessão, modelos). Dono OU admin.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Collection group: admin pode ler os cartazes de TODOS os usuários
+    // (necessário para o botão "Ver todos os cartazes salvos").
+    match /{path=**}/cartazes/{cartazId} {
+      allow read: if isAdmin();
+    }
+
+    // Diretório de usuários (email + uid). Cada um grava o seu; admin lê todos.
+    match /directory/{userId} {
+      allow read: if isAdmin();
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Cartazes compartilhados (inbox). Admin cria/edita; qualquer autenticado lê
+    // (para importar as cópias destinadas a ele).
+    match /shares/{shareId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Fallback global (modo compartilhado/legado)
     match /projeto/{document=**} {
       allow read, write: if request.auth != null;
     }

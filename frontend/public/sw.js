@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cartazista-cache-v8';
+const CACHE_NAME = 'cartazista-cache-v9';
 const APP_SHELL = [
   './',
   './index.html',

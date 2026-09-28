@@ -633,3 +633,10 @@ body {
 .mt-10 { margin-top: 10px; }
 .small { font-size: 10px; color: #8794a5; }
 textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-size:11px; }
+
+/* ===== Painel Admin ===== */
+.admin-list { max-height: 190px; overflow-y: auto; border: 1px solid #2b3444; border-radius: 8px; padding: 6px; margin-top: 4px; background: rgba(0,0,0,0.15); }
+.admin-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.admin-row:hover { background: rgba(255,255,255,0.05); }
+.admin-row input { accent-color: var(--accent, #e74c3c); width: 15px; height: 15px; flex: 0 0 auto; }
+.admin-row span { flex: 1; }
