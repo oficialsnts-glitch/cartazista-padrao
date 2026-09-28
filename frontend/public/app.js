@@ -219,37 +219,47 @@ function renderAdminUserList() {
     </label>`).join("");
 }
 
+function getAdminAudience() {
+  const audience = qs('input[name="adminAudience"]:checked')?.value || "all";
+  let targets = [];
+  if (audience === "selected") targets = qsa(".admin-user-chk:checked").map(c => c.value);
+  return { audience, targets };
+}
+
+// Cria o doc de compartilhamento de UM cartaz (de qualquer usuário) para os destinatários.
+async function enviarShareCartaz(cartazObj) {
+  const { audience, targets } = getAdminAudience();
+  if (audience === "selected" && !targets.length) { toast("Selecione ao menos um usuário destinatário.", "info"); return false; }
+  const shareId = "share_" + uid_();
+  const payload = {
+    id: shareId,
+    cartaz: deepClone(cartazObj),
+    nome: cartazLabel(cartazObj),
+    audience,
+    targets: audience === "selected" ? targets : [],
+    fromUid: uid,
+    fromEmail: auth.currentUser?.email || "",
+    createdAt: new Date().toISOString(),
+  };
+  const size = _approxSizeBytes(payload);
+  if (size > 1000 * 1024) { toast(`"${cartazLabel(cartazObj)}" é grande demais (${(size / 1024).toFixed(0)} KB) para compartilhar.`, "error", 4000); return false; }
+  try { await setDoc(doc(db, "shares", shareId), payload); return true; }
+  catch (e) { console.error("share error", e); return false; }
+}
+
 async function adminEnviarCopias() {
   if (!isAdminUser()) return;
   const cartazIds = qsa(".admin-cartaz-chk:checked").map(c => c.value);
   if (!cartazIds.length) return toast("Selecione ao menos um cartaz para enviar.", "info");
-  const audience = qs('input[name="adminAudience"]:checked')?.value || "all";
-  let targets = [];
-  if (audience === "selected") {
-    targets = qsa(".admin-user-chk:checked").map(c => c.value);
-    if (!targets.length) return toast("Selecione ao menos um usuário destinatário.", "info");
-  }
+  const { audience, targets } = getAdminAudience();
+  if (audience === "selected" && !targets.length) return toast("Selecione ao menos um usuário destinatário.", "info");
   const btn = $("btnAdminEnviar");
   if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
   let ok = 0, fail = 0;
   for (const cid of cartazIds) {
     const c = state.cartazes.find(x => x.id === cid);
     if (!c) continue;
-    const shareId = "share_" + uid_();
-    const payload = {
-      id: shareId,
-      cartaz: deepClone(c),
-      nome: cartazLabel(c),
-      audience,
-      targets: audience === "selected" ? targets : [],
-      fromUid: uid,
-      fromEmail: auth.currentUser?.email || "",
-      createdAt: new Date().toISOString(),
-    };
-    const size = _approxSizeBytes(payload);
-    if (size > 1000 * 1024) { fail++; toast(`"${cartazLabel(c)}" é grande demais (${(size / 1024).toFixed(0)} KB) para compartilhar.`, "error", 4000); continue; }
-    try { await setDoc(doc(db, "shares", shareId), payload); ok++; }
-    catch (e) { console.error("share error", e); fail++; }
+    if (await enviarShareCartaz(c)) ok++; else fail++;
   }
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cópias'; }
   const dest = audience === "all" ? "todos os usuários" : `${targets.length} usuário(s)`;
@@ -275,15 +285,20 @@ async function adminVerTodos() {
       rows.push({ ownerUid, id: d.id, data: d.data() || {} });
     });
     if (!rows.length) { box.innerHTML = '<div class="small">Nenhum cartaz encontrado.</div>'; return; }
+    // Cartazes de OUTROS usuários primeiro (é o que o admin quer compartilhar)
+    rows.sort((a, b) => (a.ownerUid === uid ? 1 : 0) - (b.ownerUid === uid ? 1 : 0));
     _adminAll = rows;
     box.innerHTML = rows.map((r, i) => {
       const owner = emailByUid[r.ownerUid] || r.ownerUid;
+      const meuTag = r.ownerUid === uid ? ' (você)' : '';
       return `<div class="admin-row">
-        <span style="flex:1">${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}</span></span>
-        <button class="btn btn-sm" data-clone="${i}"><i class="fa-regular fa-clone"></i> Clonar p/ mim</button>
+        <span style="flex:1">${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}${meuTag}</span></span>
+        <button class="btn btn-sm btn-success" data-share="${i}" title="Compartilhar este cartaz"><i class="fa-solid fa-paper-plane"></i> Compartilhar</button>
+        <button class="btn btn-sm" data-clone="${i}" title="Clonar para a sua página"><i class="fa-regular fa-clone"></i></button>
       </div>`;
     }).join("");
     qsa("[data-clone]", box).forEach(b => b.onclick = () => adminClonarParaMim(parseInt(b.dataset.clone)));
+    qsa("[data-share]", box).forEach(b => b.onclick = () => adminCompartilharCartaz(parseInt(b.dataset.share)));
   } catch (e) {
     console.error("adminVerTodos error", e);
     box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("cartazes") para o admin.</div>';
@@ -299,6 +314,16 @@ function adminClonarParaMim(i) {
   state.cartazes.push(clone);
   render(); save();
   toast("Cartaz clonado para a sua página.", "success");
+}
+
+async function adminCompartilharCartaz(i) {
+  const r = _adminAll[i];
+  if (!r) return;
+  const { audience, targets } = getAdminAudience();
+  const dest = audience === "all" ? "todos os usuários" : `${targets.length} usuário(s)`;
+  const ok = await enviarShareCartaz(r.data);
+  if (ok) toast(`Cartaz enviado para ${dest}. Eles recebem ao abrir o app.`, "success", 4500);
+  else toast("Falha ao compartilhar. Verifique as regras do Firestore.", "error", 4500);
 }
 
 // Mostra/esconde o botão Admin conforme o usuário logado

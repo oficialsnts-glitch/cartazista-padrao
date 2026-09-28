@@ -74,7 +74,10 @@
     os shares destinados ao usuário (`audience=all` ou `targets` contém o uid),
     marcando importados em `users/{uid}/data/session.importedShares`.
   - **Ver todos os cartazes salvos**: `collectionGroup("cartazes")` lista os cartazes
-    de todos os usuários (com e-mail do dono via `directory`) e permite "Clonar p/ mim".
+    de todos os usuários (com e-mail do dono via `directory`). Cada linha tem
+    **Compartilhar** (envia aquele cartaz para os destinatários selecionados via
+    `enviarShareCartaz`/`adminCompartilharCartaz`) e **Clonar p/ mim**. Cartazes de
+    outros usuários aparecem primeiro. `sw.js` v9 → v10.
   - **Diretório de usuários**: `upsertDirectory()` grava `directory/{uid}={email,uid}`
     em cada login com e-mail, para o admin escolher destinatários.
   - **firestore.rules** atualizadas (admin por `token.email`, collectionGroup de
