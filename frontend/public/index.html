@@ -54,10 +54,6 @@
   </div>
 
   <div class="tbar-group">
-    <button class="btn btn-orange" id="btnIALote" data-testid="btn-ia-lote" title="Gerar em lote (CSV)"><i class="fa-solid fa-table-list"></i> Lote CSV</button>
-  </div>
-
-  <div class="tbar-group">
     <button class="btn" id="btnIcones" data-testid="btn-icones" title="Galeria de ícones"><i class="fa-solid fa-icons"></i></button>
     <button class="btn" id="btnQR" data-testid="btn-qr" title="QR Code"><i class="fa-solid fa-qrcode"></i></button>
     <button class="btn" id="btnTarja" data-testid="btn-tarja" title="Tarja / faixa"><i class="fa-solid fa-tag"></i></button>
@@ -282,31 +278,6 @@
       <button class="btn" id="btnFecharEditor" data-testid="btn-fechar-editor"><i class="fa-solid fa-xmark"></i></button>
     </div>
   </aside>
-</div>
-
-<!-- ============== MODAL: Lote CSV ============== -->
-<div class="modal-backdrop" id="modalCSV" data-testid="modal-csv">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="fa-solid fa-table-list"></i> Gerar cartazes em lote</h2>
-      <button class="modal-close" data-close>&times;</button>
-    </div>
-    <div class="modal-body">
-      <p class="small">Cole uma lista de produtos (CSV ou texto livre). A IA entende.</p>
-      <textarea id="csvInput" class="big" data-testid="csv-input" placeholder="Ex:
-Arroz Tio João 5kg, 24,90
-Feijão Camil 1kg, 7,99, de 9,49
-Leite Ninho 400g; R$ 18,90
-Coca-Cola 2L 9,99"></textarea>
-      <div class="small mt-6">Cada linha vira um cartaz. Use vírgula, ponto-e-vírgula ou texto livre.</div>
-      <div id="csvPreview" class="mt-10"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" data-close>Cancelar</button>
-      <button class="btn btn-primary" id="btnCSVAnalisar" data-testid="btn-csv-analisar"><i class="fa-solid fa-magnifying-glass"></i> Analisar</button>
-      <button class="btn btn-success hidden" id="btnCSVGerar" data-testid="btn-csv-gerar"><i class="fa-solid fa-plus"></i> Gerar cartazes</button>
-    </div>
-  </div>
 </div>
 
 <!-- ============== MODAL: WhatsApp Share ============== -->

@@ -1086,32 +1086,6 @@ function cartazFromAI(s) {
   return { id, itens, _imgSlot: { x: 25, y: 100, w: 120, h: 120 } };
 }
 
-/**
- * Tenta gerar imagem do produto via Nano Banana e adicionar ao cartaz.
- * Falha silenciosamente (não bloqueia o cartaz se quota estourou).
- */
-async function tentarGerarImagemProduto(cartaz, produto, marca = "") {
-  if (!cartaz._imgSlot) return;
-  try {
-    const r = await fetch(`${API}/ai/generate-product-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ produto, marca, estilo: "produto" }),
-    });
-    if (!r.ok) return; // 429/quota etc — fica sem imagem
-    const data = await r.json();
-    if (!data.imagem_data_url) return;
-    const slot = cartaz._imgSlot;
-    cartaz.itens.push({
-      ...makeItem("img", data.imagem_data_url, slot.x, slot.y, 0, "", ""),
-      w: slot.w, h: slot.h,
-    });
-    render(); save();
-  } catch (e) {
-    console.warn("Imagem nano banana falhou (ok, segue sem):", e.message);
-  }
-}
-
 function adicionarCartaz(skipHistory = false) {
   if (!skipHistory) snapshot();
   state.cartazes.push(cartazBase());
@@ -2061,64 +2035,6 @@ async function gerarImagemWhats() {
   toast("Imagem gerada", "success");
 }
 
-// ---------- CSV Batch ----------
-let csvParsed = [];
-async function csvAnalisar() {
-  const texto = $("csvInput").value.trim();
-  if (!texto) return toast("Cole sua lista", "error");
-  const btn = $("btnCSVAnalisar");
-  btn.disabled = true; btn.innerHTML = '<span class="loader"></span> Analisando...';
-  try {
-    const r = await fetch(`${API}/ai/parse-csv`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto }),
-    });
-    const data = await r.json();
-    csvParsed = data.linhas || [];
-    $("csvPreview").innerHTML = csvParsed.length
-      ? `<div class="ai-result-card"><b>${csvParsed.length} produto(s) identificado(s):</b><ul style="margin:6px 0 0 18px; font-size:12px">${csvParsed.map(l => `<li>${escapeHtml(l.produto)} — R$ ${escapeHtml(l.preco)}${l.preco_de ? " <small>(de R$ " + escapeHtml(l.preco_de) + ")</small>" : ""}</li>`).join("")}</ul></div>`
-      : `<div class="ai-result-card">Nenhum produto encontrado.</div>`;
-    if (csvParsed.length) $("btnCSVGerar").classList.remove("hidden");
-    toast(`${csvParsed.length} produtos identificados`, "success");
-  } catch (e) {
-    toast("Erro: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analisar';
-  }
-}
-
-function csvGerar() {
-  if (!csvParsed.length) return;
-  snapshot();
-  // Paletas variadas pra cada cartaz não ficar tudo igual
-  const PALETAS_AUTO = [
-    ["#d63031", "#ffffff", "#1e272e"],   // vermelho clássico
-    ["#0984e3", "#ffffff", "#2d3436"],   // azul
-    ["#00b894", "#ffeaa7", "#2d3436"],   // verde hortifruti
-    ["#fdcb6e", "#ffffff", "#6c3a00"],   // amarelo padaria
-    ["#8e44ad", "#ffffff", "#1e272e"],   // roxo
-    ["#e17055", "#ffeaa7", "#2d3436"],   // laranja
-  ];
-  csvParsed.forEach((l, i) => {
-    const c = cartazFromAI({
-      chamada: "OFERTA",
-      produto: l.produto,
-      marca: l.marca,
-      peso: l.peso,
-      preco: l.preco,
-      preco_de: l.preco_de || "",
-      paleta: PALETAS_AUTO[i % PALETAS_AUTO.length],
-    });
-    state.cartazes.push(c);
-  });
-  render(); save();
-  closeModal("modalCSV");
-  $("csvInput").value = ""; $("csvPreview").innerHTML = "";
-  $("btnCSVGerar").classList.add("hidden");
-  csvParsed = [];
-  toast(`Cartazes gerados com estilos variados!`, "success");
-}
-
 // ---------- Modelos salvos ----------
 async function salvarModeloAtual() {
   const nome = prompt("Nome do modelo:", "Modelo " + new Date().toLocaleDateString("pt-BR"));
@@ -2421,7 +2337,6 @@ function wire() {
     snapshot(); state.layout = e.target.value; render(); save();
   };
 
-  $("btnIALote").onclick = () => openModal("modalCSV");
   $("btnWhats").onclick = () => openModal("modalWhats");
 
   // Admin master
@@ -2436,9 +2351,6 @@ function wire() {
     if (box) box.style.display = sel ? "" : "none";
   }));
   updateAdminUI();
-
-  $("btnCSVAnalisar").onclick = csvAnalisar;
-  $("btnCSVGerar").onclick = csvGerar;
 
   $("btnWhatsBaixar").onclick = gerarImagemWhats;
   $("iconSearch")?.addEventListener("input", (e) => { iconSearch = e.target.value; renderIconGrid(); });
