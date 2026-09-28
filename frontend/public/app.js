@@ -31,6 +31,7 @@ const auth = getAuth(fbApp);
 
 let uid = null;
 let sessionRef = null;
+let cartazesColRef = null;      // subcoleção: users/{uid}/cartazes (1 doc por cartaz)
 let modelosColRef = null;       // subcoleção: users/{uid}/modelos
 let modelosLegacyRef = null;    // doc legado: users/{uid}/data/modelos (para migração)
 
@@ -74,7 +75,19 @@ const state = {
   dirty: false,
   lastAISuggestions: null,
   clipboard: null,
+  _savedHashes: {},    // { cartazId: JSON } — última versão gravada na nuvem (evita reescrever tudo)
+  _cloudIds: new Set(),// ids de cartazes atualmente na subcoleção (para detectar remoções)
 };
+
+// ---------- Preferências (localStorage) ----------
+// Padrão da posição dos centavos para NOVOS cartazes.
+function getCentsAlignDefault() {
+  try { return localStorage.getItem("cartazista_centsAlign") === "top" ? "top" : "bottom"; }
+  catch { return "bottom"; }
+}
+function setCentsAlignDefault(v) {
+  try { localStorage.setItem("cartazista_centsAlign", v === "top" ? "top" : "bottom"); } catch {}
+}
 
 // ---------- Utilities ----------
 const $ = (id) => document.getElementById(id);
@@ -159,19 +172,55 @@ function redoAction() {
 }
 
 // ---------- Firebase persistence ----------
+// Formato novo: 1 documento por cartaz em `users/{uid}/cartazes/{id}`.
+// A ordem/página e o layout ficam num doc "meta" (sessionRef). Isso remove o
+// limite de 1 MiB por SESSÃO (que fazia cartazes sumirem a partir do ~8º no 4x1)
+// e passa a valer o limite de 1 MiB POR cartaz.
 async function save() {
-  // Aguarda o Firebase Auth resolver antes de tentar salvar
-  // (evita perdas silenciosas: clicar "Novo" antes do anon login completar
-  //  costumava cair em `if (!sessionRef) return` e nunca persistir).
   await authReady;
-  if (!sessionRef) return;
+  if (!sessionRef || !cartazesColRef) return;
+  // Garante id em todos os cartazes (paths que substituem o array — ex.: carregar modelo)
+  state.cartazes.forEach(c => { if (!c.id) c.id = uid_(); });
+  setSyncStatus("syncing");
   try {
+    const currentIds = new Set(state.cartazes.map(c => c.id));
+    const writes = [];
+
+    // 1) Grava apenas os cartazes que mudaram desde a última sincronização
+    for (const c of state.cartazes) {
+      const json = JSON.stringify(c);
+      if (state._savedHashes[c.id] === json) continue;
+      const size = _approxSizeBytes(c);
+      if (size > 1000 * 1024) {
+        toast(`Cartaz muito grande (${(size / 1024).toFixed(0)} KB). Limite: 1 MiB por cartaz. Reduza as imagens.`, "error", 5000);
+        continue; // pula este; não trava o restante do save
+      }
+      writes.push(
+        setDoc(doc(cartazesColRef, c.id), c).then(() => { state._savedHashes[c.id] = json; })
+      );
+    }
+
+    // 2) Remove da nuvem cartazes que foram excluídos localmente
+    for (const id of state._cloudIds) {
+      if (!currentIds.has(id)) {
+        writes.push(
+          deleteDoc(doc(cartazesColRef, id)).then(() => { delete state._savedHashes[id]; })
+        );
+      }
+    }
+
+    await Promise.all(writes);
+    state._cloudIds = currentIds;
+
+    // 3) Meta: ordem dos cartazes + layout (limpa o array legado inline)
     await setDoc(sessionRef, {
       schemaVersion: SCHEMA_VERSION,
-      cartazes: state.cartazes,
       layout: state.layout,
+      order: state.cartazes.map(c => c.id),
+      cartazes: [],
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+
     setSyncStatus("synced");
   } catch (e) {
     console.error("save error", e);
@@ -181,19 +230,67 @@ async function save() {
 }
 const saveDebounced = debounce(save, 600);
 
+// Carrega os cartazes da subcoleção (ou migra do formato antigo inline).
+// Retorna true se houve migração do formato antigo (o chamador deve salvar).
+async function loadCartazesFromCloud() {
+  if (!sessionRef || !cartazesColRef) return false;
+
+  let meta = {};
+  try {
+    const s = await getDoc(sessionRef);
+    if (s.exists()) meta = s.data() || {};
+  } catch (e) { console.error("meta load error", e); }
+
+  let docs = [];
+  try {
+    const snap = await getDocs(cartazesColRef);
+    snap.forEach(d => docs.push({ id: d.id, ...(d.data() || {}) }));
+  } catch (e) { console.error("cartazes load error", e); }
+
+  const fromSub = docs.length > 0;
+  let arr = [];
+
+  if (fromSub) {
+    const byId = {};
+    docs.forEach(d => { byId[d.id] = d; });
+    const order = Array.isArray(meta.order) ? meta.order : [];
+    order.forEach(id => { if (byId[id]) { arr.push(byId[id]); delete byId[id]; } });
+    Object.values(byId).forEach(d => arr.push(d)); // sobras sem ordem definida
+    state._cloudIds = new Set(docs.map(d => d.id));
+  } else if (Array.isArray(meta.cartazes) && meta.cartazes.length > 0) {
+    // Formato antigo (array inline no doc de sessão) → será migrado pelo save()
+    arr = meta.cartazes;
+    state._cloudIds = new Set();
+  } else {
+    state._cloudIds = new Set();
+  }
+
+  state.cartazes = migrateCartazes(arr, meta.schemaVersion || 1);
+  state.cartazes.forEach(c => { if (!c.id) c.id = uid_(); });
+  state.layout = meta.layout || "grid-4";
+  if ($("selectLayout")) $("selectLayout").value = state.layout;
+
+  // Marca como "já salvo" só o que veio da subcoleção; se veio do formato antigo,
+  // deixa os hashes vazios para o save() gravar tudo na nova estrutura.
+  state._savedHashes = {};
+  if (fromSub) {
+    state.cartazes.forEach(c => { state._savedHashes[c.id] = JSON.stringify(c); });
+  }
+
+  return !fromSub && arr.length > 0; // precisa migrar
+}
+
 async function load() {
   await authReady;
   if (!sessionRef) return;
   try {
-    const snap = await getDoc(sessionRef);
-    if (snap.exists()) {
-      const d = snap.data();
-      state.cartazes = migrateCartazes(d.cartazes || [], d.schemaVersion || 1);
-      state.layout = d.layout || "grid-4";
-      if ($("selectLayout")) $("selectLayout").value = state.layout;
-    }
+    const needMigrate = await loadCartazesFromCloud();
     if (state.cartazes.length === 0) adicionarCartaz(true);
     render();
+    if (needMigrate) {
+      await save();
+      toast("Cartazes migrados para o novo formato (1 doc por cartaz)", "success");
+    }
   } catch (e) {
     console.error("load error", e);
     if (state.cartazes.length === 0) adicionarCartaz(true);
@@ -422,6 +519,7 @@ function cartazFromAI(s) {
     "preco", s.preco || "0,00",
     20, 310, 130, "'Anton'", cText,
     {
+      centsAlign: getCentsAlignDefault(),
       stroke: true,
       strokeCol: "#ffffff",
       strokeWidth: 2,
@@ -1004,7 +1102,14 @@ function atualizarEstilo() {
     if (!isNaN(newH)) d.h = newH;
   }
   d.rot = parseFloat($("inRot").value) || 0;
-  if (d.tipo === "preco") d.centsAlign = $("inCentsAlign").value === "top" ? "top" : "bottom";
+  if (d.tipo === "preco") {
+    const v = $("inCentsAlign").value === "top" ? "top" : "bottom";
+    d.centsAlign = v;
+    if (getCentsAlignDefault() !== v) {
+      setCentsAlignDefault(v);
+      toast(`Centavos "${v === "top" ? "em cima" : "embaixo"}" definido como padrão para novos cartazes`, "success");
+    }
+  }
   d.shadow = $("inShadow").checked;
   d.shadowCol = $("inShadowColor").value;
   d.shadowBlur = parseInt($("inShadowBlur").value) || 8;
@@ -2079,10 +2184,12 @@ function dismissSplash() {
 function updateFirebaseRefs() {
   if (uid) {
     sessionRef = doc(db, "users", uid, "data", "session");
+    cartazesColRef = collection(db, "users", uid, "cartazes");
     modelosColRef = collection(db, "users", uid, "modelos");
     modelosLegacyRef = doc(db, "users", uid, "data", "modelos");
   } else {
     sessionRef = doc(db, "projeto", "sessao_atual");
+    cartazesColRef = collection(db, "projeto", "shared", "cartazes");
     modelosColRef = collection(db, "projeto", "shared", "modelos");
     modelosLegacyRef = doc(db, "projeto", "modelos_salvos");
   }
@@ -2135,23 +2242,27 @@ async function boot() {
       markAuthReady();
       setSyncStatus("syncing");
 
-      // Carrega cartazes do usuário atual
+      // Carrega cartazes do usuário atual (subcoleção; migra formato antigo se preciso)
       try {
-        const snap = await getDoc(sessionRef);
-        if (snap.exists()) {
-          const d = snap.data();
-          state.cartazes = migrateCartazes(d.cartazes || [], d.schemaVersion || 1);
-          state.layout = d.layout || "grid-4";
-          if ($("selectLayout")) $("selectLayout").value = state.layout;
-        } else if (wasReady && pendingCartazes && !user.isAnonymous) {
+        const needMigrate = await loadCartazesFromCloud();
+        if (state.cartazes.length === 0 && wasReady && pendingCartazes && !user.isAnonymous) {
           // Login após já estar em modo anônimo: migra o trabalho atual para a conta
           state.cartazes = pendingCartazes;
           state.layout = pendingLayout;
+          state._savedHashes = {};
+          state._cloudIds = new Set();
+          if ($("selectLayout")) $("selectLayout").value = state.layout;
+          render();
           await save();
           toast("Cartazes da sessão atual vinculados à sua conta", "success");
+        } else {
+          if (state.cartazes.length === 0) adicionarCartaz(true);
+          render();
+          if (needMigrate) {
+            await save();
+            toast("Cartazes migrados para o novo formato (1 doc por cartaz)", "success");
+          }
         }
-        if (state.cartazes.length === 0) adicionarCartaz(true);
-        render();
       } catch (e) {
         console.error("load on auth error", e);
         setSyncStatus("error");

@@ -64,11 +64,22 @@
     (offsetWidth/Height = 0).
 
 ## Implemented (Jun/2026)
-- **Posição dos centavos configurável**: nova seção "Posição dos centavos" na aba
-  Estilo do editor (só aparece quando o item selecionado é `preco`). Select
-  `#inCentsAlign` com opções Embaixo (padrão) / Em cima, gravado em `it.centsAlign`.
-  Aplicado em `buildItem` via `vertical-align` no `<small>` dos centavos → vale para
-  edição, PNG e PDF. `sw.js` v6 → v7.
+- **Padrão da posição dos centavos**: a escolha Em cima/Embaixo feita no editor é
+  salva em `localStorage` (`cartazista_centsAlign`) via `setCentsAlignDefault()` e
+  aplicada automaticamente a NOVOS cartazes em `cartazFromAI` (`getCentsAlignDefault()`).
+  Toast confirma quando o padrão muda. Verificado em memória (novo cartaz herda o topo).
+- **Correção "preço some no 4×1 (8º+)" — save por cartaz**: `save()`/`load()` refatorados
+  para **1 documento por cartaz** em `users/{uid}/cartazes/{id}` (mesmo padrão dos modelos),
+  com doc "meta" (`sessionRef`) guardando `layout` + `order[]`. Remove o limite de 1 MiB
+  por SESSÃO (causa da truncagem silenciosa). Escrita incremental por hash
+  (`state._savedHashes`) + remoção de docs excluídos (`state._cloudIds`). Migração
+  automática do formato antigo (array inline) na primeira carga.
+  ⚠️ Round-trip no Firestore NÃO pôde ser validado no sandbox (auth anônimo desabilitado
+  neste projeto Firebase e sem conta de teste); lógica segue o padrão já provado dos modelos.
+- **Posição dos centavos configurável** (sessão anterior): select `#inCentsAlign` na aba
+  Estilo (só no item `preco`), aplicado via `vertical-align`. `sw.js` v6 → v8.
+
+## Implemented (Jan/2026)
 
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
