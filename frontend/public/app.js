@@ -148,33 +148,44 @@ async function checkInbox() {
 
       // Novo formato: modelo (página inteira). Antigo: cartaz único.
       let cartazesToAdd = [];
-      let modelLayout = null;
+      let modelLayout = "grid-4";
       if (sh.modelo && Array.isArray(sh.modelo.cartazes)) {
         cartazesToAdd = sh.modelo.cartazes;
-        modelLayout = sh.modelo.layout;
+        modelLayout = sh.modelo.layout || "grid-4";
       } else if (sh.cartaz) {
         cartazesToAdd = [sh.cartaz];
       } else { toMark.push(sid); continue; }
 
-      cartazesToAdd.forEach(cz => {
+      // Clona os cartazes com ids novos (cópia editável)
+      const dados = cartazesToAdd.map(cz => {
         const clone = deepClone(cz);
         clone.id = uid_();
         (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
-        state.cartazes.push(clone);
+        return clone;
       });
-      // Aplica o layout do modelo para ficar EXATAMENTE igual à página criada
-      if (modelLayout) {
-        state.layout = modelLayout;
-        const el = $("selectLayout"); if (el) el.value = modelLayout;
+
+      // Salva o modelo recebido em "Modelos salvos" (não força na página do usuário)
+      const modeloId = "m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+      const modelo = {
+        id: modeloId,
+        nome: sh.nome || "Modelo compartilhado",
+        layout: modelLayout,
+        dados,
+        timestamp: Date.now(),
+      };
+      if (modelosColRef) {
+        try {
+          await setDoc(doc(modelosColRef, modeloId), modelo);
+          state.modelos.unshift(modelo);
+          count++;
+        } catch (e) { console.error("checkInbox saveModelo error", e); }
       }
       toMark.push(sid);
-      count++;
     }
     if (toMark.length) await markImported(toMark);
     if (count > 0) {
-      render();
-      await save();
-      toast(`Você recebeu ${count} modelo(s) compartilhado(s)!`, "success", 4500);
+      renderModelosSelect();
+      toast(`Você recebeu ${count} modelo(s) em "Modelos salvos"!`, "success", 4500);
     }
   } catch (e) { console.error("checkInbox error", e); }
 }
