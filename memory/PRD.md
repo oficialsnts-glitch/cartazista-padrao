@@ -187,6 +187,22 @@
   do DOM; recursos preservados funcionais; editor carrega sem erros; menu de contexto sem
   "Remover fundo".
 
+## Implemented (Jun/2026 — Remoção do Lote CSV + backend enxuto)
+- Removido o botão/modal **Lote CSV** (btn-ia-lote + modalCSV) e as funções
+  `csvAnalisar`, `csvGerar`, `csvParsed` e a função morta `tentarGerarImagemProduto`,
+  além do wiring correspondente.
+- **Backend (`server.py`) reescrito enxuto**: removidas TODAS as rotas de IA/EAN
+  (`/ai/generate-poster`, `/ai/suggest-headlines`, `/ai/parse-csv`,
+  `/ai/generate-product-image`, `/ean/{ean}`) e a dependência do cliente Gemini/httpx.
+  Restam apenas `/api/health` e `/`. Removidas deps `google-genai` e `httpx` do
+  requirements. O frontend não chama mais nenhuma rota `/api` própria (só a API
+  externa de ícones iconify).
+- **Fix de ambiente**: conflito pydantic/pydantic_core (ImportError validate_core_schema)
+  corrigido fixando `pydantic-core==2.27.2` no requirements.
+- **Verificado (testing agent, iteration_7, frontend 100%; backend /api/health=200)**:
+  editor estável, Lote CSV ausente, recursos preservados (ícones, QR, Modelos salvos) OK,
+  menu de contexto sem "Remover fundo".
+
 ## Backlog
 - Refatorar `save()`/`load()` para subcoleção `users/{uid}/cartazes/{id}` (1 doc
   por cartaz) — eleva o limite de 1 MiB para POR cartaz, mesmo padrão dos modelos.
