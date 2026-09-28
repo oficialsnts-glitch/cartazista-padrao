@@ -143,13 +143,30 @@ async function checkInbox() {
     for (const sid in shares) {
       if (imported.includes(sid)) continue;
       const sh = shares[sid];
-      // Não reimporta cópias que eu mesmo enviei
+      // Não reimporta o que eu mesmo enviei
       if (sh.fromUid === uid) { toMark.push(sid); continue; }
-      if (!sh.cartaz) { toMark.push(sid); continue; }
-      const clone = deepClone(sh.cartaz);
-      clone.id = uid_();
-      (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
-      state.cartazes.push(clone);
+
+      // Novo formato: modelo (página inteira). Antigo: cartaz único.
+      let cartazesToAdd = [];
+      let modelLayout = null;
+      if (sh.modelo && Array.isArray(sh.modelo.cartazes)) {
+        cartazesToAdd = sh.modelo.cartazes;
+        modelLayout = sh.modelo.layout;
+      } else if (sh.cartaz) {
+        cartazesToAdd = [sh.cartaz];
+      } else { toMark.push(sid); continue; }
+
+      cartazesToAdd.forEach(cz => {
+        const clone = deepClone(cz);
+        clone.id = uid_();
+        (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
+        state.cartazes.push(clone);
+      });
+      // Aplica o layout do modelo para ficar EXATAMENTE igual à página criada
+      if (modelLayout) {
+        state.layout = modelLayout;
+        const el = $("selectLayout"); if (el) el.value = modelLayout;
+      }
       toMark.push(sid);
       count++;
     }
@@ -157,7 +174,7 @@ async function checkInbox() {
     if (count > 0) {
       render();
       await save();
-      toast(`Você recebeu ${count} cartaz(es) compartilhado(s)!`, "success", 4500);
+      toast(`Você recebeu ${count} modelo(s) compartilhado(s)!`, "success", 4500);
     }
   } catch (e) { console.error("checkInbox error", e); }
 }
@@ -197,6 +214,30 @@ function renderCartazThumb(c, widthPx = 70) {
   return wrap;
 }
 
+const LAYOUT_LABEL = { "grid-1": "1 por folha", "grid-2": "2 por folha", "grid-4": "4 por folha" };
+function layoutLabel(l) { return LAYOUT_LABEL[l] || l || "4 por folha"; }
+
+// Miniatura de uma PÁGINA/MODELO inteiro (respeita o layout 1/2/4 por folha).
+function renderPageThumb(cartazes, layout, maxW = 120) {
+  const per = PER_PAGE[layout] || 4;
+  const cols = layout === "grid-4" ? 2 : 1;
+  const gap = 3;
+  const cellW = Math.max(28, Math.floor((maxW - gap * (cols - 1)) / cols));
+  const cells = (cartazes || []).slice(0, per);
+  const grid = document.createElement("div");
+  grid.className = "page-thumb";
+  grid.style.gridTemplateColumns = `repeat(${cols}, ${cellW}px)`;
+  grid.style.gap = gap + "px";
+  if (!cells.length) {
+    const ph = document.createElement("div");
+    ph.className = "small"; ph.textContent = "(vazio)";
+    grid.appendChild(ph);
+  } else {
+    cells.forEach(c => grid.appendChild(renderCartazThumb(c, cellW)));
+  }
+  return grid;
+}
+
 // ---------- Painel Admin ----------
 let _adminDirectory = [];
 let _adminAll = [];
@@ -214,18 +255,14 @@ function renderAdminCartazList() {
   const box = $("adminCartazList");
   if (!box) return;
   box.innerHTML = "";
-  if (!state.cartazes.length) { box.innerHTML = '<div class="small">Nenhum cartaz na página atual.</div>'; return; }
-  state.cartazes.forEach((c, i) => {
-    const label = document.createElement("label");
-    label.className = "admin-row";
-    const chk = document.createElement("input");
-    chk.type = "checkbox"; chk.className = "admin-cartaz-chk"; chk.value = c.id;
-    if (i === 0) chk.checked = true;
-    const span = document.createElement("span");
-    span.textContent = `Cartaz ${i + 1} — ${cartazLabel(c)}`;
-    label.append(chk, renderCartazThumb(c), span);
-    box.appendChild(label);
-  });
+  if (!state.cartazes.length) { box.innerHTML = '<div class="small">Sua página está vazia.</div>'; return; }
+  const row = document.createElement("div");
+  row.className = "admin-row";
+  const info = document.createElement("span");
+  info.style.flex = "1";
+  info.innerHTML = `<b>Sua página atual</b><br><span class="small" style="opacity:.7">${state.cartazes.length} cartaz(es) · ${layoutLabel(state.layout)}</span>`;
+  row.append(renderPageThumb(state.cartazes, state.layout), info);
+  box.appendChild(row);
 }
 
 async function loadAdminDirectory() {
@@ -260,15 +297,18 @@ function getAdminAudience() {
   return { audience, targets };
 }
 
-// Cria o doc de compartilhamento de UM cartaz (de qualquer usuário) para os destinatários.
-async function enviarShareCartaz(cartazObj) {
+// Compartilha uma PÁGINA/MODELO inteiro ({cartazes, layout}) para os destinatários.
+async function enviarShareModelo(modelObj, nome) {
   const { audience, targets } = getAdminAudience();
   if (audience === "selected" && !targets.length) { toast("Selecione ao menos um usuário destinatário.", "info"); return false; }
   const shareId = "share_" + uid_();
   const payload = {
     id: shareId,
-    cartaz: deepClone(cartazObj),
-    nome: cartazLabel(cartazObj),
+    modelo: {
+      cartazes: deepClone(modelObj.cartazes || []),
+      layout: modelObj.layout || "grid-4",
+    },
+    nome: nome || "Modelo",
     audience,
     targets: audience === "selected" ? targets : [],
     fromUid: uid,
@@ -276,31 +316,28 @@ async function enviarShareCartaz(cartazObj) {
     createdAt: new Date().toISOString(),
   };
   const size = _approxSizeBytes(payload);
-  if (size > 1000 * 1024) { toast(`"${cartazLabel(cartazObj)}" é grande demais (${(size / 1024).toFixed(0)} KB) para compartilhar.`, "error", 4000); return false; }
+  if (size > 1000 * 1024) { toast(`Modelo grande demais (${(size / 1024).toFixed(0)} KB). Reduza imagens.`, "error", 4500); return false; }
   try { await setDoc(doc(db, "shares", shareId), payload); return true; }
   catch (e) { console.error("share error", e); return false; }
 }
 
+// Envia a PÁGINA ATUAL do admin (exatamente como está) como um modelo.
 async function adminEnviarCopias() {
   if (!isAdminUser()) return;
-  const cartazIds = qsa(".admin-cartaz-chk:checked").map(c => c.value);
-  if (!cartazIds.length) return toast("Selecione ao menos um cartaz para enviar.", "info");
+  if (!state.cartazes.length) return toast("Sua página está vazia.", "info");
   const { audience, targets } = getAdminAudience();
   if (audience === "selected" && !targets.length) return toast("Selecione ao menos um usuário destinatário.", "info");
   const btn = $("btnAdminEnviar");
   if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
-  let ok = 0, fail = 0;
-  for (const cid of cartazIds) {
-    const c = state.cartazes.find(x => x.id === cid);
-    if (!c) continue;
-    if (await enviarShareCartaz(c)) ok++; else fail++;
-  }
-  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cópias'; }
+  const nome = `Página (${state.cartazes.length} cartaz(es) · ${layoutLabel(state.layout)})`;
+  const ok = await enviarShareModelo({ cartazes: state.cartazes, layout: state.layout }, nome);
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar esta página'; }
   const dest = audience === "all" ? "todos os usuários" : `${targets.length} usuário(s)`;
-  if (ok) toast(`${ok} cartaz(es) enviado(s) para ${dest}. Eles recebem ao abrir o app.`, "success", 4500);
-  if (fail && !ok) toast(`Falha ao enviar (${fail}). Verifique as regras do Firestore.`, "error", 4500);
+  if (ok) toast(`Página enviada para ${dest}. Eles recebem exatamente igual ao abrir o app.`, "success", 4800);
+  else toast("Falha ao enviar. Verifique as regras do Firestore.", "error", 4500);
 }
 
+// Lista os MODELOS (páginas) de cada usuário: 1 entrada por usuário.
 async function adminVerTodos() {
   if (!isAdminUser()) return;
   const box = $("adminAllList");
@@ -312,62 +349,83 @@ async function adminVerTodos() {
     _adminDirectory.forEach(u => { emailByUid[u.uid] = u.email; });
 
     const snap = await getDocs(collectionGroup(db, "cartazes"));
-    const rows = [];
+    const byUser = {};
     snap.forEach(d => {
       const parts = d.ref.path.split("/"); // users/{uid}/cartazes/{id}
       const ownerUid = parts.length >= 4 ? parts[1] : "?";
-      rows.push({ ownerUid, id: d.id, data: d.data() || {} });
+      (byUser[ownerUid] = byUser[ownerUid] || []).push({ id: d.id, data: d.data() || {} });
     });
-    if (!rows.length) { box.innerHTML = '<div class="small">Nenhum cartaz encontrado.</div>'; return; }
-    // Cartazes de OUTROS usuários primeiro (é o que o admin quer compartilhar)
-    rows.sort((a, b) => (a.ownerUid === uid ? 1 : 0) - (b.ownerUid === uid ? 1 : 0));
-    _adminAll = rows;
+    const uids = Object.keys(byUser);
+    if (!uids.length) { box.innerHTML = '<div class="small">Nenhum modelo encontrado.</div>'; return; }
+
+    // Lê a sessão (layout + ordem) de cada usuário para montar a página igual à criada
+    const sessions = {};
+    await Promise.all(uids.map(async u => {
+      try { const s = await getDoc(doc(db, "users", u, "data", "session")); sessions[u] = s.exists() ? (s.data() || {}) : {}; }
+      catch { sessions[u] = {}; }
+    }));
+
+    _adminAll = uids.map(u => {
+      const byId = {}; byUser[u].forEach(x => { byId[x.id] = x.data; });
+      const order = Array.isArray(sessions[u].order) ? sessions[u].order : [];
+      const ordered = [];
+      order.forEach(id => { if (byId[id]) { ordered.push(byId[id]); delete byId[id]; } });
+      Object.values(byId).forEach(d => ordered.push(d));
+      return { ownerUid: u, cartazes: ordered, layout: sessions[u].layout || "grid-4" };
+    });
+    _adminAll.sort((a, b) => (a.ownerUid === uid ? 1 : 0) - (b.ownerUid === uid ? 1 : 0));
+
     box.innerHTML = "";
-    rows.forEach((r, i) => {
-      const owner = emailByUid[r.ownerUid] || r.ownerUid;
-      const meuTag = r.ownerUid === uid ? " (você)" : "";
+    _adminAll.forEach((m, i) => {
+      const owner = emailByUid[m.ownerUid] || m.ownerUid;
+      const meuTag = m.ownerUid === uid ? " (você)" : "";
       const row = document.createElement("div");
       row.className = "admin-row";
       const span = document.createElement("span");
       span.style.flex = "1";
-      span.innerHTML = `${escapeHtml(cartazLabel(r.data))} <span class="small" style="opacity:.6">· ${escapeHtml(owner)}${meuTag}</span>`;
+      span.innerHTML = `<b>${escapeHtml(owner)}${meuTag}</b><br><span class="small" style="opacity:.7">${m.cartazes.length} cartaz(es) · ${layoutLabel(m.layout)}</span>`;
       const shareBtn = document.createElement("button");
       shareBtn.className = "btn btn-sm btn-success";
-      shareBtn.title = "Compartilhar este cartaz";
+      shareBtn.title = "Compartilhar este modelo (página inteira)";
       shareBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Compartilhar';
-      shareBtn.onclick = () => adminCompartilharCartaz(i);
+      shareBtn.onclick = () => adminCompartilharModelo(i);
       const cloneBtn = document.createElement("button");
       cloneBtn.className = "btn btn-sm";
-      cloneBtn.title = "Clonar para a sua página";
+      cloneBtn.title = "Clonar este modelo para a sua página";
       cloneBtn.innerHTML = '<i class="fa-regular fa-clone"></i>';
-      cloneBtn.onclick = () => adminClonarParaMim(i);
-      row.append(renderCartazThumb(r.data), span, shareBtn, cloneBtn);
+      cloneBtn.onclick = () => adminClonarModelo(i);
+      row.append(renderPageThumb(m.cartazes, m.layout), span, shareBtn, cloneBtn);
       box.appendChild(row);
     });
   } catch (e) {
     console.error("adminVerTodos error", e);
-    box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("cartazes") para o admin.</div>';
+    box.innerHTML = '<div class="small" style="color:var(--danger)">Falha ao carregar. Verifique se as regras do Firestore permitem leitura de collectionGroup("cartazes") e da sessão dos usuários para o admin.</div>';
   }
 }
 
-function adminClonarParaMim(i) {
-  const r = _adminAll[i];
-  if (!r) return;
-  const clone = deepClone(r.data);
-  clone.id = uid_();
-  (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
-  state.cartazes.push(clone);
+function adminClonarModelo(i) {
+  const m = _adminAll[i];
+  if (!m) return;
+  (m.cartazes || []).forEach(cz => {
+    const clone = deepClone(cz);
+    clone.id = uid_();
+    (clone.itens || []).forEach(it => { it.id = `${it.tipo}-${uid_()}`; });
+    state.cartazes.push(clone);
+  });
+  if (m.layout) { state.layout = m.layout; const el = $("selectLayout"); if (el) el.value = m.layout; }
   render(); save();
-  toast("Cartaz clonado para a sua página.", "success");
+  renderAdminCartazList();
+  toast("Modelo clonado para a sua página.", "success");
 }
 
-async function adminCompartilharCartaz(i) {
-  const r = _adminAll[i];
-  if (!r) return;
+async function adminCompartilharModelo(i) {
+  const m = _adminAll[i];
+  if (!m) return;
   const { audience, targets } = getAdminAudience();
   const dest = audience === "all" ? "todos os usuários" : `${targets.length} usuário(s)`;
-  const ok = await enviarShareCartaz(r.data);
-  if (ok) toast(`Cartaz enviado para ${dest}. Eles recebem ao abrir o app.`, "success", 4500);
+  const owner = (_adminDirectory.find(u => u.uid === m.ownerUid) || {}).email || m.ownerUid;
+  const ok = await enviarShareModelo(m, `Modelo de ${owner}`);
+  if (ok) toast(`Modelo enviado para ${dest}. Eles recebem exatamente igual ao abrir o app.`, "success", 4800);
   else toast("Falha ao compartilhar. Verifique as regras do Firestore.", "error", 4500);
 }
 

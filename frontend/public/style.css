@@ -657,3 +657,4 @@ textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-si
   top: 0; left: 0;
   transform-origin: top left;
 }
+.page-thumb { display: grid; flex: 0 0 auto; }
