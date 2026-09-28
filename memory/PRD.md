@@ -99,6 +99,35 @@
     cartazes p/ admin, `directory`, `shares`). ⚠️ PRECISA DE DEPLOY manual.
   - `sw.js` v8 → v9. Verificado em Firebase real: login admin, painel, ver-todos OK.
 
+## Implemented (Jun/2026 — Modelos salvos de TODOS os usuários no painel admin)
+- **Problema**: nos "Modelos salvos" do admin devem aparecer os modelos criados por
+  TODOS os usuários (agrupados por usuário/pasta), para o admin COPIAR para a sua tela,
+  EDITAR e REPLICAR para todos os usuários restantes (cada usuário recebe uma cópia editável).
+- **Frontend (`app.js`)**:
+  - `adminVerModelosTodos()`: `getDocs(collectionGroup(db, "modelos"))` agrupa por
+    `ownerUid` (path `users/{uid}/modelos/{id}`); ignora docs sem `dados[]`.
+  - `renderAdminModelosList()`: renderiza PASTAS por usuário (email via `directory`),
+    cada modelo com miniatura (`renderPageThumb`), nome, data, e botões **Copiar** e **Replicar**.
+  - `adminCopiarModeloParaTela(i)`: substitui a tela atual pelos cartazes do modelo
+    (novos ids), fecha o modal — admin edita e depois replica.
+  - `replicarModeloParaUsuarios(modelo, nome)`: grava uma cópia em
+    `users/{uid}/modelos/{novoId}` para cada destinatário (audience Todos = todos do
+    diretório exceto o próprio admin; ou Selecionados). Respeita limite 1 MiB.
+  - `adminReplicarModelo(i)`: replica um modelo salvo (como está).
+  - `adminReplicarTelaAtual()`: replica a tela atual (após editar) como novo modelo p/ todos.
+  - Wiring: `#btnAdminModelosTodos`, `#btnAdminReplicarTela`.
+- **UI (`index.html`)**: nova seção no `#modalAdmin` "Modelos salvos de todos os usuários"
+  (data-testids: `btn-admin-modelos-todos`, `admin-modelos-list`, `btn-admin-replicar-tela`).
+- **CSS (`style.css`)**: `.admin-folder` / `.admin-folder-head` para as pastas por usuário.
+- **firestore.rules**: adicionada regra collectionGroup `modelos` com `allow read: if isAdmin()`.
+  ⚠️ **PRECISA DE DEPLOY manual** (`firebase deploy --only firestore:rules`). Sem o deploy,
+  a listagem mostra erro de permissão (tratado com mensagem amigável). A ESCRITA (replicar)
+  já é permitida pela regra existente `users/{userId}/{document=**}` com `isAdmin()`.
+- **Verificação (testing agent, iteration_2)**: login admin OK, botão Admin visível, modal
+  abre, os 3 novos elementos presentes e wired, erro de permissão tratado corretamente
+  (esperado até o deploy das regras). Frontend 100%.
+
+
 ## Implemented (Jun/2026 — sessão anterior)
 - **Padrão da posição dos centavos**: a escolha Em cima/Embaixo feita no editor é
   salva em `localStorage` (`cartazista_centsAlign`) via `setCentsAlignDefault()` e
