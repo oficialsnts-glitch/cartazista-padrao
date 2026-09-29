@@ -1491,7 +1491,7 @@ function clearSnapGuides() { qsa(".snap-guide").forEach(g => g.remove()); }
 // ---------- Editor panel ----------
 function mostrarNoPainel(it, c) {
   $("editor").classList.add("open");
-  $("editorBadge").textContent = (it.tipo || "ITEM").toUpperCase();
+  $("editorBadge").textContent = it.isIcon ? "ÍCONE" : (it.tipo || "ITEM").toUpperCase();
   $("editorTitle").textContent = "Editor";
 
   // Conteúdo
@@ -1539,6 +1539,17 @@ function mostrarNoPainel(it, c) {
   $("inGradC1").value = it.gradC1 || "#ff5252";
   $("inGradC2").value = it.gradC2 || "#ffeaa7";
   $("inGradientDir").value = it.gradDir || "to bottom";
+
+  // Cor do ícone (somente para ícones adicionados via galeria)
+  const secIcon = $("secaoIconeCor");
+  if (secIcon) {
+    if (it.isIcon) {
+      secIcon.style.display = "block";
+      $("inIconColor").value = /^#/.test(it.col) ? it.col : "#000000";
+    } else {
+      secIcon.style.display = "none";
+    }
+  }
 
   // highlight color-box
   qsa(".color-box").forEach(b => b.classList.remove("active"));
@@ -1596,6 +1607,10 @@ function atualizarEstilo() {
   d.font = $("inFont").value;
   d.size = parseInt($("inSize").value) || 40;
   d.col = $("inColor").value;
+  if (d.isIcon && d.iconSvg) {
+    recolorIconItem(d, d.col);
+    const inIc = $("inIconColor"); if (inIc) inIc.value = /^#/.test(d.col) ? d.col : inIc.value;
+  }
   // Width / Height com aspect-ratio opcional
   const newW = parseInt($("inW").value);
   const newH = parseInt($("inH").value);
@@ -1863,26 +1878,46 @@ async function adicionarIcone(iconName, cor) {
   const c = ensureCartaz();
   if (!c) return toast("Crie um cartaz primeiro.", "error");
   try {
-    let svg = await getIconSVG(iconName);
-    if (svg) {
-      svg = colorizeSVG(svg, cor);
-    } else {
-      // fallback: single direct fetch with color param
-      const corEnc = encodeURIComponent(cor || "#000");
-      const r = await fetch(`https://api.iconify.design/${iconName}.svg?color=${corEnc}`);
-      svg = (await r.text()).trim();
+    let raw = await getIconSVG(iconName); // SVG with currentColor preserved (for monotone)
+    if (!raw) {
+      // fallback: direct fetch WITHOUT color param so currentColor is preserved
+      const r = await fetch(`https://api.iconify.design/${iconName}.svg`);
+      raw = (await r.text()).trim();
     }
-    if (!svg || !svg.startsWith("<svg")) return toast("Erro ao carregar ícone", "error");
-    const b64 = btoa(unescape(encodeURIComponent(svg)));
-    const dataUrl = `data:image/svg+xml;base64,${b64}`;
+    if (!raw || !raw.startsWith("<svg")) return toast("Erro ao carregar ícone", "error");
+    const dataUrl = iconSvgToDataUrl(raw, cor);
     snapshot();
-    c.itens.push({ ...makeItem("img", dataUrl, 80, 80, 0, "", ""), w: 180, h: 180 });
+    c.itens.push({ ...makeItem("img", dataUrl, 80, 80, 0, "", cor), w: 180, h: 180, isIcon: true, iconName, iconSvg: raw });
     render(); save();
     toast("Ícone adicionado", "success");
     closeModal("modalIcones");
   } catch (e) {
     toast("Erro ao carregar ícone", "error");
   }
+}
+
+function iconSvgToDataUrl(rawSvg, cor) {
+  const colored = colorizeSVG(rawSvg, cor);
+  const b64 = btoa(unescape(encodeURIComponent(colored)));
+  return `data:image/svg+xml;base64,${b64}`;
+}
+
+// Recolor an already-placed icon on the poster
+function recolorIconItem(d, cor) {
+  if (!d || !d.isIcon || !d.iconSvg) return;
+  d.col = cor;
+  d.val = iconSvgToDataUrl(d.iconSvg, cor);
+}
+
+function aplicarCorIcone(cor) {
+  if (!state.sel) return;
+  const d = state.sel.data;
+  if (!d.isIcon || !d.iconSvg) return;
+  snapshotDebounced();
+  recolorIconItem(d, cor);
+  const inC = $("inColor"); if (inC && /^#/.test(cor)) inC.value = cor;
+  render();
+  saveDebounced();
 }
 
 // ---------- Drag & drop de cartazes entre páginas ----------
@@ -2481,6 +2516,10 @@ function wire() {
     $(id)?.addEventListener("input", atualizarEstilo);
     $(id)?.addEventListener("change", atualizarEstilo);
   });
+
+  // Cor do ícone (recolore ícone já posicionado no cartaz)
+  $("inIconColor")?.addEventListener("input", (e) => aplicarCorIcone(e.target.value));
+  $("inIconColor")?.addEventListener("change", (e) => aplicarCorIcone(e.target.value));
 
   // Align
   $("alignL").onclick = () => alignar("L");

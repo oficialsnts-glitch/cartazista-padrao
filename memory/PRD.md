@@ -224,3 +224,8 @@
 - `/app/frontend/public/index.html` — removido `<select id="selectTemplate">` da toolbar
 - `/app/frontend/public/app.js` — removidos `TEMPLATES`, `carregarTemplate` e handler
 - `/app/frontend/public/sw.js` — `CACHE_NAME` v5 → v6
+## Cartazista Pro — histórico recente
+- Login: removidas credenciais pré-preenchidas + botão mostrar senha.
+- Fontes: portfólio ampliado (~35 fontes, 4 grupos).
+- Galeria de ícones: ~200 ícones em 14 categorias; carregamento via API JSON em lote (evita 429); recolor por CSS.
+- Recolor de ícone no cartaz: item guarda iconSvg original + isIcon; seção 'Cor do ícone' na aba Estilo (inIconColor) recolore item selecionado via aplicarCorIcone()/recolorIconItem().
