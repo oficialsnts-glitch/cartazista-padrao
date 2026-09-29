@@ -414,6 +414,17 @@ body {
   box-shadow: 0 0 0 3px rgba(76,139,255,0.15);
 }
 .campo textarea { resize: vertical; min-height: 34px; }
+.pass-wrap { position: relative; display: flex; align-items: center; }
+.pass-wrap input { width: 100%; padding-right: 38px; }
+.toggle-pass {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  border: none; background: transparent; cursor: pointer;
+  color: var(--muted, #8a94a6); padding: 6px 8px; font-size: 14px;
+  border-radius: var(--radius-sm); transition: color .15s, background .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.toggle-pass:hover { color: var(--accent); background: rgba(76,139,255,0.1); }
+
 
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }

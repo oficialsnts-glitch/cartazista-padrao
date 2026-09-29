@@ -11,7 +11,7 @@
   <!-- Fonts: curated selection for retail/price posters -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Righteous&family=Alfa+Slab+One&family=Ultra&family=Bungee&family=Passion+One:wght@900&family=Black+Ops+One&family=Staatliches&family=Fjalla+One&family=Abril+Fatface&family=Russo+One&family=Squada+One&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Archivo+Black&family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Righteous&family=Alfa+Slab+One&family=Ultra&family=Bungee&family=Passion+One:wght@900&family=Black+Ops+One&family=Staatliches&family=Fjalla+One&family=Abril+Fatface&family=Russo+One&family=Squada+One&family=Teko:wght@700&family=Barlow+Condensed:wght@700;800&family=Saira+Condensed:wght@700;800&family=Fugaz+One&family=Titan+One&family=Luckiest+Guy&family=Bowlby+One+SC&family=Chango&family=Rammetto+One&family=Bungee+Shade&family=Monoton&family=Pacifico&family=Lobster&family=Bangers&family=Permanent+Marker&family=Shrikhand&family=Playfair+Display:wght@700;900&family=Concert+One&family=Paytone+One&display=swap" rel="stylesheet" />
 
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -166,6 +166,9 @@
                 <option value="'Oswald'">Oswald</option>
                 <option value="'Fjalla One'">Fjalla One</option>
                 <option value="'Staatliches'">Staatliches</option>
+                <option value="'Teko'">Teko</option>
+                <option value="'Barlow Condensed'">Barlow Condensed</option>
+                <option value="'Saira Condensed'">Saira Condensed</option>
               </optgroup>
               <optgroup label="Impacto (chamadas)">
                 <option value="'Archivo Black'">Archivo Black</option>
@@ -174,12 +177,30 @@
                 <option value="'Passion One'">Passion One</option>
                 <option value="'Russo One'">Russo One</option>
                 <option value="'Squada One'">Squada One</option>
+                <option value="'Fugaz One'">Fugaz One</option>
+                <option value="'Titan One'">Titan One</option>
+                <option value="'Paytone One'">Paytone One</option>
+                <option value="'Concert One'">Concert One</option>
               </optgroup>
               <optgroup label="Divertidas / especiais">
                 <option value="'Righteous'">Righteous</option>
                 <option value="'Bungee'">Bungee</option>
                 <option value="'Black Ops One'">Black Ops One</option>
                 <option value="'Abril Fatface'">Abril Fatface</option>
+                <option value="'Luckiest Guy'">Luckiest Guy</option>
+                <option value="'Bowlby One SC'">Bowlby One SC</option>
+                <option value="'Chango'">Chango</option>
+                <option value="'Rammetto One'">Rammetto One</option>
+                <option value="'Bungee Shade'">Bungee Shade</option>
+                <option value="'Monoton'">Monoton</option>
+                <option value="'Bangers'">Bangers</option>
+                <option value="'Shrikhand'">Shrikhand</option>
+              </optgroup>
+              <optgroup label="Manuscritas / elegantes">
+                <option value="'Pacifico'">Pacifico</option>
+                <option value="'Lobster'">Lobster</option>
+                <option value="'Permanent Marker'">Permanent Marker</option>
+                <option value="'Playfair Display'">Playfair Display</option>
               </optgroup>
             </select>
           </div>
@@ -332,11 +353,16 @@
     <div class="modal-body">
       <div class="campo">
         <label>E-mail</label>
-        <input type="email" id="loginEmail" placeholder="loja1@gestor.com" value="loja1@gestor.com" />
+        <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="off" />
       </div>
       <div class="campo">
         <label>Senha</label>
-        <input type="password" id="loginPass" placeholder="••••••••" value="admpadrao" />
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="new-password" />
+          <button type="button" class="toggle-pass" id="btnTogglePass" title="Mostrar senha" aria-label="Mostrar senha" data-testid="toggle-pass-btn">
+            <i class="fa-solid fa-eye" id="iconTogglePass"></i>
+          </button>
+        </div>
       </div>
       <div id="loginMsg" class="small" style="color: var(--danger); margin-top: 5px;"></div>
     </div>

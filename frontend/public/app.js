@@ -2287,9 +2287,27 @@ function wire() {
         });
       }
     } else {
+      $("loginEmail").value = "";
+      $("loginPass").value = "";
+      $("loginMsg").textContent = "";
+      const pw = $("loginPass"), ic = $("iconTogglePass");
+      if (pw) pw.type = "password";
+      if (ic) ic.className = "fa-solid fa-eye";
       openModal("modalLogin");
     }
   };
+
+  const btnTogglePass = $("btnTogglePass");
+  if (btnTogglePass) {
+    btnTogglePass.onclick = () => {
+      const pw = $("loginPass"), ic = $("iconTogglePass");
+      const show = pw.type === "password";
+      pw.type = show ? "text" : "password";
+      ic.className = show ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+      btnTogglePass.title = show ? "Ocultar senha" : "Mostrar senha";
+      btnTogglePass.setAttribute("aria-label", show ? "Ocultar senha" : "Mostrar senha");
+    };
+  }
 
   $("btnLoginExecutar").onclick = async () => {
     const email = $("loginEmail").value.trim();
