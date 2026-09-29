@@ -1747,10 +1747,13 @@ const ICON_SVG_CACHE = new Map(); // iconName -> Promise<string>
 function getIconSVG(iconName) {
   if (!ICON_SVG_CACHE.has(iconName)) {
     const url = `https://api.iconify.design/${iconName}.svg`;
-    ICON_SVG_CACHE.set(iconName, fetch(url)
+    const p = fetch(url)
       .then(r => r.ok ? r.text() : "")
       .then(t => { t = (t || "").trim(); return t.startsWith("<svg") ? t : ""; })
-      .catch(() => ""));
+      .catch(() => "");
+    // Don't permanently cache failures: allow retry on next render
+    p.then(svg => { if (!svg) ICON_SVG_CACHE.delete(iconName); });
+    ICON_SVG_CACHE.set(iconName, p);
   }
   return ICON_SVG_CACHE.get(iconName);
 }

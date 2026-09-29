@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only test of icon gallery color-change bug fix in Cartazista Pro. PRIMARY BUG VERIFIED FIXED: opening the gallery via #btnIcones triggered 190 fetches to api.iconify.design (one per icon). Changing #iconColor three times in a row (#1e88e5, #00aa00, #ff0000) triggered 0 additional iconify requests, confirming ICON_SVG_CACHE prevents refetch. #iconGrid.style.color updated correctly each time (final rgb(255,0,0)). All 200 .icon-cell nodes remained in the DOM — icons did NOT disappear. Category chip switch re-rendered grid to 44 cells for Hortifruti with icons visible. In runs where iconify.design was reachable, inlined SVG icons rendered correctly (noto multi-color icons kept native colors as spec allows). Click-to-add: in a session where SVG cache was empty (network flakiness) the toast 'Erro ao carregar ícone' was shown correctly — not related to the reported bug.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Icon SVG fetch from api.iconify.design", "issue": "Intermittent net::ERR_FAILED for /api/*.svg calls from this preview container. When it fails, cells show '?' placeholder and adicionarIcone() correctly reports 'Erro ao carregar ícone'. This is environmental network flakiness, NOT a code bug. Reproduces less often when tested a second time (some responses cached at CDN).", "affected_selectors": ["#iconGrid .icon-cell .icon-svg"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "getIconSVG caches promises even for failed fetches that resolve to '' — a transient network failure permanently poisons the cache for that icon until reload. Consider clearing entries that resolved to empty string so a subsequent open/render can retry.",
+    "renderIconGrid always clears grid.innerHTML and re-creates 200 cells with new getIconSVG().then() closures; while safe (fetch is cached), consider skipping full rebuild when only search filter is unchanged.",
+    "Firebase anonymous auth still errors on page load (auth/admin-restricted-operation) — expected per prior iteration, no impact on icon gallery flow."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% for the reported bug scenario"},
+  "test_credentials": "N/A - gallery is accessible without login",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bug 'ao mudar a cor os ícones somem' is confirmed fixed. Verified via network request tracking: 0 iconify.design requests during color changes. Grid recolored via CSS (grid.style.color drives currentColor). If icons appear as '?' on your run, it's transient blocked/failed fetch to api.iconify.design from the preview container — retry or verify by counting iconify requests during color change (should stay at 0)."
+}
