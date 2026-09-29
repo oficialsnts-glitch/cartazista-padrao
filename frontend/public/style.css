@@ -599,6 +599,11 @@ body {
   box-shadow: 0 4px 12px rgba(76,139,255,0.15);
 }
 .icon-cell img { width: 36px; height: 36px; pointer-events: none; }
+.icon-cell .icon-svg { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.icon-cell .icon-svg svg { width: 36px; height: 36px; }
+.icon-cell .icon-loading { width: 20px; height: 20px; border: 2px solid #e3e8f0; border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+.icon-cell .icon-missing { color: #c4ccd8; font-size: 20px; font-weight: 700; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .icon-cell .nome { font-size: 9px; color: #7a8494; text-align:center; line-height:1.1; }
 
 .ean-card {

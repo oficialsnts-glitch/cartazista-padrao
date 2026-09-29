@@ -1742,10 +1742,29 @@ const ICON_CATEGORIAS = [
 let iconCatAtual = "tudo";
 let iconSearch = "";
 
+// SVG cache: fetch each icon once, recolor client-side (avoids Iconify rate limits on color change)
+const ICON_SVG_CACHE = new Map(); // iconName -> Promise<string>
+function getIconSVG(iconName) {
+  if (!ICON_SVG_CACHE.has(iconName)) {
+    const url = `https://api.iconify.design/${iconName}.svg`;
+    ICON_SVG_CACHE.set(iconName, fetch(url)
+      .then(r => r.ok ? r.text() : "")
+      .then(t => { t = (t || "").trim(); return t.startsWith("<svg") ? t : ""; })
+      .catch(() => ""));
+  }
+  return ICON_SVG_CACHE.get(iconName);
+}
+function colorizeSVG(svg, cor) {
+  if (!svg) return svg;
+  // Only monotone icons use currentColor; palette icons (noto, emojione...) keep native colors
+  return svg.replace(/currentColor/g, cor || "#000");
+}
+
 function renderIconGrid() {
   const grid = $("iconGrid");
   grid.innerHTML = "";
-  const cor = encodeURIComponent($("iconColor").value || "#000");
+  const cor = $("iconColor").value || "#000";
+  grid.style.color = cor; // drives currentColor on inline monotone SVGs, updates instantly
 
   let toShow = [];
   if (iconCatAtual === "tudo") {
@@ -1765,12 +1784,13 @@ function renderIconGrid() {
     cell.className = "icon-cell";
     cell.title = x.id;
     const iconName = x.id;
-    const url = `https://api.iconify.design/${iconName}.svg?color=%23${cor.replace(/^%23/, "")}`;
-    const img = document.createElement("img");
-    img.src = url;
-    img.alt = x.id;
-    img.loading = "lazy";
-    cell.appendChild(img);
+    const holder = document.createElement("span");
+    holder.className = "icon-svg";
+    holder.innerHTML = '<span class="icon-loading"></span>';
+    cell.appendChild(holder);
+    getIconSVG(iconName).then(svg => {
+      holder.innerHTML = svg || '<span class="icon-missing">?</span>';
+    });
     const nome = document.createElement("div");
     nome.className = "nome";
     nome.textContent = iconName.split(":").pop().replace(/-/g, " ");
@@ -1779,6 +1799,12 @@ function renderIconGrid() {
     grid.appendChild(cell);
   });
   if (toShow.length === 0) grid.innerHTML = '<div class="small" style="padding:20px">Nenhum ícone encontrado.</div>';
+}
+
+// Update icon colors without refetching (instant, no network)
+function recolorIconGrid() {
+  const grid = $("iconGrid");
+  if (grid) grid.style.color = $("iconColor").value || "#000";
 }
 
 function renderIconCategorias() {
@@ -1796,11 +1822,17 @@ function renderIconCategorias() {
 async function adicionarIcone(iconName, cor) {
   const c = ensureCartaz();
   if (!c) return toast("Crie um cartaz primeiro.", "error");
-  const corEnc = encodeURIComponent(cor || "#000").replace("#", "%23");
-  const url = `https://api.iconify.design/${iconName}.svg?color=${corEnc}`;
   try {
-    const r = await fetch(url);
-    const svg = await r.text();
+    let svg = await getIconSVG(iconName);
+    if (svg) {
+      svg = colorizeSVG(svg, cor);
+    } else {
+      // fallback: single direct fetch with color param
+      const corEnc = encodeURIComponent(cor || "#000");
+      const r = await fetch(`https://api.iconify.design/${iconName}.svg?color=${corEnc}`);
+      svg = (await r.text()).trim();
+    }
+    if (!svg || !svg.startsWith("<svg")) return toast("Erro ao carregar ícone", "error");
     const b64 = btoa(unescape(encodeURIComponent(svg)));
     const dataUrl = `data:image/svg+xml;base64,${b64}`;
     snapshot();
@@ -2376,7 +2408,8 @@ function wire() {
 
   $("btnWhatsBaixar").onclick = gerarImagemWhats;
   $("iconSearch")?.addEventListener("input", (e) => { iconSearch = e.target.value; renderIconGrid(); });
-  $("iconColor")?.addEventListener("change", () => renderIconGrid());
+  $("iconColor")?.addEventListener("input", () => recolorIconGrid());
+  $("iconColor")?.addEventListener("change", () => recolorIconGrid());
   qsa("#modalWhats .chip").forEach(c => c.onclick = () => {
     qsa("#modalWhats .chip").forEach(x => x.classList.remove("active"));
     c.classList.add("active"); whatsFormat = c.dataset.share;
