@@ -1742,20 +1742,57 @@ const ICON_CATEGORIAS = [
 let iconCatAtual = "tudo";
 let iconSearch = "";
 
-// SVG cache: fetch each icon once, recolor client-side (avoids Iconify rate limits on color change)
-const ICON_SVG_CACHE = new Map(); // iconName -> Promise<string>
-function getIconSVG(iconName) {
-  if (!ICON_SVG_CACHE.has(iconName)) {
-    const url = `https://api.iconify.design/${iconName}.svg`;
-    const p = fetch(url)
-      .then(r => r.ok ? r.text() : "")
-      .then(t => { t = (t || "").trim(); return t.startsWith("<svg") ? t : ""; })
-      .catch(() => "");
-    // Don't permanently cache failures: allow retry on next render
-    p.then(svg => { if (!svg) ICON_SVG_CACHE.delete(iconName); });
-    ICON_SVG_CACHE.set(iconName, p);
-  }
-  return ICON_SVG_CACHE.get(iconName);
+// Bulk-load icons via Iconify JSON API: ~1 request per icon-set prefix instead of 200 individual
+// SVG requests. This avoids rate limiting (429) that made icons show as "?".
+const ICON_BODY_CACHE = new Map(); // "prefix:name" -> { body, w, h }
+let iconPreloadPromise = null;
+
+function preloadAllIcons() {
+  if (iconPreloadPromise) return iconPreloadPromise;
+  const byPrefix = {};
+  ICON_CATEGORIAS.forEach(c => {
+    if (!c.icons) return;
+    c.icons.forEach(full => {
+      const idx = full.indexOf(":");
+      if (idx < 0) return;
+      const prefix = full.slice(0, idx), name = full.slice(idx + 1);
+      (byPrefix[prefix] = byPrefix[prefix] || new Set()).add(name);
+    });
+  });
+  const jobs = [];
+  Object.entries(byPrefix).forEach(([prefix, set]) => {
+    const names = [...set];
+    for (let i = 0; i < names.length; i += 50) {
+      const chunk = names.slice(i, i + 50);
+      jobs.push(
+        fetch(`https://api.iconify.design/${prefix}.json?icons=${chunk.join(",")}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (!d || !d.icons) return;
+            const dw = d.width || 16, dh = d.height || 16;
+            Object.entries(d.icons).forEach(([n, ic]) => {
+              ICON_BODY_CACHE.set(`${prefix}:${n}`, { body: ic.body, w: ic.width || dw, h: ic.height || dh });
+            });
+          })
+          .catch(() => {})
+      );
+    }
+  });
+  iconPreloadPromise = Promise.all(jobs).catch(() => {});
+  // Allow a retry on the next render if everything failed (transient network)
+  iconPreloadPromise.then(() => { if (ICON_BODY_CACHE.size === 0) iconPreloadPromise = null; });
+  return iconPreloadPromise;
+}
+
+function buildIconSVG(iconName) {
+  const ic = ICON_BODY_CACHE.get(iconName);
+  if (!ic) return "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 ${ic.w} ${ic.h}">${ic.body}</svg>`;
+}
+
+async function getIconSVG(iconName) {
+  await preloadAllIcons();
+  return buildIconSVG(iconName);
 }
 function colorizeSVG(svg, cor) {
   if (!svg) return svg;
