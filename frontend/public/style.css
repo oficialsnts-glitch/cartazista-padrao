@@ -741,10 +741,19 @@ textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-si
   color: #111; background: #fff;
 }
 .g-label.bordered { border: 0.3mm solid #000; }
+.g-label .g-head {
+  display: flex; align-items: center; gap: 2mm; flex: 0 0 auto;
+  margin-bottom: 1mm; overflow: hidden;
+}
+.g-label .g-logo { height: 6mm; width: auto; max-width: 24mm; object-fit: contain; flex: 0 0 auto; }
 .g-label .g-store {
   font-size: 3mm; font-weight: 700; line-height: 1; text-transform: uppercase;
-  letter-spacing: .3mm; color: #444; margin-bottom: 1mm; flex: 0 0 auto;
+  letter-spacing: .3mm; color: #444; flex: 1 1 auto; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.g-logo-thumb {
+  height: 34px; max-width: 120px; object-fit: contain;
+  background: #fff; border: 1px solid #2b3444; border-radius: 6px; padding: 2px;
 }
 .g-label .g-prod {
   flex: 1 1 auto; min-height: 0; overflow: hidden;

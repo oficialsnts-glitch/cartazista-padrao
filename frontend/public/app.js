@@ -2328,6 +2328,41 @@ function closeModal(id) { $(id).classList.remove("open"); }
 // ---------- Etiqueta de Gôndola (10 × 3 cm) ----------
 const GONDOLA_PER_PAGE = 18; // 2 colunas × 9 linhas por folha A4
 let gondolaEntries = [{ prod: "", preco: "" }];
+let gondLogo = ""; // dataURL da logomarca da loja
+const GOND_SETTINGS_KEY = "cartazista_gondola_settings";
+
+function saveGondSettings() {
+  try {
+    localStorage.setItem(GOND_SETTINGS_KEY, JSON.stringify({
+      loja: $("gondLoja")?.value || "",
+      logo: gondLogo || "",
+      font: $("gondFont")?.value || "'Oswald'",
+      priceColor: $("gondPriceColor")?.value || "#e11d2a",
+      bordered: $("gondBorda")?.checked !== false,
+    }));
+  } catch (e) { /* ignora quota */ }
+}
+
+function loadGondSettings() {
+  try {
+    const raw = localStorage.getItem(GOND_SETTINGS_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if ($("gondLoja")) $("gondLoja").value = s.loja || "";
+    if ($("gondFont") && s.font) $("gondFont").value = s.font;
+    if ($("gondPriceColor") && s.priceColor) $("gondPriceColor").value = s.priceColor;
+    if ($("gondBorda")) $("gondBorda").checked = s.bordered !== false;
+    gondLogo = s.logo || "";
+    applyGondLogoUI();
+  } catch (e) { /* ignora */ }
+}
+
+function applyGondLogoUI() {
+  const prev = $("gondLogoPreview"), rm = $("gondLogoRemove");
+  if (!prev || !rm) return;
+  if (gondLogo) { prev.src = gondLogo; prev.style.display = ""; rm.style.display = ""; }
+  else { prev.removeAttribute("src"); prev.style.display = "none"; rm.style.display = "none"; }
+}
 
 function gondStyleOpts() {
   return {
@@ -2335,6 +2370,7 @@ function gondStyleOpts() {
     priceColor: $("gondPriceColor")?.value || "#e11d2a",
     bordered: $("gondBorda")?.checked !== false,
     loja: ($("gondLoja")?.value || "").trim(),
+    logo: gondLogo || "",
   };
 }
 
@@ -2389,6 +2425,7 @@ function addGondolaRow() {
 
 function openGondolaModal() {
   if (!gondolaEntries.length) gondolaEntries = [{ prod: "", preco: "" }];
+  loadGondSettings();
   renderGondolaRows();
   openModal("modalGondola");
 }
@@ -2414,11 +2451,22 @@ function makeGondLabel(entry, opts) {
   const lab = document.createElement("div");
   lab.className = "g-label" + (opts.bordered ? " bordered" : "");
   lab.style.fontFamily = opts.font;
-  if (opts.loja) {
-    const store = document.createElement("div");
-    store.className = "g-store";
-    store.textContent = opts.loja;
-    lab.appendChild(store);
+  if (opts.logo || opts.loja) {
+    const head = document.createElement("div");
+    head.className = "g-head";
+    if (opts.logo) {
+      const img = document.createElement("img");
+      img.className = "g-logo";
+      img.src = opts.logo;
+      head.appendChild(img);
+    }
+    if (opts.loja) {
+      const store = document.createElement("div");
+      store.className = "g-store";
+      store.textContent = opts.loja;
+      head.appendChild(store);
+    }
+    lab.appendChild(head);
   }
   const prod = document.createElement("div");
   prod.className = "g-prod";
@@ -2634,8 +2682,28 @@ function wire() {
   $("gondPreview").onclick = previewGondola;
   $("gondPrint").onclick = imprimirGondola;
   ["gondLoja", "gondFont", "gondPriceColor", "gondBorda"].forEach(id => {
-    $(id)?.addEventListener("input", renderGondolaLivePreview);
-    $(id)?.addEventListener("change", renderGondolaLivePreview);
+    $(id)?.addEventListener("input", () => { renderGondolaLivePreview(); saveGondSettings(); });
+    $(id)?.addEventListener("change", () => { renderGondolaLivePreview(); saveGondSettings(); });
+  });
+  $("gondLogoInput")?.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast("Selecione uma imagem (PNG/JPG)", "error"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      gondLogo = reader.result;
+      applyGondLogoUI();
+      renderGondolaLivePreview();
+      saveGondSettings();
+    };
+    reader.readAsDataURL(file);
+  });
+  $("gondLogoRemove")?.addEventListener("click", () => {
+    gondLogo = "";
+    if ($("gondLogoInput")) $("gondLogoInput").value = "";
+    applyGondLogoUI();
+    renderGondolaLivePreview();
+    saveGondSettings();
   });
   $("gondClosePreview").onclick = () => $("gondPreviewOverlay").classList.remove("open");
   $("gondPreviewOverlay").onclick = (e) => { if (e.target === $("gondPreviewOverlay")) $("gondPreviewOverlay").classList.remove("open"); };

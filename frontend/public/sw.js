@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cartazista-cache-v12';
+const CACHE_NAME = 'cartazista-cache-v13';
 const APP_SHELL = [
   './',
   './index.html',
@@ -55,9 +55,10 @@ self.addEventListener('fetch', (e) => {
     NETWORK_FIRST_REGEX.test(url.pathname);
 
   if (isAppShell) {
-    // Network-first: sempre tenta buscar a versão mais recente
+    // Network-first: sempre busca a versão mais recente, ignorando o cache HTTP
+    // do navegador (cache: 'no-store') — assim o usuário nunca precisa de Ctrl+Shift+R.
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then(response => {
           if (response && response.status === 200 && response.type === 'basic') {
             const copy = response.clone();

@@ -443,6 +443,15 @@
 
       <div class="campo"><label>Nome da loja <span class="small" style="opacity:.6">(aparece no topo de cada etiqueta)</span></label><input type="text" id="gondLoja" placeholder="Ex: Supermercado Silva" data-testid="gond-loja" /></div>
 
+      <div class="campo">
+        <label>Logomarca da loja <span class="small" style="opacity:.6">(opcional — PNG/JPG)</span></label>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+          <input type="file" id="gondLogoInput" accept="image/*" data-testid="gond-logo-input" />
+          <img id="gondLogoPreview" class="g-logo-thumb" alt="Prévia da logo" style="display:none" data-testid="gond-logo-preview" />
+          <button class="btn btn-sm" id="gondLogoRemove" data-testid="gond-logo-remove" style="display:none"><i class="fa-solid fa-trash"></i> Remover logo</button>
+        </div>
+      </div>
+
       <div class="g-style-bar">
         <div class="campo" style="min-width:180px">
           <label>Fonte</label>
