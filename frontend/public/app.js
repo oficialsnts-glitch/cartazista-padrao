@@ -2502,7 +2502,7 @@ function fitGondProd(lab) {
     px -= 0.5;
     prod.style.fontSize = px + "px";
   }
-  // lab permanece no measurer; o chamador o reanexa ao destino final
+  lab.remove(); // desanexa do measurer; o chamador reanexa ao destino final
 }
 
 function renderGondolaLivePreview() {

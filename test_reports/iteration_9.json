@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only testing of Cartazista Pro 'Etiqueta de Gôndola' feature: logo upload, live preview, store name, auto-shrink of long product name, A4 sheet preview with borders+gaps, and localStorage persistence + service worker registration. All 11 test steps passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "modal_opens_on_btn_gondola_click": "PASS (modal-gondola gets .open, display:flex)",
+    "add_row_and_price_prefix": "PASS (gond-add-row creates gond-prod-1; price shows 'R$ 24,90')",
+    "live_preview_updates_on_typing": "PASS (#gondLivePreview .g-label rendered as user types)",
+    "store_name_in_live_preview": "PASS ('.g-store' shows 'Mercado Teste')",
+    "logo_upload_shows_preview_and_remove_and_appears_in_label": "PASS (gond-logo-preview visible, gond-logo-remove visible, .g-logo present in preview labels)",
+    "auto_shrink_long_product_name": "PASS (font shrunk to 10px; scrollHeight==clientHeight==17, scrollWidth==clientWidth==346 => no clipping/overflow)",
+    "sheet_preview_overlay": "PASS (gond-preview-overlay opens with .g-sheet; row-gap ≈7.56px (~2mm), column-gap ≈18.9px (~5mm); .g-label border 1px solid black — labels have their own cut lines with visible gap)",
+    "persistence_localStorage_after_normal_reload": "PASS (after page.reload() the store name 'Mercado Teste' and logo data URL restored on modal open — NO Ctrl+Shift+R needed)",
+    "logo_remove_button": "PASS (clicking gond-logo-remove clears .g-logo from live preview and hides the remove button)",
+    "service_worker_registration": "PASS (SW active/activated, scope root)",
+    "no_console_errors_besides_expected_firebase_anon_auth": "PASS (0 non-firebase console errors; firebase anon auth error is expected in preview env — app correctly falls back to guest/offline mode)"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "app.js fitGondProd() leaves the label attached to an off-screen measurer (_gondMeasurer) after measurement; it relies on the caller's subsequent appendChild to move it out. Works today (renderGondolaLivePreview and buildGondolaSheetsInto both re-append), but is a fragile contract — a future caller that forgets to re-append will silently render labels off-screen. Consider explicitly removing from measurer before returning.",
+    "app.js is ~3000 lines — approaching size where a split into modules (gondola.js, editor.js, auth.js) would improve maintainability per code review guidelines (>700 lines threshold).",
+    "Firebase anonymous auth fails with auth/admin-restricted-operation in the preview environment; app handles it gracefully (offline mode) so guest features work, but the console error is noisy. Consider suppressing/logging at info level when guest mode is intended."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (11/11)"},
+  "seed_data_creation": "Generated a tiny 8x8 PNG at /tmp/tt/logo.png for the logo upload flow.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All new gôndola features validated end-to-end via Playwright against the public preview URL. Selectors used: data-testid btn-gondola, modal-gondola, gond-prod-0/1, gond-preco-0, gond-add-row, gond-loja, gond-logo-input, gond-logo-preview, gond-logo-remove, gond-preview, gond-preview-overlay. localStorage key: cartazista_gondola_settings. SW: cartazista-cache-v13 (network-first with no-store). Splash requires ~5-6s wait before btn-gondola is clickable."
+}
