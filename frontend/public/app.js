@@ -2325,6 +2325,115 @@ async function abrirPreview() {
 function openModal(id) { $(id).classList.add("open"); }
 function closeModal(id) { $(id).classList.remove("open"); }
 
+// ---------- Etiqueta de Gôndola (10 × 3 cm) ----------
+const GONDOLA_PER_PAGE = 18; // 2 colunas × 9 linhas por folha A4
+let gondolaEntries = [{ prod: "", preco: "" }];
+
+function gondStyleOpts() {
+  return {
+    font: $("gondFont")?.value || "'Oswald'",
+    priceColor: $("gondPriceColor")?.value || "#e11d2a",
+    bordered: $("gondBorda")?.checked !== false,
+  };
+}
+
+function formatGondPrice(v) {
+  const t = String(v).trim();
+  if (!t) return "";
+  return /r\$/i.test(t) ? t : "R$ " + t;
+}
+
+function gondFilledEntries() {
+  return gondolaEntries.filter(e => (e.prod || "").trim() || (e.preco || "").trim());
+}
+
+function updateGondolaCount() {
+  const filled = Math.max(gondFilledEntries().length, 1);
+  const pages = Math.max(1, Math.ceil(filled / GONDOLA_PER_PAGE));
+  const el = $("gondCount");
+  if (el) el.textContent = `${gondolaEntries.length} etiqueta(s) • ${pages} folha(s) A4`;
+}
+
+function renderGondolaRows() {
+  const host = $("gondRows");
+  if (!host) return;
+  host.innerHTML = "";
+  gondolaEntries.forEach((e, i) => {
+    const row = document.createElement("div");
+    row.className = "g-row";
+    row.innerHTML =
+      `<input type="text" placeholder="Ex: Arroz Tio João 5kg" value="${escapeHtml(e.prod)}" data-testid="gond-prod-${i}" />` +
+      `<input type="text" placeholder="Ex: 24,90" value="${escapeHtml(e.preco)}" data-testid="gond-preco-${i}" />` +
+      `<button class="g-del" title="Remover etiqueta" data-testid="gond-del-${i}"><i class="fa-solid fa-trash"></i></button>`;
+    const inputs = row.querySelectorAll("input");
+    inputs[0].addEventListener("input", () => { gondolaEntries[i].prod = inputs[0].value; updateGondolaCount(); });
+    inputs[1].addEventListener("input", () => { gondolaEntries[i].preco = inputs[1].value; updateGondolaCount(); });
+    row.querySelector(".g-del").onclick = () => {
+      gondolaEntries.splice(i, 1);
+      if (!gondolaEntries.length) gondolaEntries.push({ prod: "", preco: "" });
+      renderGondolaRows();
+    };
+    host.appendChild(row);
+  });
+  updateGondolaCount();
+}
+
+function addGondolaRow() {
+  gondolaEntries.push({ prod: "", preco: "" });
+  renderGondolaRows();
+  const inputs = qsa("#gondRows .g-row input");
+  inputs[inputs.length - 2]?.focus();
+}
+
+function openGondolaModal() {
+  if (!gondolaEntries.length) gondolaEntries = [{ prod: "", preco: "" }];
+  renderGondolaRows();
+  openModal("modalGondola");
+}
+
+function buildGondolaSheetsInto(host) {
+  host.innerHTML = "";
+  const opts = gondStyleOpts();
+  const items = gondFilledEntries();
+  const list = items.length ? items : [{ prod: "", preco: "" }];
+  const pages = Math.max(1, Math.ceil(list.length / GONDOLA_PER_PAGE));
+  for (let p = 0; p < pages; p++) {
+    const sheet = document.createElement("div");
+    sheet.className = "g-sheet";
+    list.slice(p * GONDOLA_PER_PAGE, (p + 1) * GONDOLA_PER_PAGE).forEach(e => {
+      const lab = document.createElement("div");
+      lab.className = "g-label" + (opts.bordered ? " bordered" : "");
+      lab.style.fontFamily = opts.font;
+      const prod = document.createElement("div");
+      prod.className = "g-prod";
+      prod.textContent = e.prod || "";
+      const price = document.createElement("div");
+      price.className = "g-price";
+      price.style.color = opts.priceColor;
+      price.textContent = formatGondPrice(e.preco);
+      lab.appendChild(prod);
+      lab.appendChild(price);
+      sheet.appendChild(lab);
+    });
+    host.appendChild(sheet);
+  }
+  return pages;
+}
+
+function previewGondola() {
+  buildGondolaSheetsInto($("gondPreviewContent"));
+  $("gondPreviewOverlay").classList.add("open");
+}
+
+function imprimirGondola() {
+  if (!gondFilledEntries().length) { toast("Digite ao menos uma etiqueta", "error"); return; }
+  buildGondolaSheetsInto($("gondolaPrintArea"));
+  document.body.classList.add("printing-gondola");
+  const done = () => { document.body.classList.remove("printing-gondola"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  setTimeout(() => window.print(), 150);
+}
+
 // ---------- Keyboard shortcuts ----------
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea, select")) return;
@@ -2343,7 +2452,7 @@ document.addEventListener("keydown", (e) => {
     render(); save();
   }
   else if (e.key === "Delete" && state.sel) { e.preventDefault(); excluirItemSelecionado(); }
-  else if (e.key === "Escape") { closeEditor(); hideCtxMenu(); qsa(".modal-backdrop.open").forEach(m => m.classList.remove("open")); $("previewOverlay").classList.remove("open"); }
+  else if (e.key === "Escape") { closeEditor(); hideCtxMenu(); qsa(".modal-backdrop.open").forEach(m => m.classList.remove("open")); $("previewOverlay").classList.remove("open"); $("gondPreviewOverlay")?.classList.remove("open"); }
   else if (e.key === "f" || e.key === "F") { abrirPreview(); }
   else if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key) && state.sel) {
     e.preventDefault();
@@ -2467,6 +2576,14 @@ function wire() {
   };
 
   $("btnWhats").onclick = () => openModal("modalWhats");
+
+  // Etiqueta de Gôndola
+  $("btnGondola").onclick = openGondolaModal;
+  $("gondAddRow").onclick = addGondolaRow;
+  $("gondPreview").onclick = previewGondola;
+  $("gondPrint").onclick = imprimirGondola;
+  $("gondClosePreview").onclick = () => $("gondPreviewOverlay").classList.remove("open");
+  $("gondPreviewOverlay").onclick = (e) => { if (e.target === $("gondPreviewOverlay")) $("gondPreviewOverlay").classList.remove("open"); };
 
   // Admin master
   $("btnAdmin")?.addEventListener("click", openAdminPanel);

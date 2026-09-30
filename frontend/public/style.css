@@ -701,3 +701,63 @@ textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-si
   transform-origin: top left;
 }
 .page-thumb { display: grid; flex: 0 0 auto; }
+
+/* ===== Etiqueta de Gôndola (10 × 3 cm) ===== */
+.g-style-bar {
+  display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;
+  margin: 12px 0 14px; padding: 12px;
+  border: 1px solid #2b3444; border-radius: 10px; background: rgba(0,0,0,0.15);
+}
+.g-style-bar .campo { margin: 0; }
+.g-style-bar input[type="color"] { width: 46px; height: 36px; padding: 2px; cursor: pointer; }
+.g-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim, #8794a5); padding-bottom: 8px; cursor: pointer; }
+.g-check input { width: 16px; height: 16px; accent-color: var(--accent, #e74c3c); }
+.g-rows-head {
+  display: grid; grid-template-columns: 1fr 170px 42px; gap: 8px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+  color: #8794a5; padding: 0 2px 6px;
+}
+.g-rows { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
+.g-row { display: grid; grid-template-columns: 1fr 170px 42px; gap: 8px; align-items: center; }
+.g-row input { width: 100%; }
+.g-row .g-del {
+  background: var(--danger, #e74c3c); color: #fff; border: none;
+  border-radius: 6px; height: 36px; cursor: pointer; font-size: 13px;
+}
+.g-row .g-del:hover { filter: brightness(1.1); }
+
+/* Folha A4 preenchida com etiquetas */
+#gondPreviewContent { display: flex; flex-direction: column; gap: 24px; }
+.g-sheet {
+  width: 210mm; height: 297mm; background: #fff; box-sizing: border-box;
+  display: grid; grid-template-columns: 100mm 100mm; grid-auto-rows: 30mm;
+  justify-content: center; align-content: start; padding-top: 13.5mm;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+.g-label {
+  width: 100mm; height: 30mm; box-sizing: border-box; overflow: hidden;
+  padding: 2.5mm 4mm; display: flex; flex-direction: column; justify-content: space-between;
+  color: #111; background: #fff;
+}
+.g-label.bordered { border: 0.3mm solid #000; }
+.g-label .g-prod {
+  font-size: 5mm; font-weight: 700; line-height: 1.08; max-height: 12mm;
+  overflow: hidden; text-transform: uppercase; word-break: break-word;
+}
+.g-label .g-price { font-size: 13mm; font-weight: 800; line-height: 1; text-align: right; }
+
+#gondolaPrintArea { display: none; }
+
+@media print {
+  body.printing-gondola .toolbar,
+  body.printing-gondola .main,
+  body.printing-gondola .editor,
+  body.printing-gondola .zoom-indicator,
+  body.printing-gondola #splash { display: none !important; }
+  body.printing-gondola #gondolaPrintArea { display: block !important; }
+  body.printing-gondola .g-sheet {
+    width: 210mm !important; height: 297mm !important;
+    box-shadow: none !important; margin: 0 !important;
+    page-break-after: always !important; page-break-inside: avoid !important;
+  }
+}
