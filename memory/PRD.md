@@ -15,7 +15,9 @@ App estático (HTML/CSS/JS puro, servido via `serve` na porta 3000) para criar c
 - Layout A4: grid 100mm × 30mm, 2 colunas × 9 linhas = **18 etiquetas por folha**; múltiplas folhas quando >18.
 - Ações: **Visualizar folha** (overlay) e **Imprimir folha** (`window.print()` com `body.printing-gondola` isolando só as folhas de etiqueta).
 - Preço exibe prefixo "R$ " automático se não digitado.
-- Funções em app.js: `openGondolaModal`, `renderGondolaRows`, `addGondolaRow`, `buildGondolaSheetsInto`, `previewGondola`, `imprimirGondola`.
+- **Nome da loja**: campo `gond-loja` que aparece no topo de cada etiqueta.
+- **Pré-visualização em tempo real**: `#gondLivePreview` mostra as etiquetas em miniatura, atualizando a cada digitação/alteração de estilo/loja.
+- Funções em app.js: `openGondolaModal`, `renderGondolaRows`, `addGondolaRow`, `makeGondLabel`, `buildGondolaSheetsInto`, `renderGondolaLivePreview`, `previewGondola`, `imprimirGondola`.
 
 ## Observações de teste
 - No sandbox de preview, o navegador headless não alcança o CDN do Firebase (gstatic), então o app fica na splash e a ferramenta de screenshot retornou imagem em cache — verificação visual e2e não foi possível aqui. Sintaxe validada e arquivos servidos corretamente. Testar na produção/ambiente do usuário.

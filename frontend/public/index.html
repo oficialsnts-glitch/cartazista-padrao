@@ -441,6 +441,8 @@
     <div class="modal-body">
       <p class="small">Digite o <b>produto</b> e o <b>preço</b> de cada etiqueta. Cabem 18 por folha A4 (2 colunas × 9 linhas). Ao concluir, clique em <b>Imprimir folha</b>.</p>
 
+      <div class="campo"><label>Nome da loja <span class="small" style="opacity:.6">(aparece no topo de cada etiqueta)</span></label><input type="text" id="gondLoja" placeholder="Ex: Supermercado Silva" data-testid="gond-loja" /></div>
+
       <div class="g-style-bar">
         <div class="campo" style="min-width:180px">
           <label>Fonte</label>
@@ -464,6 +466,11 @@
       <div style="margin-top:10px; display:flex; align-items:center; gap:12px">
         <button class="btn btn-success btn-sm" id="gondAddRow" data-testid="gond-add-row"><i class="fa-solid fa-plus"></i> Adicionar etiqueta</button>
         <span class="small" id="gondCount"></span>
+      </div>
+
+      <div class="g-live-wrap">
+        <label class="small" style="font-weight:600; display:block; margin:14px 0 6px"><i class="fa-solid fa-eye"></i> Pré-visualização em tempo real</label>
+        <div id="gondLivePreview" class="g-live" data-testid="gond-live-preview"></div>
       </div>
     </div>
     <div class="modal-footer">

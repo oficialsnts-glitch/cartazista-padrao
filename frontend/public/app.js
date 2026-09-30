@@ -2334,6 +2334,7 @@ function gondStyleOpts() {
     font: $("gondFont")?.value || "'Oswald'",
     priceColor: $("gondPriceColor")?.value || "#e11d2a",
     bordered: $("gondBorda")?.checked !== false,
+    loja: ($("gondLoja")?.value || "").trim(),
   };
 }
 
@@ -2366,8 +2367,8 @@ function renderGondolaRows() {
       `<input type="text" placeholder="Ex: 24,90" value="${escapeHtml(e.preco)}" data-testid="gond-preco-${i}" />` +
       `<button class="g-del" title="Remover etiqueta" data-testid="gond-del-${i}"><i class="fa-solid fa-trash"></i></button>`;
     const inputs = row.querySelectorAll("input");
-    inputs[0].addEventListener("input", () => { gondolaEntries[i].prod = inputs[0].value; updateGondolaCount(); });
-    inputs[1].addEventListener("input", () => { gondolaEntries[i].preco = inputs[1].value; updateGondolaCount(); });
+    inputs[0].addEventListener("input", () => { gondolaEntries[i].prod = inputs[0].value; updateGondolaCount(); renderGondolaLivePreview(); });
+    inputs[1].addEventListener("input", () => { gondolaEntries[i].preco = inputs[1].value; updateGondolaCount(); renderGondolaLivePreview(); });
     row.querySelector(".g-del").onclick = () => {
       gondolaEntries.splice(i, 1);
       if (!gondolaEntries.length) gondolaEntries.push({ prod: "", preco: "" });
@@ -2376,6 +2377,7 @@ function renderGondolaRows() {
     host.appendChild(row);
   });
   updateGondolaCount();
+  renderGondolaLivePreview();
 }
 
 function addGondolaRow() {
@@ -2401,23 +2403,47 @@ function buildGondolaSheetsInto(host) {
     const sheet = document.createElement("div");
     sheet.className = "g-sheet";
     list.slice(p * GONDOLA_PER_PAGE, (p + 1) * GONDOLA_PER_PAGE).forEach(e => {
-      const lab = document.createElement("div");
-      lab.className = "g-label" + (opts.bordered ? " bordered" : "");
-      lab.style.fontFamily = opts.font;
-      const prod = document.createElement("div");
-      prod.className = "g-prod";
-      prod.textContent = e.prod || "";
-      const price = document.createElement("div");
-      price.className = "g-price";
-      price.style.color = opts.priceColor;
-      price.textContent = formatGondPrice(e.preco);
-      lab.appendChild(prod);
-      lab.appendChild(price);
-      sheet.appendChild(lab);
+      sheet.appendChild(makeGondLabel(e, opts));
     });
     host.appendChild(sheet);
   }
   return pages;
+}
+
+function makeGondLabel(entry, opts) {
+  const lab = document.createElement("div");
+  lab.className = "g-label" + (opts.bordered ? " bordered" : "");
+  lab.style.fontFamily = opts.font;
+  if (opts.loja) {
+    const store = document.createElement("div");
+    store.className = "g-store";
+    store.textContent = opts.loja;
+    lab.appendChild(store);
+  }
+  const prod = document.createElement("div");
+  prod.className = "g-prod";
+  prod.textContent = entry.prod || "";
+  const price = document.createElement("div");
+  price.className = "g-price";
+  price.style.color = opts.priceColor;
+  price.textContent = formatGondPrice(entry.preco);
+  lab.appendChild(prod);
+  lab.appendChild(price);
+  return lab;
+}
+
+function renderGondolaLivePreview() {
+  const host = $("gondLivePreview");
+  if (!host) return;
+  const opts = gondStyleOpts();
+  const list = gondFilledEntries();
+  host.innerHTML = "";
+  list.forEach(e => {
+    const mini = document.createElement("div");
+    mini.className = "g-mini";
+    mini.appendChild(makeGondLabel(e, opts));
+    host.appendChild(mini);
+  });
 }
 
 function previewGondola() {
@@ -2582,6 +2608,10 @@ function wire() {
   $("gondAddRow").onclick = addGondolaRow;
   $("gondPreview").onclick = previewGondola;
   $("gondPrint").onclick = imprimirGondola;
+  ["gondLoja", "gondFont", "gondPriceColor", "gondBorda"].forEach(id => {
+    $(id)?.addEventListener("input", renderGondolaLivePreview);
+    $(id)?.addEventListener("change", renderGondolaLivePreview);
+  });
   $("gondClosePreview").onclick = () => $("gondPreviewOverlay").classList.remove("open");
   $("gondPreviewOverlay").onclick = (e) => { if (e.target === $("gondPreviewOverlay")) $("gondPreviewOverlay").classList.remove("open"); };
 

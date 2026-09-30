@@ -740,11 +740,30 @@ textarea.big { min-height: 120px; font-family: 'Courier New', monospace; font-si
   color: #111; background: #fff;
 }
 .g-label.bordered { border: 0.3mm solid #000; }
+.g-label .g-store {
+  font-size: 3mm; font-weight: 700; line-height: 1; text-transform: uppercase;
+  letter-spacing: .3mm; color: #444; margin-bottom: 1mm;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .g-label .g-prod {
   font-size: 5mm; font-weight: 700; line-height: 1.08; max-height: 12mm;
   overflow: hidden; text-transform: uppercase; word-break: break-word;
 }
 .g-label .g-price { font-size: 13mm; font-weight: 800; line-height: 1; text-align: right; }
+
+/* Pré-visualização em tempo real (labels reduzidas) */
+.g-live {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px;
+  max-height: 230px; overflow: auto; padding: 12px;
+  background: #0e1420; border: 1px solid #2b3444; border-radius: 10px;
+}
+.g-live:empty::after { content: "Digite uma etiqueta para ver a prévia aqui."; color: #8794a5; font-size: 12px; }
+.g-mini {
+  width: 200px; height: 60px; flex: 0 0 auto; overflow: hidden;
+  background: #fff; border-radius: 2px; position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.g-mini .g-label { transform: scale(0.529); transform-origin: top left; }
 
 #gondolaPrintArea { display: none; }
 
