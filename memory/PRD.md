@@ -17,6 +17,8 @@ App estático (HTML/CSS/JS puro, servido via `serve` na porta 3000) para criar c
 - Preço exibe prefixo "R$ " automático se não digitado.
 - **Nome da loja**: campo `gond-loja` que aparece no topo de cada etiqueta.
 - **Pré-visualização em tempo real**: `#gondLivePreview` mostra as etiquetas em miniatura, atualizando a cada digitação/alteração de estilo/loja.
+- **Auto-encolher produto**: `fitGondProd` mede a etiqueta num container off-screen e reduz a fonte do nome do produto (19px→9px) até caber em altura e largura, sem cortar.
+- **Espaçamento entre etiquetas**: grid com `column-gap: 5mm` e `row-gap: 2mm`; cada etiqueta mantém sua própria borda (referência de corte) sem compartilhar a linha.
 - Funções em app.js: `openGondolaModal`, `renderGondolaRows`, `addGondolaRow`, `makeGondLabel`, `buildGondolaSheetsInto`, `renderGondolaLivePreview`, `previewGondola`, `imprimirGondola`.
 
 ## Observações de teste

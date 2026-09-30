@@ -2429,7 +2429,32 @@ function makeGondLabel(entry, opts) {
   price.textContent = formatGondPrice(entry.preco);
   lab.appendChild(prod);
   lab.appendChild(price);
+  fitGondProd(lab); // encolhe o nome do produto para nunca cortar
   return lab;
+}
+
+// Mede a etiqueta num container off-screen (visibility:hidden) e reduz a fonte
+// do produto até caber na altura/largura disponível — evita texto cortado.
+let _gondMeasurer = null;
+function fitGondProd(lab) {
+  const prod = lab.querySelector(".g-prod");
+  if (!prod || !(prod.textContent || "").trim()) return;
+  if (!_gondMeasurer) {
+    _gondMeasurer = document.createElement("div");
+    _gondMeasurer.style.cssText = "position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none;";
+    document.body.appendChild(_gondMeasurer);
+  }
+  _gondMeasurer.appendChild(lab); // move temporariamente para medir
+  let px = 19;            // ~5mm (tamanho base)
+  const min = 9;          // ~2.4mm (mínimo legível)
+  prod.style.fontSize = px + "px";
+  let guard = 0;
+  while (px > min && guard++ < 60 &&
+         (prod.scrollHeight > prod.clientHeight + 1 || prod.scrollWidth > prod.clientWidth + 1)) {
+    px -= 0.5;
+    prod.style.fontSize = px + "px";
+  }
+  // lab permanece no measurer; o chamador o reanexa ao destino final
 }
 
 function renderGondolaLivePreview() {
